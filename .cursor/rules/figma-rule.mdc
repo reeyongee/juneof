@@ -1,0 +1,91 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+Objective: Convert CSS generated from Figma (using absolute positioning) into responsive CSS by interpreting specific modifiers attached to element names. This involves translating initial absolute positions and dimensions into a combination of fixed pixel values (for anchors), relative units (percentages, calc(), clamp() for scaling gaps/positions), and explicit dimension scaling rules, while respecting constraints and structural context from Figma.
+
+Required Inputs:
+
+Figma Design Link: Mandatory. Used via the Model Context Protocol (MCP) to retrieve the design's node structure, hierarchy (parent/child/sibling relationships), and element names with modifiers. If not provided, request it from the user. Do not proceed without it.
+CSS Data: Mandatory. The initial CSS generated from Figma, containing absolute positioning (position: absolute;) and dimensions (width, height, left, top, etc.) for each element. Do not proceed without it.
+Workflow:
+
+Initialization & Validation:
+Verify presence of both Figma Link and CSS data. Request missing inputs if necessary.
+Invoke MCP using the Figma link to get the structured node data (hierarchy, names, modifiers).
+Data Parsing & Contextual Analysis:
+Parse the MCP JSON to build an internal representation of the element tree.
+Parse the initial CSS, associating geometric properties (width, height, left, top) with their corresponding nodes from MCP.
+Identify Viewport: Locate the element explicitly named "viewport". Record its initial width (VpW) and height (VpH) from the CSS as the top-level reference dimensions.
+Identify Parents & Siblings: For each element, determine its immediate parent container and its siblings using the MCP hierarchy.
+Calculate Initial Geometry & Gaps: For each element relative to its immediate parent:
+Store initial width, height, left, top.
+Calculate initial parent gaps: gapL = left, gapT = top, gapR = parent.width - (left + width), gapB = parent.height - (top + height).
+Calculate initial sibling gaps (only if needed for complex fallback scenarios, prioritize grouping): gapH = nextSibling.left - (current.left + current.width), gapV = nextSibling.top - (current.top + current.height).
+Parse Modifiers: Extract and validate modifiers attached to element names (e.g., /aL-sR, /pinC-scaleW).
+CSS Conversion Logic:
+Iterate through elements identified in the MCP data.
+Viewport Element: Set its CSS to position: relative; width: 100%; height: 100vh; overflow: hidden; (or similar standard practices), discarding its initial fixed dimensions after recording VpW/VpH.
+Other Elements:
+No Modifier: Retain original absolute CSS (position: absolute; width: ...px; height: ...px; left: ...px; top: ...px;).
+With Modifier: Apply rules based on the parsed modifier(s). Default assumption: position: absolute; remains. width and height remain fixed unless explicitly scaled (/scaleW, /scaleH, /scaleWH, /sAR).
+Apply Modifier Rules (see Definitions below): Translate modifiers into appropriate CSS properties (left, top, right, bottom, width, height, aspect-ratio, transform, calc(), clamp()).
+Handle Combinations (using -): Apply rules for each part. Anchors (aL/aR/aT/aB) or pinning (pinC) establish the primary fixed point(s). Scaling (sL/sR/sT/sB) applies to the remaining, non-anchored gaps. Dimension scaling (scaleW/H/WH/AR) applies if present.
+Precedence: Anchoring/Pinning rules override default positioning. Scaling rules modify gaps or dimensions relative to the anchored/pinned state.
+Mutual Exclusivity: /pinC conflicts with /aL, /aR, /aT, /aB. If combined, /pinC takes precedence for positioning.
+Sibling Spacing Recommendation: If elements require fixed spacing between them (e.g., menu buttons), the strongly recommended approach is to group them within a dedicated container frame in Figma. Apply positioning modifiers (/aR, /pinC, etc.) to the group container. Elements inside the group use simple positioning relative to the group (often just their default Figma positions suffice if the group isn't scaled). Attempting to maintain fixed gaps between non-grouped, absolutely positioned siblings using only CSS calc() based on modifiers is complex and potentially fragile; avoid generating such complex calc() unless explicitly unavoidable and simple.
+Pre-computation & Confirmation:
+Perform all necessary calculations based on the initial CSS and the conversion rules.
+Present a clear, concise summary to the user detailing how each modified element's CSS will be changed. Include the element name, modifier, initial relevant values, and the calculated output CSS rules (e.g., left: 20px, right: clamp(0px, 85%, 50px), width: calc(100% - 20px - clamp(0px, 85%, 50px))).
+CRITICAL STEP: Wait for USER CONFIRMATION. Allow the user to review and approve the planned conversions before generating the final code.
+Final CSS Generation:
+Generate the complete CSS file, including unchanged elements and the converted CSS for modified elements, based on the confirmed conversion plan.
+Include comments indicating the original element name and modifier for clarity: /* Element Name /modifier */.
+Modifier Definitions:
+
+Core Concept: Modifiers describe how an element's position and size relate to its immediate parent container or maintain internal properties.
+Separator: Use a hyphen (-) to combine multiple rules (e.g., /aL-sR-scaleH).
+1. Anchoring (Fixed Positioning): a
+* Fixes the distance (using initial pixel value) from the element's edge to the parent's corresponding edge. Resists scaling on that edge.
+* /aL: left: [initial_left]px;
+* /aR: right: [initial_gapR]px; (Note: right property often requires parent position: relative. Alternatively, calculate left: calc(100% - [initial_gapR]px - width); if width is known/fixed).
+* /aT: top: [initial_top]px;
+* /aB: bottom: [initial_gapB]px; (Alternatively, top: calc(100% - [initial_gapB]px - height);).
+
+2. Center Pinning (Relative Center Position): pinC
+* Maintains the element's center point at the same relative position within the parent container as in the original design. Overrides edge anchors (aL/R/T/B). Element size remains fixed unless explicitly scaled.
+* /pinC: Calculates cx = (initial_left + initial_width/2) / parent.width and cy = (initial_top + initial_height/2) / parent.height. Applies CSS:
+left: calc([cx * 100]% - [initial_width/2]px);
+top: calc([cy * 100]% - [initial_height/2]px);
+(May need browser prefixes or adjustments for sub-pixel rendering if extreme precision is needed)
+
+3. Gap/Space Scaling (Proportional Gaps): s
+* Makes the space (gap) between the element's edge and the parent's corresponding edge proportional to the parent container's size change.
+* Can include min/max constraints: /sL[min:10px, max:20%]. Uses clamp(MIN, VAL, MAX). Default MIN=0, MAX=unbounded. VAL is the calculated proportional percentage.
+* /sL: left: clamp(MIN, (initial_left / parent.width) * 100%, MAX);
+* /sR: right: clamp(MIN, (initial_gapR / parent.width) * 100%, MAX);
+* /sT: top: clamp(MIN, (initial_top / parent.height) * 100%, MAX);
+* /sB: bottom: clamp(MIN, (initial_gapB / parent.height) * 100%, MAX);
+* Important: These primarily affect positioning/gaps. They do not scale the element's width or height by default. If combined with anchors (e.g., /aL-sR), the element's dimension might become flexible via calc() to satisfy both constraints (e.g., width: calc(100% - left - right);).
+
+4. Dimension Scaling (Explicit Size Scaling): scale, sAR
+* Explicitly scales the element's dimensions.
+* /scaleW: Scales width proportionally to the parent width.
+width: clamp(MIN_W, (initial_width / parent.width) * 100%, MAX_W);
+* /scaleH: Scales height proportionally to the parent height.
+height: clamp(MIN_H, (initial_height / parent.height) * 100%, MAX_H);
+* /scaleWH: Scales both width and height independently but proportionally. Combines logic of /scaleW and /scaleH.
+* /sAR: Scales the element while maintaining its original aspect ratio (initial_width / initial_height). Usually driven by width scaling.
+width: clamp(MIN_W, (initial_width / parent.width) * 100%, MAX_W);
+aspect-ratio: [initial_width] / [initial_height];
+height: auto; (Or calculate height based on scaled width if aspect-ratio is not suitable).
+
+Example Combinations:
+
+/* logo /aL-aT */: Fixed top-left position. Fixed size (default).
+/* title /pinC-scaleW[maxW:500px] */: Center stays relative. Width scales proportionally up to 500px. Height fixed.
+/* sidebar /aL-aT-aB */: Anchored left, top, bottom. Left position fixed. Top/Bottom fixed implies fixed height relative to parent height changes (height: calc(100% - top - bottom);). Width fixed (default).
+/* main-content /aL-aT-sR-sB */: Anchored top-left. Right and bottom gaps scale proportionally. Implies flexible width and height (width: calc(100% - left - right); height: calc(100% - top - bottom);).
+/* icon /pinC-sAR[maxW:50px] */: Relative center pinned. Scales proportionally with aspect ratio, up to 50px width.
+/* menu-group /aR-pinC[vertical] */: Group anchored to parent right. Vertical center pinned relative to parent height. Width/Height fixed (default). (Note: pinC[vertical] syntax needs defining if we want separate axis pinning - let's assume /pinC is always both axes for now unless specified otherwise). Correction: Let's keep /pinC for both axes. If only vertical center pinning is needed with a horizontal anchor, use /aR-aT-sB or similar constructs to define top/bottom behavior, effectively centering it if /sT-sB were used (though that's not defined yet). Simpler: use /aR and adjust top/bottom or top/height based on initial vertical centering. The simplest is often /aR and /aT (if top-aligned) or calculating a fixed top for vertical center. Let's stick to /pinC for true relative center pinning.

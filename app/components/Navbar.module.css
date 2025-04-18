@@ -1,0 +1,98 @@
+@font-face {
+  font-family: "Apoc-Normal-Trial";
+  src: url("/fonts/Apoc-Normal-Trial.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+}
+
+.navbar {
+  position: fixed;
+  width: 100%;
+  height: 128px;
+  left: 0;
+  top: 0;
+  background: #ffffff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 1000;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.logoContainer {
+  position: relative;
+  width: 252px;
+  height: 128px;
+  left: 0;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo {
+  position: relative;
+  width: 144.53px;
+  height: 80px;
+  background: #ffffff;
+}
+
+.buttonContainer {
+  position: relative;
+  width: 390px;
+  height: 126px;
+  display: flex;
+  align-items: center;
+  gap: 42px;
+  padding: 0 48px;
+}
+
+.navLink {
+  font-family: "Apoc-Normal-Trial", serif;
+  font-style: normal;
+  font-weight: 400;
+  font-size: 24px;
+  line-height: 34px;
+  color: #1e1e1e;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon {
+  display: block;
+}
+
+@media (max-width: 768px) {
+  .navbar {
+    height: 80px;
+  }
+
+  .logoContainer {
+    width: 180px;
+    height: 80px;
+  }
+
+  .logo {
+    width: 108px;
+    height: 60px;
+  }
+
+  .buttonContainer {
+    width: auto;
+    height: 80px;
+    padding: 0 24px;
+    gap: 24px;
+  }
+
+  .navLink {
+    font-size: 18px;
+    line-height: 25px;
+  }
+
+  .icon {
+    width: 20px;
+    height: 20px;
+  }
+}
