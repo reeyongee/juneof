@@ -21,15 +21,12 @@ export default function Home() {
       >
         PRIVACY POLICY
       </Link>
-<<<<<<< HEAD
-=======
       <Link
         href="/shopify-test"
         className="border border-gray-900 px-8 py-4 text-xl tracking-widest hover:bg-gray-100 transition-colors"
       >
         SHOPIFY TEST
       </Link>
->>>>>>> shopify-test
     </main>
   );
 }

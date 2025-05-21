@@ -1,7 +1,4 @@
-<<<<<<< HEAD
-=======
 // next.config.ts
->>>>>>> shopify-test
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
@@ -9,12 +6,6 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-<<<<<<< HEAD
-        hostname: "picsum.photos",
-        port: "",
-        pathname: "/**",
-      },
-=======
         hostname: "picsum.photos", // Keep this if you might still use picsum for other placeholders
         port: "",
         pathname: "/**",
@@ -26,7 +17,6 @@ const nextConfig: NextConfig = {
         port: "",
         pathname: "/**", // Allows any path under cdn.shopify.com
       },
->>>>>>> shopify-test
     ],
   },
 };
