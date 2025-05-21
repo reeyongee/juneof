@@ -5,6 +5,7 @@ import gsap from "gsap";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import { useCart } from "@/context/CartContext";
+import { ShoppingBagIcon, XMarkIcon } from "@heroicons/react/24/outline";
 
 // Define props interface
 interface CartOverlayProps {
@@ -142,66 +143,77 @@ export default function CartOverlay({ isOpen, onClose }: CartOverlayProps) {
         className="relative h-full w-full max-w-md bg-[#F8F4EC] text-[#171717] flex flex-col shadow-xl"
       >
         {/* Header */}
-        <div className="flex justify-between items-center p-6 border-b border-gray-300">
-          <div className="flex-grow text-center">
-            <h2 className="text-2xl font-serif lowercase">bag</h2>
+        <div className="relative flex items-center p-6 border-b border-gray-300">
+          {/* Centered Title */}
+          <div className="absolute inset-x-0 top-1/2 transform -translate-y-1/2 text-center pointer-events-none">
+            <h2 className="text-2xl font-serif lowercase inline-block">bag</h2>
           </div>
-          <button
-            onClick={handleCloseStart}
-            className="text-2xl hover:text-gray-600 transition-colors"
-          >
-            &times;
-          </button>
+          {/* Close Button pushed to the right */}
+          <div className="ml-auto">
+            <button
+              onClick={handleCloseStart}
+              className="text-gray-600 hover:text-black transition-colors p-1 border border-gray-300 rounded-md"
+            >
+              <XMarkIcon className="h-6 w-6" />
+            </button>
+          </div>
         </div>
 
         {/* Cart Items */}
-        <div className="flex-grow overflow-y-auto p-6 space-y-4">
+        <div className="flex-grow overflow-y-auto p-6 flex flex-col">
           {cartItems.length === 0 ? (
-            <p className="text-center text-gray-500 lowercase">
-              Your bag is empty.
-            </p>
+            <div className="flex-grow flex flex-col items-center justify-start text-center pt-16">
+              <ShoppingBagIcon className="h-24 w-24 text-gray-600 mb-6" />
+              <p className="text-xl font-medium text-gray-700">
+                Your cart is empty.
+              </p>
+            </div>
           ) : (
-            cartItems.map((item) => (
-              <div key={item.id} className="flex items-center space-x-4">
-                <div className="w-20 h-20 relative rounded overflow-hidden">
-                  <Image
-                    src={item.imageUrl}
-                    alt={item.name}
-                    fill
-                    style={{ objectFit: "cover" }}
-                  />
-                </div>
-                <div className="flex-grow">
-                  <h3 className="font-medium lowercase">{item.name}</h3>
-                  <p className="text-sm text-gray-600 lowercase">{item.size}</p>
-                </div>
-                <div className="flex items-center space-x-2">
+            <div className="space-y-4">
+              {cartItems.map((item) => (
+                <div key={item.id} className="flex items-center space-x-4">
+                  <div className="w-20 h-20 relative rounded overflow-hidden">
+                    <Image
+                      src={item.imageUrl}
+                      alt={item.name}
+                      fill
+                      style={{ objectFit: "cover" }}
+                    />
+                  </div>
+                  <div className="flex-grow">
+                    <h3 className="font-medium lowercase">{item.name}</h3>
+                    <p className="text-sm text-gray-600 lowercase">
+                      {item.size}
+                    </p>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => handleQuantityChange(item.id, -1)}
+                      className="px-2 py-1 hover:bg-gray-100"
+                    >
+                      -
+                    </button>
+                    <span>{item.quantity}</span>
+                    <button
+                      onClick={() => handleQuantityChange(item.id, 1)}
+                      className="px-2 py-1 hover:bg-gray-100"
+                    >
+                      +
+                    </button>
+                  </div>
+                  <p className="font-medium w-20 text-right">
+                    {formatPrice(item.price * item.quantity)}
+                  </p>
                   <button
-                    onClick={() => handleQuantityChange(item.id, -1)}
-                    className="px-2 py-1 hover:bg-gray-100"
+                    onClick={() => removeItemFromCart(item.id)}
+                    className="ml-2 text-gray-500 hover:text-gray-700 text-lg"
+                    aria-label={`Remove ${item.name}`}
                   >
-                    -
-                  </button>
-                  <span>{item.quantity}</span>
-                  <button
-                    onClick={() => handleQuantityChange(item.id, 1)}
-                    className="px-2 py-1 hover:bg-gray-100"
-                  >
-                    +
+                    &times;
                   </button>
                 </div>
-                <p className="font-medium w-20 text-right">
-                  {formatPrice(item.price * item.quantity)}
-                </p>
-                <button
-                  onClick={() => removeItemFromCart(item.id)}
-                  className="ml-2 text-gray-500 hover:text-gray-700 text-lg"
-                  aria-label={`Remove ${item.name}`}
-                >
-                  &times;
-                </button>
-              </div>
-            ))
+              ))}
+            </div>
           )}
         </div>
 

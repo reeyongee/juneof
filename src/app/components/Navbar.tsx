@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import CartOverlay from "./CartOverlay";
+import { useCart } from "@/context/CartContext";
 
 // Placeholder SVGs - Replace with actual SVGs
 const InstagramIcon = () => (
@@ -50,6 +51,13 @@ const Navbar: React.FC = () => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const HOVER_DELAY_MS = 300;
+
+  const { cartItems } = useCart();
+
+  const totalCartItems = cartItems.reduce(
+    (sum, item) => sum + item.quantity,
+    0
+  );
 
   const handleCloseCart = useCallback(() => {
     setIsCartOpen(false);
@@ -209,6 +217,9 @@ const Navbar: React.FC = () => {
               width={150} // Adjust as needed
               height={40} // Adjust as needed
               priority
+              className="pointer-events-none"
+              style={{ userSelect: "none" }}
+              draggable="false"
             />
           </Link>
 
@@ -228,17 +239,25 @@ const Navbar: React.FC = () => {
               >
                 Shop
               </Link>
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  setIsCartOpen(true);
-                }}
-                className={`${navLinkBaseClasses} ${getLinkItemClasses(
-                  isEffectivelyTransparent
-                )}`}
-              >
-                Bag
-              </button>
+              {/* Bag Button with Notification Bubble */}
+              <div className="relative">
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setIsCartOpen(true);
+                  }}
+                  className={`${navLinkBaseClasses} ${getLinkItemClasses(
+                    isEffectivelyTransparent
+                  )}`}
+                >
+                  Bag
+                </button>
+                {totalCartItems > 0 && (
+                  <span className="absolute -top-4 -right-4 flex items-center justify-center w-5 h-5 bg-gray-800 text-white text-xs rounded-full">
+                    {totalCartItems}
+                  </span>
+                )}
+              </div>
               <Link
                 href="https://instagram.com"
                 target="_blank"

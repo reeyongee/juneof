@@ -65,7 +65,9 @@ const Footer = () => {
             width={640} // Reduced width by 20%
             height={160} // Reduced height by 20%
             // Removed transform class
-            className=""
+            className="pointer-events-none"
+            style={{ userSelect: "none" }}
+            draggable="false"
             priority // Optional: Keep if logo is critical LCP
           />
         </div>
