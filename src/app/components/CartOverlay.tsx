@@ -165,7 +165,7 @@ export default function CartOverlay({ isOpen, onClose }: CartOverlayProps) {
             <div className="flex-grow flex flex-col items-center justify-start text-center pt-16">
               <ShoppingBagIcon className="h-24 w-24 text-gray-600 mb-6" />
               <p className="text-xl font-medium text-gray-700">
-                Your cart is empty.
+                Your bag is empty.
               </p>
             </div>
           ) : (
