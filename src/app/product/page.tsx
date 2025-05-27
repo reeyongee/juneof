@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import SizeChart from "../components/SizeChart";
 import WashCareOverlay from "../components/WashCareOverlay";
-import Lenis from "lenis";
 import Image from "next/image";
 import { useCart } from "@/context/CartContext";
 
@@ -12,7 +11,6 @@ export default function ProductPage() {
   const [selectedSize, setSelectedSize] = useState("in between");
   const [isSizeChartOpen, setIsSizeChartOpen] = useState(false);
   const [isWashCareOpen, setIsWashCareOpen] = useState(false);
-  const lenisRef = useRef<Lenis | null>(null);
   const { addItemToCart } = useCart();
 
   const router = useRouter();
@@ -28,39 +26,6 @@ export default function ProductPage() {
     "curvy",
     "extra curvy",
   ];
-
-  // Effect to initialize Lenis for smooth scrolling
-  useEffect(() => {
-    const lenis = new Lenis({
-      lerp: 0.1, // Adjust for desired smoothness
-      smoothWheel: true, // Enable smooth scroll for wheel events
-    });
-
-    lenisRef.current = lenis;
-
-    function raf(time: number) {
-      lenis.raf(time);
-      requestAnimationFrame(raf);
-    }
-
-    const rafId = requestAnimationFrame(raf);
-
-    // Cleanup function to destroy Lenis instance on unmount
-    return () => {
-      cancelAnimationFrame(rafId);
-      lenis.destroy();
-      lenisRef.current = null;
-    };
-  }, []); // Empty dependency array ensures this runs only once on mount
-
-  // Effect to stop/start Lenis scrolling based on *either* overlay's visibility
-  useEffect(() => {
-    if (isSizeChartOpen || isWashCareOpen) {
-      lenisRef.current?.stop();
-    } else {
-      lenisRef.current?.start();
-    }
-  }, [isSizeChartOpen, isWashCareOpen]);
 
   // Effect to sync local state `selectedSize` with the URL parameter
   useEffect(() => {

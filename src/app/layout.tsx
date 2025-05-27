@@ -2,8 +2,6 @@ import { Old_Standard_TT } from "next/font/google";
 import "./globals.css";
 import type { Metadata } from "next";
 import Footer from "@/app/components/Footer";
-import RevealOnScrollUp from "@/app/components/RevealOnScrollUp";
-import SmoothScrollProvider from "@/app/components/SmoothScrollProvider";
 import Navbar from "@/app/components/Navbar";
 import { CartProvider } from "@/context/CartContext";
 
@@ -27,12 +25,9 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${oldStandardTT.className} flex flex-col min-h-screen`}>
         <CartProvider>
-          <SmoothScrollProvider />
           <Navbar />
-          <RevealOnScrollUp>
-            <main className="flex-grow bg-white">{children}</main>
-            <Footer />
-          </RevealOnScrollUp>
+          <main className="flex-grow bg-white">{children}</main>
+          <Footer />
         </CartProvider>
       </body>
     </html>

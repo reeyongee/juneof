@@ -40,16 +40,19 @@ export default function PrivacyPolicyPage() {
   }, []);
 
   return (
-    <div className="relative overflow-hidden">
-      <main
-        ref={mainElementRef}
-        className="relative flex min-h-screen text-black"
-      >
+    <div className="relative">
+      {/* Clipping container for the parallax image */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div
           ref={backgroundRef}
           className="absolute inset-0 z-0 h-[130%] bg-[url('https://picsum.photos/1920/1080')] bg-cover bg-center"
         ></div>
+      </div>
 
+      <main
+        ref={mainElementRef}
+        className="relative flex min-h-screen text-black"
+      >
         {/* Left Column (Sticky Title) */}
         <div className="relative sticky top-0 z-10 flex h-screen w-[40%] flex-shrink-0 flex-col justify-center p-8 border-r border-gray-300">
           <h1 className="text-xl font-medium tracking-widest lowercase text-black mix-blend-difference">
