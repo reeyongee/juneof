@@ -21,7 +21,11 @@ const Footer = () => {
 
           {/* Column 2: Social/Shop */}
           <div className="w-full sm:w-auto md:w-1/4 mb-6 md:mb-0 flex flex-col items-start md:items-center">
-            <Link href="#" className="hover:opacity-75 mb-1">
+            <Link
+              href="#"
+              className="hover:opacity-75 mb-1"
+              data-underline-button-effect
+            >
               instagram
             </Link>
             {/* Removed TikTok and Shop Lello */}
@@ -29,20 +33,36 @@ const Footer = () => {
 
           {/* Column 3: Legal */}
           <div className="w-full sm:w-auto md:w-1/4 mb-6 md:mb-0 flex flex-col items-start md:items-center">
-            <Link href="#" className="hover:opacity-75 mb-1">
+            <Link
+              href="#"
+              className="hover:opacity-75 mb-1"
+              data-underline-button-effect
+            >
               terms of use
             </Link>
-            <Link href="#" className="hover:opacity-75">
+            <Link
+              href="/privacy-policy"
+              className="hover:opacity-75"
+              data-underline-button-effect
+            >
               privacy policy
             </Link>
           </div>
 
           {/* Column 4: Company */}
           <div className="w-full sm:w-auto md:w-1/4 mb-6 md:mb-0 flex flex-col items-start md:items-end">
-            <Link href="#" className="hover:opacity-75 mb-1">
+            <Link
+              href="#"
+              className="hover:opacity-75 mb-1"
+              data-underline-button-effect
+            >
               about us
             </Link>
-            <Link href="#" className="hover:opacity-75 mb-1">
+            <Link
+              href="#"
+              className="hover:opacity-75 mb-1"
+              data-underline-button-effect
+            >
               contact us
             </Link>
             {/* Removed Credits */}
@@ -51,6 +71,7 @@ const Footer = () => {
               target="_blank"
               rel="noopener noreferrer"
               className="hover:opacity-75 mt-4"
+              data-underline-button-effect
             >
               juneof.com
             </a>

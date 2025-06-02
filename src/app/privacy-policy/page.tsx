@@ -51,7 +51,7 @@ export default function PrivacyPolicyPage() {
 
       <main
         ref={mainElementRef}
-        className="relative flex min-h-screen text-black"
+        className="relative flex min-h-screen text-black pt-24"
       >
         {/* Left Column (Sticky Title) */}
         <div className="relative sticky top-0 z-10 flex h-screen w-[40%] flex-shrink-0 flex-col justify-center p-8 border-r border-gray-300">

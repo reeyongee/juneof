@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode } from "react";
+import { createCheckoutAndRedirect } from "@/lib/shopify";
 
 export interface CartItem {
   id: string; // Unique ID for the cart item (e.g., productID + size)
@@ -9,6 +10,8 @@ export interface CartItem {
   price: number;
   quantity: number;
   imageUrl: string;
+  variantId?: string; // Shopify variant ID for checkout
+  productHandle?: string; // Shopify product handle
 }
 
 interface CartContextType {
@@ -17,6 +20,7 @@ interface CartContextType {
   removeItemFromCart: (itemId: string) => void;
   updateItemQuantity: (itemId: string, change: number) => void;
   clearCart: () => void;
+  proceedToCheckout: (email?: string) => Promise<void>;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -114,6 +118,18 @@ export const CartProvider = ({ children }: CartProviderProps) => {
     setCartItems([]);
   };
 
+  const proceedToCheckout = async (email?: string) => {
+    try {
+      await createCheckoutAndRedirect(cartItems, email);
+      // Clear cart after successful checkout initiation
+      clearCart();
+    } catch (error) {
+      console.error("Checkout failed:", error);
+      // You might want to show a toast or error message to the user here
+      throw error;
+    }
+  };
+
   return (
     <CartContext.Provider
       value={{
@@ -122,6 +138,7 @@ export const CartProvider = ({ children }: CartProviderProps) => {
         removeItemFromCart,
         updateItemQuantity,
         clearCart,
+        proceedToCheckout,
       }}
     >
       {children}

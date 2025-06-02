@@ -114,9 +114,19 @@ const Navbar: React.FC = () => {
     const bottomObserver = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
+          // Only hide navbar if we've actually scrolled down AND reached the bottom
+          // Check if the page is tall enough to scroll
+          const isPageScrollable =
+            document.body.scrollHeight > window.innerHeight;
+          const hasScrolledDown = window.scrollY > 100; // Only hide if scrolled down at least 100px
+
           // When bottomSentinel enters viewport (scrolled to bottom), hide navbar
-          // When bottomSentinel exits viewport (scrolled up), show navbar
-          setVisible(!entry.isIntersecting);
+          // But only if the page is scrollable and we've scrolled down
+          if (entry.isIntersecting && isPageScrollable && hasScrolledDown) {
+            setVisible(false);
+          } else if (!entry.isIntersecting) {
+            setVisible(true);
+          }
         });
       },
       {
@@ -148,6 +158,18 @@ const Navbar: React.FC = () => {
       topObserver.observe(topSentinel);
     }
 
+    // Ensure navbar is visible on short pages that don't require scrolling
+    const checkPageHeight = () => {
+      const isPageScrollable = document.body.scrollHeight > window.innerHeight;
+      if (!isPageScrollable) {
+        setVisible(true); // Always show navbar on short pages
+      }
+    };
+
+    // Check immediately and on resize
+    checkPageHeight();
+    window.addEventListener("resize", checkPageHeight);
+
     // Cleanup on unmount
     return () => {
       if (bottomSentinel) {
@@ -159,6 +181,9 @@ const Navbar: React.FC = () => {
         topObserver.unobserve(topSentinel);
         topSentinel.remove();
       }
+
+      window.removeEventListener("resize", checkPageHeight);
+
       if (hoverTimeoutRef.current) {
         clearTimeout(hoverTimeoutRef.current);
       }
@@ -179,7 +204,7 @@ const Navbar: React.FC = () => {
     }, HOVER_DELAY_MS);
   };
 
-  const dynamicHeaderClasses = `sticky top-0 left-0 right-0 z-50 text-black p-4 transition-all duration-300 ${
+  const dynamicHeaderClasses = `fixed top-0 left-0 right-0 z-50 text-black p-4 transition-all duration-300 ${
     visible ? "translate-y-0" : "-translate-y-full"
   } ${
     // Navbar background becomes transparent if scrolled and not hovered
@@ -193,7 +218,7 @@ const Navbar: React.FC = () => {
     }`;
 
   const navLinkBaseClasses =
-    "text-sm uppercase tracking-wider hover:opacity-75"; // Default styling for text links
+    "text-lg lowercase tracking-wider hover:opacity-75"; // Changed from text-base to text-lg for even bigger font
 
   // Determine if the navbar is effectively transparent for item styling
   const isEffectivelyTransparent = transparent && !isNavItemHovered;
@@ -236,8 +261,9 @@ const Navbar: React.FC = () => {
                 className={`${navLinkBaseClasses} ${getLinkItemClasses(
                   isEffectivelyTransparent
                 )}`}
+                data-underline-button-effect
               >
-                Shop
+                shop
               </Link>
               {/* Bag Button with Notification Bubble */}
               <div className="relative">
@@ -250,7 +276,7 @@ const Navbar: React.FC = () => {
                     isEffectivelyTransparent
                   )}`}
                 >
-                  Bag
+                  bag
                 </button>
                 {totalCartItems > 0 && (
                   <span className="absolute -top-4 -right-4 flex items-center justify-center w-5 h-5 bg-gray-800 text-white text-xs rounded-full">
@@ -259,22 +285,20 @@ const Navbar: React.FC = () => {
                 )}
               </div>
               <Link
-                href="https://instagram.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`hover:opacity-75 ${getLinkItemClasses(
-                  isEffectivelyTransparent
-                )}`}
-              >
-                <InstagramIcon />
-              </Link>
-              <Link
-                href="/account"
-                className={`hover:opacity-75 ${getLinkItemClasses(
-                  isEffectivelyTransparent
-                )}`}
+                href="/profile"
+                className={`${getLinkItemClasses(isEffectivelyTransparent)}`}
+                data-underline-button-effect
               >
                 <UserIcon />
+              </Link>
+              <Link
+                href="https://www.instagram.com/juneofofficial/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`${getLinkItemClasses(isEffectivelyTransparent)}`}
+                data-underline-button-effect
+              >
+                <InstagramIcon />
               </Link>
             </div>
           </nav>

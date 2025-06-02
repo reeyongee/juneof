@@ -37,3 +37,201 @@ input[type="submit"],
 input[type="reset"] {
   cursor: default !important;
 }
+
+/* Custom Cursor Styles */
+.cursor-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 10000;
+  transform: translate(-50%, -50%); /* Center the cursor on mouse position */
+}
+
+.custom-cursor--outer {
+  width: 6px;
+  height: 6px;
+  border: 2px solid white;
+  background: white;
+  border-radius: 50%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box; /* Ensure border doesn't affect size calculations */
+  flex-shrink: 0; /* Prevent flex distortion */
+}
+
+.custom-cursor--inner {
+  width: 8px;
+  height: 8px;
+  background: rgba(50, 50, 50, 0.6); /* Even darker grey and translucent */
+  border-radius: 50%;
+  position: absolute;
+  opacity: 0.6;
+}
+
+/* Hide native cursor completely on devices with fine pointers (mouse/trackpad) */
+@media (pointer: fine) {
+  *,
+  *::before,
+  *::after {
+    cursor: none !important;
+  }
+
+  html,
+  body {
+    cursor: none !important;
+  }
+}
+
+/* Hide native cursor when custom cursor is active */
+body.custom-cursor-active,
+body.custom-cursor-active * {
+  cursor: none !important;
+}
+
+/* Hide all cursors during splash screen */
+body.splash-screen-active,
+body.splash-screen-active * {
+  cursor: none !important;
+}
+
+/* Splash Screen Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes progressBar {
+  0% {
+    width: 0%;
+  }
+  50% {
+    width: 70%;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
+@keyframes logoFloat {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.splash-logo {
+  animation: logoFloat 3s ease-in-out infinite;
+}
+
+.splash-content {
+  animation: fadeInUp 0.8s ease-out;
+}
+
+.progress-bar-fill {
+  animation: progressBar 2s ease-in-out;
+}
+
+/* == BUTTON UNDERLINE HOVER EFFECT (ADAPTED FROM DEMO 3 LINK STYLE) == */
+
+/* 
+  Target buttons that should have the effect. 
+  Exclude specific buttons using :not() with their respective classes.
+  NEW: Added :not(.size-btn) - REPLACE .size-btn WITH YOUR ACTUAL SIZE BUTTON CLASS.
+
+  Consider also targeting other elements that act as buttons if needed, e.g.:
+  a[role="button"]:not(...), div[role="button"]:not(...)
+*/
+button:not(.add-to-cart-btn):not(.clear-cart-btn):not(.checkout-btn):not(.size-btn):not(.no-underline-effect),
+/* Add similar lines for other elements if they act as buttons and need this effect: */
+/* e.g., a.button-like-link:not(...), */
+[data-underline-button-effect]:not(.add-to-cart-btn):not(.clear-cart-btn):not(.checkout-btn):not(.size-btn):not(.no-underline-effect) {
+  position: relative; /* Required for the ::after pseudo-element positioning */
+  /* 
+      Ensure these buttons have a visible text color for `currentColor` to work.
+      You might need to explicitly set a text color if it's inheriting something problematic.
+      e.g., color: var(--color-text-body);
+
+      Other base styles might be needed if they are unstyled or heavily styled:
+      background: transparent;
+      border: none;
+      padding-left: 0; 
+      padding-right: 0;
+      cursor: pointer;
+    */
+}
+
+button:not(.add-to-cart-btn):not(.clear-cart-btn):not(.checkout-btn):not(.size-btn):not(.no-underline-effect)::after,
+/* Corresponding ::after for other targeted elements */
+[data-underline-button-effect]:not(.add-to-cart-btn):not(.clear-cart-btn):not(.checkout-btn):not(.size-btn):not(.no-underline-effect)::after {
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 1.5px; /* Slightly thicker for better visibility on buttons */
+  background: currentColor; /* Uses the button's current text color */
+  bottom: -3px; /* Adjusted position for the thicker line */
+  left: 0;
+  opacity: 0;
+  transform-origin: 50% 50%; /* Underline grows from the center */
+  transform: scaleX(0);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease-out;
+}
+
+button:not(.add-to-cart-btn):not(.clear-cart-btn):not(.checkout-btn):not(.size-btn):not(.no-underline-effect):hover::after,
+button:not(.add-to-cart-btn):not(.clear-cart-btn):not(.checkout-btn):not(.size-btn):not(.no-underline-effect):focus::after,
+/* Corresponding :hover::after for other targeted elements */
+[data-underline-button-effect]:not(.add-to-cart-btn):not(.clear-cart-btn):not(.checkout-btn):not(.size-btn):not(.no-underline-effect):hover::after,
+[data-underline-button-effect]:not(.add-to-cart-btn):not(.clear-cart-btn):not(.checkout-btn):not(.size-btn):not(.no-underline-effect):focus::after {
+  opacity: 1;
+  transform-origin: 50% 50%; /* Underline grows from the center */
+  transform: scaleX(1);
+}
+
+/*
+  README FOR BUTTON UNDERLINE EFFECT:
+
+  1. EXCLUSION CLASSES:
+     To exclude a button/element from this effect, add one of the following classes to it:
+     - `.add-to-cart-btn`
+     - `.clear-cart-btn`
+     - `.checkout-btn`
+     - `.size-btn` (REPLACE THIS WITH YOUR ACTUAL SIZE BUTTON CLASS NAME)
+     - Or, for any other button/element you want to exclude: `.no-underline-effect`
+
+  2. TARGETING OTHER ELEMENTS (NON-<button>s):
+     If elements like footer links should have this effect, they WON'T be targeted by `button:not(...)`.
+     You can either:
+       a) Add the attribute `data-underline-button-effect` to them in your HTML/JSX.
+          e.g., <a href="/" data-underline-button-effect>Footer Link</a>
+       b) Or, create a more specific selector for them if they have a common class.
+          e.g., if all footer links that need this are `a.footer-action-link`, you could add:
+          a.footer-action-link:not(...) { ... base styles ... }
+          a.footer-action-link:not(...)::after { ... underline styles ... }
+          a.footer-action-link:not(...):hover::after, a.footer-action-link:not(...):focus::after { ... hover styles ... }
+          The provided CSS now includes a generic `[data-underline-button-effect]` selector as an example of method (a).
+
+  3. ADAPTATION & DEBUGGING:
+     - **REPLACE `.size-btn`** with the class your size buttons actually use.
+     - If your excluded buttons use different classes or IDs, update the `:not()` selectors.
+     - Use browser developer tools to INSPECT elements where the effect is missing:
+        - Are they `<button>` elements? If not, use method 2a or 2b.
+        - Do they have one of the exclusion classes by mistake?
+        - Check their `color` property. If it's transparent or matches their background, `currentColor` for the underline will be invisible.
+        - Check their `position`. It needs to be `relative` (or `absolute`/`fixed`) for the `::after` to position correctly.
+        - Do they already have an `::after` pseudo-element with conflicting styles?
+
+  4. STYLING CONFLICTS:
+     If buttons have existing `position` properties or complex `::after` pseudo-elements,
+     you might need to adjust these styles or the button's own styles.
+*/

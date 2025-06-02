@@ -1,5 +1,9 @@
 The following text is a Git repository with code. The structure of the text are sections that begin with ----, followed by a single line containing the file path and file name, followed by a variable amount of lines containing the file contents. The text representing the Git repository ends when the symbols --END-- are encounted. Any further text beyond --END-- are meant to be interpreted as instructions using the aforementioned Git repository as context.
 ----
+.env.local
+NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN="df3sub-yw.myshopify.com"
+NEXT_PUBLIC_SHOPIFY_STOREFRONT_ACCESS_TOKEN="3c5903e753b04085b45c707f76b37b13"
+----
 README.md
 # juneof
 
@@ -33,6 +37,7 @@ next-env.d.ts
 
 ----
 next.config.ts
+// next.config.ts
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
@@ -40,9 +45,16 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "picsum.photos",
+        hostname: "picsum.photos", // Keep this if you might still use picsum for other placeholders
         port: "",
         pathname: "/**",
+      },
+      {
+        // This is the new entry for Shopify
+        protocol: "https",
+        hostname: "cdn.shopify.com",
+        port: "",
+        pathname: "/**", // Allows any path under cdn.shopify.com
       },
     ],
   },
@@ -65,6 +77,9 @@ package-lock.json
         "@headlessui/react": "^2.2.4",
         "@heroicons/react": "^2.2.0",
         "clsx": "^2.1.1",
+        "events": "^3.3.0",
+        "graphql": "^16.11.0",
+        "graphql-request": "^7.1.2",
         "gsap": "^3.13.0",
         "lenis": "^1.3.1",
         "next": "15.3.1",
@@ -97,6 +112,20 @@ package-lock.json
       },
       "funding": {
         "url": "https://github.com/sponsors/sindresorhus"
+      }
+    },
+    "node_modules/@ampproject/remapping": {
+      "version": "2.3.0",
+      "resolved": "https://registry.npmjs.org/@ampproject/remapping/-/remapping-2.3.0.tgz",
+      "integrity": "sha512-30iZtAPgz+LTIYoeivqYo853f02jBYSd5uGnGpkFV0M3xOt9aN73erkgYAmZU43x4VfqcnLxW9Kpg3R5LC4YYw==",
+      "dev": true,
+      "license": "Apache-2.0",
+      "dependencies": {
+        "@jridgewell/gen-mapping": "^0.3.5",
+        "@jridgewell/trace-mapping": "^0.3.24"
+      },
+      "engines": {
+        "node": ">=6.0.0"
       }
     },
     "node_modules/@emnapi/core": {
@@ -133,9 +162,9 @@ package-lock.json
       }
     },
     "node_modules/@eslint-community/eslint-utils": {
-      "version": "4.6.1",
-      "resolved": "https://registry.npmjs.org/@eslint-community/eslint-utils/-/eslint-utils-4.6.1.tgz",
-      "integrity": "sha512-KTsJMmobmbrFLe3LDh0PC2FXpcSYJt/MLjlkh/9LEnmKYLSYmT/0EW9JWANjeoemiuZrmogti0tW5Ch+qNUYDw==",
+      "version": "4.7.0",
+      "resolved": "https://registry.npmjs.org/@eslint-community/eslint-utils/-/eslint-utils-4.7.0.tgz",
+      "integrity": "sha512-dyybb3AcajC7uha6CvhdVRJqaKyn7w2YKqKyAN37NKYgZT36w+iRb0Dymmc5qEJ549c/S31cMMSFd75bteCpCw==",
       "dev": true,
       "license": "MIT",
       "dependencies": {
@@ -190,9 +219,9 @@ package-lock.json
       }
     },
     "node_modules/@eslint/config-helpers": {
-      "version": "0.2.1",
-      "resolved": "https://registry.npmjs.org/@eslint/config-helpers/-/config-helpers-0.2.1.tgz",
-      "integrity": "sha512-RI17tsD2frtDu/3dmI7QRrD4bedNKPM08ziRYaC5AhkGrzIAJelm9kJU1TznK+apx6V+cqRz8tfpEeG3oIyjxw==",
+      "version": "0.2.2",
+      "resolved": "https://registry.npmjs.org/@eslint/config-helpers/-/config-helpers-0.2.2.tgz",
+      "integrity": "sha512-+GPzk8PlG0sPpzdU5ZvIRMPidzAnZDl/s9L+y13iodqvb8leL53bTannOrQ/Im7UkpsmFU5Ily5U60LWixnmLg==",
       "dev": true,
       "license": "Apache-2.0",
       "engines": {
@@ -200,9 +229,9 @@ package-lock.json
       }
     },
     "node_modules/@eslint/core": {
-      "version": "0.13.0",
-      "resolved": "https://registry.npmjs.org/@eslint/core/-/core-0.13.0.tgz",
-      "integrity": "sha512-yfkgDw1KR66rkT5A8ci4irzDysN7FRpq3ttJolR88OqQikAWqwA8j5VZyas+vjyBNFIJ7MfybJ9plMILI2UrCw==",
+      "version": "0.14.0",
+      "resolved": "https://registry.npmjs.org/@eslint/core/-/core-0.14.0.tgz",
+      "integrity": "sha512-qIbV0/JZr7iSDjqAc60IqbLdsj9GDt16xQtWD+B78d/HAlvysGdZZ6rpJHGAc2T0FQx1X6thsSPdnoiGKdNtdg==",
       "dev": true,
       "license": "Apache-2.0",
       "dependencies": {
@@ -237,13 +266,16 @@ package-lock.json
       }
     },
     "node_modules/@eslint/js": {
-      "version": "9.25.1",
-      "resolved": "https://registry.npmjs.org/@eslint/js/-/js-9.25.1.tgz",
-      "integrity": "sha512-dEIwmjntEx8u3Uvv+kr3PDeeArL8Hw07H9kyYxCjnM9pBjfEhk6uLXSchxxzgiwtRhhzVzqmUSDFBOi1TuZ7qg==",
+      "version": "9.27.0",
+      "resolved": "https://registry.npmjs.org/@eslint/js/-/js-9.27.0.tgz",
+      "integrity": "sha512-G5JD9Tu5HJEu4z2Uo4aHY2sLV64B7CDMXxFzqzjl3NKd6RVzSXNoE80jk7Y0lJkTTkjiIhBAqmlYwjuBY3tvpA==",
       "dev": true,
       "license": "MIT",
       "engines": {
         "node": "^18.18.0 || ^20.9.0 || >=21.1.0"
+      },
+      "funding": {
+        "url": "https://eslint.org/donate"
       }
     },
     "node_modules/@eslint/object-schema": {
@@ -257,13 +289,13 @@ package-lock.json
       }
     },
     "node_modules/@eslint/plugin-kit": {
-      "version": "0.2.8",
-      "resolved": "https://registry.npmjs.org/@eslint/plugin-kit/-/plugin-kit-0.2.8.tgz",
-      "integrity": "sha512-ZAoA40rNMPwSm+AeHpCq8STiNAwzWLJuP8Xv4CHIc9wv/PSuExjMrmjfYNj682vW0OOiZ1HKxzvjQr9XZIisQA==",
+      "version": "0.3.1",
+      "resolved": "https://registry.npmjs.org/@eslint/plugin-kit/-/plugin-kit-0.3.1.tgz",
+      "integrity": "sha512-0J+zgWxHN+xXONWIyPWKFMgVuJoZuGiIFu8yxk7RJjxkzpGmyja5wRFqZIVtjDVOQpV+Rw0iOAjYPE2eQyjr0w==",
       "dev": true,
       "license": "Apache-2.0",
       "dependencies": {
-        "@eslint/core": "^0.13.0",
+        "@eslint/core": "^0.14.0",
         "levn": "^0.4.1"
       },
       "engines": {
@@ -322,6 +354,15 @@ package-lock.json
       "resolved": "https://registry.npmjs.org/@floating-ui/utils/-/utils-0.2.9.tgz",
       "integrity": "sha512-MDWhGtE+eHw5JW7lq4qhc5yRLS11ERl1c7Z6Xd0a58DozHES6EnNNwUWbMiG4J9Cgj053Bhk8zvlhFYKVhULwg==",
       "license": "MIT"
+    },
+    "node_modules/@graphql-typed-document-node/core": {
+      "version": "3.2.0",
+      "resolved": "https://registry.npmjs.org/@graphql-typed-document-node/core/-/core-3.2.0.tgz",
+      "integrity": "sha512-mB9oAsNCm9aM3/SOv4YtBMqZbYj10R7dkq8byBqxGY/ncFwhf2oQzMV+LCRlWoDSEBJ3COiR1yeDvMtsoOsuFQ==",
+      "license": "MIT",
+      "peerDependencies": {
+        "graphql": "^0.8.0 || ^0.9.0 || ^0.10.0 || ^0.11.0 || ^0.12.0 || ^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0 || ^17.0.0"
+      }
     },
     "node_modules/@headlessui/react": {
       "version": "2.2.4",
@@ -405,9 +446,9 @@ package-lock.json
       }
     },
     "node_modules/@humanwhocodes/retry": {
-      "version": "0.4.2",
-      "resolved": "https://registry.npmjs.org/@humanwhocodes/retry/-/retry-0.4.2.tgz",
-      "integrity": "sha512-xeO57FpIu4p1Ri3Jq/EXq4ClRm86dVF2z/+kvFnyqVYRavTZmaFaUBbWCOuuTh0o/g7DSsk6kc2vrS4Vl5oPOQ==",
+      "version": "0.4.3",
+      "resolved": "https://registry.npmjs.org/@humanwhocodes/retry/-/retry-0.4.3.tgz",
+      "integrity": "sha512-bV0Tgo9K4hfPCek+aMAn81RppFKv2ySDQeMoSZuvTASywNTnVJCArCZE2FWqpvIatKu7VMRLWlR1EazvVhDyhQ==",
       "dev": true,
       "license": "Apache-2.0",
       "engines": {
@@ -419,9 +460,9 @@ package-lock.json
       }
     },
     "node_modules/@img/sharp-darwin-arm64": {
-      "version": "0.34.1",
-      "resolved": "https://registry.npmjs.org/@img/sharp-darwin-arm64/-/sharp-darwin-arm64-0.34.1.tgz",
-      "integrity": "sha512-pn44xgBtgpEbZsu+lWf2KNb6OAf70X68k+yk69Ic2Xz11zHR/w24/U49XT7AeRwJ0Px+mhALhU5LPci1Aymk7A==",
+      "version": "0.34.2",
+      "resolved": "https://registry.npmjs.org/@img/sharp-darwin-arm64/-/sharp-darwin-arm64-0.34.2.tgz",
+      "integrity": "sha512-OfXHZPppddivUJnqyKoi5YVeHRkkNE2zUFT2gbpKxp/JZCFYEYubnMg+gOp6lWfasPrTS+KPosKqdI+ELYVDtg==",
       "cpu": [
         "arm64"
       ],
@@ -441,9 +482,9 @@ package-lock.json
       }
     },
     "node_modules/@img/sharp-darwin-x64": {
-      "version": "0.34.1",
-      "resolved": "https://registry.npmjs.org/@img/sharp-darwin-x64/-/sharp-darwin-x64-0.34.1.tgz",
-      "integrity": "sha512-VfuYgG2r8BpYiOUN+BfYeFo69nP/MIwAtSJ7/Zpxc5QF3KS22z8Pvg3FkrSFJBPNQ7mmcUcYQFBmEQp7eu1F8Q==",
+      "version": "0.34.2",
+      "resolved": "https://registry.npmjs.org/@img/sharp-darwin-x64/-/sharp-darwin-x64-0.34.2.tgz",
+      "integrity": "sha512-dYvWqmjU9VxqXmjEtjmvHnGqF8GrVjM2Epj9rJ6BUIXvk8slvNDJbhGFvIoXzkDhrJC2jUxNLz/GUjjvSzfw+g==",
       "cpu": [
         "x64"
       ],
@@ -607,9 +648,9 @@ package-lock.json
       }
     },
     "node_modules/@img/sharp-linux-arm": {
-      "version": "0.34.1",
-      "resolved": "https://registry.npmjs.org/@img/sharp-linux-arm/-/sharp-linux-arm-0.34.1.tgz",
-      "integrity": "sha512-anKiszvACti2sGy9CirTlNyk7BjjZPiML1jt2ZkTdcvpLU1YH6CXwRAZCA2UmRXnhiIftXQ7+Oh62Ji25W72jA==",
+      "version": "0.34.2",
+      "resolved": "https://registry.npmjs.org/@img/sharp-linux-arm/-/sharp-linux-arm-0.34.2.tgz",
+      "integrity": "sha512-0DZzkvuEOqQUP9mo2kjjKNok5AmnOr1jB2XYjkaoNRwpAYMDzRmAqUIa1nRi58S2WswqSfPOWLNOr0FDT3H5RQ==",
       "cpu": [
         "arm"
       ],
@@ -629,9 +670,9 @@ package-lock.json
       }
     },
     "node_modules/@img/sharp-linux-arm64": {
-      "version": "0.34.1",
-      "resolved": "https://registry.npmjs.org/@img/sharp-linux-arm64/-/sharp-linux-arm64-0.34.1.tgz",
-      "integrity": "sha512-kX2c+vbvaXC6vly1RDf/IWNXxrlxLNpBVWkdpRq5Ka7OOKj6nr66etKy2IENf6FtOgklkg9ZdGpEu9kwdlcwOQ==",
+      "version": "0.34.2",
+      "resolved": "https://registry.npmjs.org/@img/sharp-linux-arm64/-/sharp-linux-arm64-0.34.2.tgz",
+      "integrity": "sha512-D8n8wgWmPDakc83LORcfJepdOSN6MvWNzzz2ux0MnIbOqdieRZwVYY32zxVx+IFUT8er5KPcyU3XXsn+GzG/0Q==",
       "cpu": [
         "arm64"
       ],
@@ -651,9 +692,9 @@ package-lock.json
       }
     },
     "node_modules/@img/sharp-linux-s390x": {
-      "version": "0.34.1",
-      "resolved": "https://registry.npmjs.org/@img/sharp-linux-s390x/-/sharp-linux-s390x-0.34.1.tgz",
-      "integrity": "sha512-7s0KX2tI9mZI2buRipKIw2X1ufdTeaRgwmRabt5bi9chYfhur+/C1OXg3TKg/eag1W+6CCWLVmSauV1owmRPxA==",
+      "version": "0.34.2",
+      "resolved": "https://registry.npmjs.org/@img/sharp-linux-s390x/-/sharp-linux-s390x-0.34.2.tgz",
+      "integrity": "sha512-EGZ1xwhBI7dNISwxjChqBGELCWMGDvmxZXKjQRuqMrakhO8QoMgqCrdjnAqJq/CScxfRn+Bb7suXBElKQpPDiw==",
       "cpu": [
         "s390x"
       ],
@@ -673,9 +714,9 @@ package-lock.json
       }
     },
     "node_modules/@img/sharp-linux-x64": {
-      "version": "0.34.1",
-      "resolved": "https://registry.npmjs.org/@img/sharp-linux-x64/-/sharp-linux-x64-0.34.1.tgz",
-      "integrity": "sha512-wExv7SH9nmoBW3Wr2gvQopX1k8q2g5V5Iag8Zk6AVENsjwd+3adjwxtp3Dcu2QhOXr8W9NusBU6XcQUohBZ5MA==",
+      "version": "0.34.2",
+      "resolved": "https://registry.npmjs.org/@img/sharp-linux-x64/-/sharp-linux-x64-0.34.2.tgz",
+      "integrity": "sha512-sD7J+h5nFLMMmOXYH4DD9UtSNBD05tWSSdWAcEyzqW8Cn5UxXvsHAxmxSesYUsTOBmUnjtxghKDl15EvfqLFbQ==",
       "cpu": [
         "x64"
       ],
@@ -695,9 +736,9 @@ package-lock.json
       }
     },
     "node_modules/@img/sharp-linuxmusl-arm64": {
-      "version": "0.34.1",
-      "resolved": "https://registry.npmjs.org/@img/sharp-linuxmusl-arm64/-/sharp-linuxmusl-arm64-0.34.1.tgz",
-      "integrity": "sha512-DfvyxzHxw4WGdPiTF0SOHnm11Xv4aQexvqhRDAoD00MzHekAj9a/jADXeXYCDFH/DzYruwHbXU7uz+H+nWmSOQ==",
+      "version": "0.34.2",
+      "resolved": "https://registry.npmjs.org/@img/sharp-linuxmusl-arm64/-/sharp-linuxmusl-arm64-0.34.2.tgz",
+      "integrity": "sha512-NEE2vQ6wcxYav1/A22OOxoSOGiKnNmDzCYFOZ949xFmrWZOVII1Bp3NqVVpvj+3UeHMFyN5eP/V5hzViQ5CZNA==",
       "cpu": [
         "arm64"
       ],
@@ -717,9 +758,9 @@ package-lock.json
       }
     },
     "node_modules/@img/sharp-linuxmusl-x64": {
-      "version": "0.34.1",
-      "resolved": "https://registry.npmjs.org/@img/sharp-linuxmusl-x64/-/sharp-linuxmusl-x64-0.34.1.tgz",
-      "integrity": "sha512-pax/kTR407vNb9qaSIiWVnQplPcGU8LRIJpDT5o8PdAx5aAA7AS3X9PS8Isw1/WfqgQorPotjrZL3Pqh6C5EBg==",
+      "version": "0.34.2",
+      "resolved": "https://registry.npmjs.org/@img/sharp-linuxmusl-x64/-/sharp-linuxmusl-x64-0.34.2.tgz",
+      "integrity": "sha512-DOYMrDm5E6/8bm/yQLCWyuDJwUnlevR8xtF8bs+gjZ7cyUNYXiSf/E8Kp0Ss5xasIaXSHzb888V1BE4i1hFhAA==",
       "cpu": [
         "x64"
       ],
@@ -739,16 +780,16 @@ package-lock.json
       }
     },
     "node_modules/@img/sharp-wasm32": {
-      "version": "0.34.1",
-      "resolved": "https://registry.npmjs.org/@img/sharp-wasm32/-/sharp-wasm32-0.34.1.tgz",
-      "integrity": "sha512-YDybQnYrLQfEpzGOQe7OKcyLUCML4YOXl428gOOzBgN6Gw0rv8dpsJ7PqTHxBnXnwXr8S1mYFSLSa727tpz0xg==",
+      "version": "0.34.2",
+      "resolved": "https://registry.npmjs.org/@img/sharp-wasm32/-/sharp-wasm32-0.34.2.tgz",
+      "integrity": "sha512-/VI4mdlJ9zkaq53MbIG6rZY+QRN3MLbR6usYlgITEzi4Rpx5S6LFKsycOQjkOGmqTNmkIdLjEvooFKwww6OpdQ==",
       "cpu": [
         "wasm32"
       ],
       "license": "Apache-2.0 AND LGPL-3.0-or-later AND MIT",
       "optional": true,
       "dependencies": {
-        "@emnapi/runtime": "^1.4.0"
+        "@emnapi/runtime": "^1.4.3"
       },
       "engines": {
         "node": "^18.17.0 || ^20.3.0 || >=21.0.0"
@@ -757,10 +798,29 @@ package-lock.json
         "url": "https://opencollective.com/libvips"
       }
     },
+    "node_modules/@img/sharp-win32-arm64": {
+      "version": "0.34.2",
+      "resolved": "https://registry.npmjs.org/@img/sharp-win32-arm64/-/sharp-win32-arm64-0.34.2.tgz",
+      "integrity": "sha512-cfP/r9FdS63VA5k0xiqaNaEoGxBg9k7uE+RQGzuK9fHt7jib4zAVVseR9LsE4gJcNWgT6APKMNnCcnyOtmSEUQ==",
+      "cpu": [
+        "arm64"
+      ],
+      "license": "Apache-2.0 AND LGPL-3.0-or-later",
+      "optional": true,
+      "os": [
+        "win32"
+      ],
+      "engines": {
+        "node": "^18.17.0 || ^20.3.0 || >=21.0.0"
+      },
+      "funding": {
+        "url": "https://opencollective.com/libvips"
+      }
+    },
     "node_modules/@img/sharp-win32-ia32": {
-      "version": "0.34.1",
-      "resolved": "https://registry.npmjs.org/@img/sharp-win32-ia32/-/sharp-win32-ia32-0.34.1.tgz",
-      "integrity": "sha512-WKf/NAZITnonBf3U1LfdjoMgNO5JYRSlhovhRhMxXVdvWYveM4kM3L8m35onYIdh75cOMCo1BexgVQcCDzyoWw==",
+      "version": "0.34.2",
+      "resolved": "https://registry.npmjs.org/@img/sharp-win32-ia32/-/sharp-win32-ia32-0.34.2.tgz",
+      "integrity": "sha512-QLjGGvAbj0X/FXl8n1WbtQ6iVBpWU7JO94u/P2M4a8CFYsvQi4GW2mRy/JqkRx0qpBzaOdKJKw8uc930EX2AHw==",
       "cpu": [
         "ia32"
       ],
@@ -777,9 +837,9 @@ package-lock.json
       }
     },
     "node_modules/@img/sharp-win32-x64": {
-      "version": "0.34.1",
-      "resolved": "https://registry.npmjs.org/@img/sharp-win32-x64/-/sharp-win32-x64-0.34.1.tgz",
-      "integrity": "sha512-hw1iIAHpNE8q3uMIRCgGOeDoz9KtFNarFLQclLxr/LK1VBkj8nby18RjFvr6aP7USRYAjTZW6yisnBWMX571Tw==",
+      "version": "0.34.2",
+      "resolved": "https://registry.npmjs.org/@img/sharp-win32-x64/-/sharp-win32-x64-0.34.2.tgz",
+      "integrity": "sha512-aUdT6zEYtDKCaxkofmmJDJYGCf0+pJg3eU9/oBuqvEeoB9dKI6ZLc/1iLJCTuJQDO4ptntAlkUmHgGjyuobZbw==",
       "cpu": [
         "x64"
       ],
@@ -795,16 +855,82 @@ package-lock.json
         "url": "https://opencollective.com/libvips"
       }
     },
+    "node_modules/@isaacs/fs-minipass": {
+      "version": "4.0.1",
+      "resolved": "https://registry.npmjs.org/@isaacs/fs-minipass/-/fs-minipass-4.0.1.tgz",
+      "integrity": "sha512-wgm9Ehl2jpeqP3zw/7mo3kRHFp5MEDhqAdwy1fTGkHAwnkGOVsgpvQhL8B5n1qlb01jV3n/bI0ZfZp5lWA1k4w==",
+      "dev": true,
+      "license": "ISC",
+      "dependencies": {
+        "minipass": "^7.0.4"
+      },
+      "engines": {
+        "node": ">=18.0.0"
+      }
+    },
+    "node_modules/@jridgewell/gen-mapping": {
+      "version": "0.3.8",
+      "resolved": "https://registry.npmjs.org/@jridgewell/gen-mapping/-/gen-mapping-0.3.8.tgz",
+      "integrity": "sha512-imAbBGkb+ebQyxKgzv5Hu2nmROxoDOXHh80evxdoXNOrvAnVx7zimzc1Oo5h9RlfV4vPXaE2iM5pOFbvOCClWA==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "@jridgewell/set-array": "^1.2.1",
+        "@jridgewell/sourcemap-codec": "^1.4.10",
+        "@jridgewell/trace-mapping": "^0.3.24"
+      },
+      "engines": {
+        "node": ">=6.0.0"
+      }
+    },
+    "node_modules/@jridgewell/resolve-uri": {
+      "version": "3.1.2",
+      "resolved": "https://registry.npmjs.org/@jridgewell/resolve-uri/-/resolve-uri-3.1.2.tgz",
+      "integrity": "sha512-bRISgCIjP20/tbWSPWMEi54QVPRZExkuD9lJL+UIxUKtwVJA8wW1Trb1jMs1RFXo1CBTNZ/5hpC9QvmKWdopKw==",
+      "dev": true,
+      "license": "MIT",
+      "engines": {
+        "node": ">=6.0.0"
+      }
+    },
+    "node_modules/@jridgewell/set-array": {
+      "version": "1.2.1",
+      "resolved": "https://registry.npmjs.org/@jridgewell/set-array/-/set-array-1.2.1.tgz",
+      "integrity": "sha512-R8gLRTZeyp03ymzP/6Lil/28tGeGEzhx1q2k703KGWRAI1VdvPIXdG70VJc2pAMw3NA6JKL5hhFu1sJX0Mnn/A==",
+      "dev": true,
+      "license": "MIT",
+      "engines": {
+        "node": ">=6.0.0"
+      }
+    },
+    "node_modules/@jridgewell/sourcemap-codec": {
+      "version": "1.5.0",
+      "resolved": "https://registry.npmjs.org/@jridgewell/sourcemap-codec/-/sourcemap-codec-1.5.0.tgz",
+      "integrity": "sha512-gv3ZRaISU3fjPAgNsriBRqGWQL6quFx04YMPW/zD8XMLsU32mhCCbfbO6KZFLjvYpCZ8zyDEgqsgf+PwPaM7GQ==",
+      "dev": true,
+      "license": "MIT"
+    },
+    "node_modules/@jridgewell/trace-mapping": {
+      "version": "0.3.25",
+      "resolved": "https://registry.npmjs.org/@jridgewell/trace-mapping/-/trace-mapping-0.3.25.tgz",
+      "integrity": "sha512-vNk6aEwybGtawWmy/PzwnGDOjCkLWSD2wqvjGGAgOAwCGWySYXfYoxt00IJkTF+8Lb57DwOb3Aa0o9CApepiYQ==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "@jridgewell/resolve-uri": "^3.1.0",
+        "@jridgewell/sourcemap-codec": "^1.4.14"
+      }
+    },
     "node_modules/@napi-rs/wasm-runtime": {
-      "version": "0.2.9",
-      "resolved": "https://registry.npmjs.org/@napi-rs/wasm-runtime/-/wasm-runtime-0.2.9.tgz",
-      "integrity": "sha512-OKRBiajrrxB9ATokgEQoG87Z25c67pCpYcCwmXYX8PBftC9pBfN18gnm/fh1wurSLEKIAt+QRFLFCQISrb66Jg==",
+      "version": "0.2.10",
+      "resolved": "https://registry.npmjs.org/@napi-rs/wasm-runtime/-/wasm-runtime-0.2.10.tgz",
+      "integrity": "sha512-bCsCyeZEwVErsGmyPNSzwfwFn4OdxBj0mmv6hOFucB/k81Ojdu68RbZdxYsRQUPc9l6SU5F/cG+bXgWs3oUgsQ==",
       "dev": true,
       "license": "MIT",
       "optional": true,
       "dependencies": {
-        "@emnapi/core": "^1.4.0",
-        "@emnapi/runtime": "^1.4.0",
+        "@emnapi/core": "^1.4.3",
+        "@emnapi/runtime": "^1.4.3",
         "@tybys/wasm-util": "^0.9.0"
       }
     },
@@ -1118,55 +1244,63 @@ package-lock.json
       "license": "Apache-2.0"
     },
     "node_modules/@swc/helpers": {
-      "version": "0.5.15",
-      "resolved": "https://registry.npmjs.org/@swc/helpers/-/helpers-0.5.15.tgz",
-      "integrity": "sha512-JQ5TuMi45Owi4/BIMAJBoSQoOJu12oOk/gADqlcUL9JEdHB8vyjUSsxqeNXnmXHjYKMi2WcYtezGEEhqUI/E2g==",
+      "version": "0.5.17",
+      "resolved": "https://registry.npmjs.org/@swc/helpers/-/helpers-0.5.17.tgz",
+      "integrity": "sha512-5IKx/Y13RsYd+sauPb2x+U/xZikHjolzfuDgTAl/Tdf3Q8rslRvC19NKDLgAJQ6wsqADk10ntlv08nPFw/gO/A==",
       "license": "Apache-2.0",
       "dependencies": {
         "tslib": "^2.8.0"
       }
     },
     "node_modules/@tailwindcss/node": {
-      "version": "4.1.5",
-      "resolved": "https://registry.npmjs.org/@tailwindcss/node/-/node-4.1.5.tgz",
-      "integrity": "sha512-CBhSWo0vLnWhXIvpD0qsPephiaUYfHUX3U9anwDaHZAeuGpTiB3XmsxPAN6qX7bFhipyGBqOa1QYQVVhkOUGxg==",
+      "version": "4.1.7",
+      "resolved": "https://registry.npmjs.org/@tailwindcss/node/-/node-4.1.7.tgz",
+      "integrity": "sha512-9rsOpdY9idRI2NH6CL4wORFY0+Q6fnx9XP9Ju+iq/0wJwGD5IByIgFmwVbyy4ymuyprj8Qh4ErxMKTUL4uNh3g==",
       "dev": true,
       "license": "MIT",
       "dependencies": {
+        "@ampproject/remapping": "^2.3.0",
         "enhanced-resolve": "^5.18.1",
         "jiti": "^2.4.2",
-        "lightningcss": "1.29.2",
-        "tailwindcss": "4.1.5"
+        "lightningcss": "1.30.1",
+        "magic-string": "^0.30.17",
+        "source-map-js": "^1.2.1",
+        "tailwindcss": "4.1.7"
       }
     },
     "node_modules/@tailwindcss/oxide": {
-      "version": "4.1.5",
-      "resolved": "https://registry.npmjs.org/@tailwindcss/oxide/-/oxide-4.1.5.tgz",
-      "integrity": "sha512-1n4br1znquEvyW/QuqMKQZlBen+jxAbvyduU87RS8R3tUSvByAkcaMTkJepNIrTlYhD+U25K4iiCIxE6BGdRYA==",
+      "version": "4.1.7",
+      "resolved": "https://registry.npmjs.org/@tailwindcss/oxide/-/oxide-4.1.7.tgz",
+      "integrity": "sha512-5SF95Ctm9DFiUyjUPnDGkoKItPX/k+xifcQhcqX5RA85m50jw1pT/KzjdvlqxRja45Y52nR4MR9fD1JYd7f8NQ==",
       "dev": true,
+      "hasInstallScript": true,
       "license": "MIT",
+      "dependencies": {
+        "detect-libc": "^2.0.4",
+        "tar": "^7.4.3"
+      },
       "engines": {
         "node": ">= 10"
       },
       "optionalDependencies": {
-        "@tailwindcss/oxide-android-arm64": "4.1.5",
-        "@tailwindcss/oxide-darwin-arm64": "4.1.5",
-        "@tailwindcss/oxide-darwin-x64": "4.1.5",
-        "@tailwindcss/oxide-freebsd-x64": "4.1.5",
-        "@tailwindcss/oxide-linux-arm-gnueabihf": "4.1.5",
-        "@tailwindcss/oxide-linux-arm64-gnu": "4.1.5",
-        "@tailwindcss/oxide-linux-arm64-musl": "4.1.5",
-        "@tailwindcss/oxide-linux-x64-gnu": "4.1.5",
-        "@tailwindcss/oxide-linux-x64-musl": "4.1.5",
-        "@tailwindcss/oxide-wasm32-wasi": "4.1.5",
-        "@tailwindcss/oxide-win32-arm64-msvc": "4.1.5",
-        "@tailwindcss/oxide-win32-x64-msvc": "4.1.5"
+        "@tailwindcss/oxide-android-arm64": "4.1.7",
+        "@tailwindcss/oxide-darwin-arm64": "4.1.7",
+        "@tailwindcss/oxide-darwin-x64": "4.1.7",
+        "@tailwindcss/oxide-freebsd-x64": "4.1.7",
+        "@tailwindcss/oxide-linux-arm-gnueabihf": "4.1.7",
+        "@tailwindcss/oxide-linux-arm64-gnu": "4.1.7",
+        "@tailwindcss/oxide-linux-arm64-musl": "4.1.7",
+        "@tailwindcss/oxide-linux-x64-gnu": "4.1.7",
+        "@tailwindcss/oxide-linux-x64-musl": "4.1.7",
+        "@tailwindcss/oxide-wasm32-wasi": "4.1.7",
+        "@tailwindcss/oxide-win32-arm64-msvc": "4.1.7",
+        "@tailwindcss/oxide-win32-x64-msvc": "4.1.7"
       }
     },
     "node_modules/@tailwindcss/oxide-android-arm64": {
-      "version": "4.1.5",
-      "resolved": "https://registry.npmjs.org/@tailwindcss/oxide-android-arm64/-/oxide-android-arm64-4.1.5.tgz",
-      "integrity": "sha512-LVvM0GirXHED02j7hSECm8l9GGJ1RfgpWCW+DRn5TvSaxVsv28gRtoL4aWKGnXqwvI3zu1GABeDNDVZeDPOQrw==",
+      "version": "4.1.7",
+      "resolved": "https://registry.npmjs.org/@tailwindcss/oxide-android-arm64/-/oxide-android-arm64-4.1.7.tgz",
+      "integrity": "sha512-IWA410JZ8fF7kACus6BrUwY2Z1t1hm0+ZWNEzykKmMNM09wQooOcN/VXr0p/WJdtHZ90PvJf2AIBS/Ceqx1emg==",
       "cpu": [
         "arm64"
       ],
@@ -1181,9 +1315,9 @@ package-lock.json
       }
     },
     "node_modules/@tailwindcss/oxide-darwin-arm64": {
-      "version": "4.1.5",
-      "resolved": "https://registry.npmjs.org/@tailwindcss/oxide-darwin-arm64/-/oxide-darwin-arm64-4.1.5.tgz",
-      "integrity": "sha512-//TfCA3pNrgnw4rRJOqavW7XUk8gsg9ddi8cwcsWXp99tzdBAZW0WXrD8wDyNbqjW316Pk2hiN/NJx/KWHl8oA==",
+      "version": "4.1.7",
+      "resolved": "https://registry.npmjs.org/@tailwindcss/oxide-darwin-arm64/-/oxide-darwin-arm64-4.1.7.tgz",
+      "integrity": "sha512-81jUw9To7fimGGkuJ2W5h3/oGonTOZKZ8C2ghm/TTxbwvfSiFSDPd6/A/KE2N7Jp4mv3Ps9OFqg2fEKgZFfsvg==",
       "cpu": [
         "arm64"
       ],
@@ -1198,9 +1332,9 @@ package-lock.json
       }
     },
     "node_modules/@tailwindcss/oxide-darwin-x64": {
-      "version": "4.1.5",
-      "resolved": "https://registry.npmjs.org/@tailwindcss/oxide-darwin-x64/-/oxide-darwin-x64-4.1.5.tgz",
-      "integrity": "sha512-XQorp3Q6/WzRd9OalgHgaqgEbjP3qjHrlSUb5k1EuS1Z9NE9+BbzSORraO+ecW432cbCN7RVGGL/lSnHxcd+7Q==",
+      "version": "4.1.7",
+      "resolved": "https://registry.npmjs.org/@tailwindcss/oxide-darwin-x64/-/oxide-darwin-x64-4.1.7.tgz",
+      "integrity": "sha512-q77rWjEyGHV4PdDBtrzO0tgBBPlQWKY7wZK0cUok/HaGgbNKecegNxCGikuPJn5wFAlIywC3v+WMBt0PEBtwGw==",
       "cpu": [
         "x64"
       ],
@@ -1215,9 +1349,9 @@ package-lock.json
       }
     },
     "node_modules/@tailwindcss/oxide-freebsd-x64": {
-      "version": "4.1.5",
-      "resolved": "https://registry.npmjs.org/@tailwindcss/oxide-freebsd-x64/-/oxide-freebsd-x64-4.1.5.tgz",
-      "integrity": "sha512-bPrLWbxo8gAo97ZmrCbOdtlz/Dkuy8NK97aFbVpkJ2nJ2Jo/rsCbu0TlGx8joCuA3q6vMWTSn01JY46iwG+clg==",
+      "version": "4.1.7",
+      "resolved": "https://registry.npmjs.org/@tailwindcss/oxide-freebsd-x64/-/oxide-freebsd-x64-4.1.7.tgz",
+      "integrity": "sha512-RfmdbbK6G6ptgF4qqbzoxmH+PKfP4KSVs7SRlTwcbRgBwezJkAO3Qta/7gDy10Q2DcUVkKxFLXUQO6J3CRvBGw==",
       "cpu": [
         "x64"
       ],
@@ -1232,9 +1366,9 @@ package-lock.json
       }
     },
     "node_modules/@tailwindcss/oxide-linux-arm-gnueabihf": {
-      "version": "4.1.5",
-      "resolved": "https://registry.npmjs.org/@tailwindcss/oxide-linux-arm-gnueabihf/-/oxide-linux-arm-gnueabihf-4.1.5.tgz",
-      "integrity": "sha512-1gtQJY9JzMAhgAfvd/ZaVOjh/Ju/nCoAsvOVJenWZfs05wb8zq+GOTnZALWGqKIYEtyNpCzvMk+ocGpxwdvaVg==",
+      "version": "4.1.7",
+      "resolved": "https://registry.npmjs.org/@tailwindcss/oxide-linux-arm-gnueabihf/-/oxide-linux-arm-gnueabihf-4.1.7.tgz",
+      "integrity": "sha512-OZqsGvpwOa13lVd1z6JVwQXadEobmesxQ4AxhrwRiPuE04quvZHWn/LnihMg7/XkN+dTioXp/VMu/p6A5eZP3g==",
       "cpu": [
         "arm"
       ],
@@ -1249,9 +1383,9 @@ package-lock.json
       }
     },
     "node_modules/@tailwindcss/oxide-linux-arm64-gnu": {
-      "version": "4.1.5",
-      "resolved": "https://registry.npmjs.org/@tailwindcss/oxide-linux-arm64-gnu/-/oxide-linux-arm64-gnu-4.1.5.tgz",
-      "integrity": "sha512-dtlaHU2v7MtdxBXoqhxwsWjav7oim7Whc6S9wq/i/uUMTWAzq/gijq1InSgn2yTnh43kR+SFvcSyEF0GCNu1PQ==",
+      "version": "4.1.7",
+      "resolved": "https://registry.npmjs.org/@tailwindcss/oxide-linux-arm64-gnu/-/oxide-linux-arm64-gnu-4.1.7.tgz",
+      "integrity": "sha512-voMvBTnJSfKecJxGkoeAyW/2XRToLZ227LxswLAwKY7YslG/Xkw9/tJNH+3IVh5bdYzYE7DfiaPbRkSHFxY1xA==",
       "cpu": [
         "arm64"
       ],
@@ -1266,9 +1400,9 @@ package-lock.json
       }
     },
     "node_modules/@tailwindcss/oxide-linux-arm64-musl": {
-      "version": "4.1.5",
-      "resolved": "https://registry.npmjs.org/@tailwindcss/oxide-linux-arm64-musl/-/oxide-linux-arm64-musl-4.1.5.tgz",
-      "integrity": "sha512-fg0F6nAeYcJ3CriqDT1iVrqALMwD37+sLzXs8Rjy8Z1ZHshJoYceodfyUwGJEsQoTyWbliFNRs2wMQNXtT7MVA==",
+      "version": "4.1.7",
+      "resolved": "https://registry.npmjs.org/@tailwindcss/oxide-linux-arm64-musl/-/oxide-linux-arm64-musl-4.1.7.tgz",
+      "integrity": "sha512-PjGuNNmJeKHnP58M7XyjJyla8LPo+RmwHQpBI+W/OxqrwojyuCQ+GUtygu7jUqTEexejZHr/z3nBc/gTiXBj4A==",
       "cpu": [
         "arm64"
       ],
@@ -1283,9 +1417,9 @@ package-lock.json
       }
     },
     "node_modules/@tailwindcss/oxide-linux-x64-gnu": {
-      "version": "4.1.5",
-      "resolved": "https://registry.npmjs.org/@tailwindcss/oxide-linux-x64-gnu/-/oxide-linux-x64-gnu-4.1.5.tgz",
-      "integrity": "sha512-SO+F2YEIAHa1AITwc8oPwMOWhgorPzzcbhWEb+4oLi953h45FklDmM8dPSZ7hNHpIk9p/SCZKUYn35t5fjGtHA==",
+      "version": "4.1.7",
+      "resolved": "https://registry.npmjs.org/@tailwindcss/oxide-linux-x64-gnu/-/oxide-linux-x64-gnu-4.1.7.tgz",
+      "integrity": "sha512-HMs+Va+ZR3gC3mLZE00gXxtBo3JoSQxtu9lobbZd+DmfkIxR54NO7Z+UQNPsa0P/ITn1TevtFxXTpsRU7qEvWg==",
       "cpu": [
         "x64"
       ],
@@ -1300,9 +1434,9 @@ package-lock.json
       }
     },
     "node_modules/@tailwindcss/oxide-linux-x64-musl": {
-      "version": "4.1.5",
-      "resolved": "https://registry.npmjs.org/@tailwindcss/oxide-linux-x64-musl/-/oxide-linux-x64-musl-4.1.5.tgz",
-      "integrity": "sha512-6UbBBplywkk/R+PqqioskUeXfKcBht3KU7juTi1UszJLx0KPXUo10v2Ok04iBJIaDPkIFkUOVboXms5Yxvaz+g==",
+      "version": "4.1.7",
+      "resolved": "https://registry.npmjs.org/@tailwindcss/oxide-linux-x64-musl/-/oxide-linux-x64-musl-4.1.7.tgz",
+      "integrity": "sha512-MHZ6jyNlutdHH8rd+YTdr3QbXrHXqwIhHw9e7yXEBcQdluGwhpQY2Eku8UZK6ReLaWtQ4gijIv5QoM5eE+qlsA==",
       "cpu": [
         "x64"
       ],
@@ -1317,9 +1451,9 @@ package-lock.json
       }
     },
     "node_modules/@tailwindcss/oxide-wasm32-wasi": {
-      "version": "4.1.5",
-      "resolved": "https://registry.npmjs.org/@tailwindcss/oxide-wasm32-wasi/-/oxide-wasm32-wasi-4.1.5.tgz",
-      "integrity": "sha512-hwALf2K9FHuiXTPqmo1KeOb83fTRNbe9r/Ixv9ZNQ/R24yw8Ge1HOWDDgTdtzntIaIUJG5dfXCf4g9AD4RiyhQ==",
+      "version": "4.1.7",
+      "resolved": "https://registry.npmjs.org/@tailwindcss/oxide-wasm32-wasi/-/oxide-wasm32-wasi-4.1.7.tgz",
+      "integrity": "sha512-ANaSKt74ZRzE2TvJmUcbFQ8zS201cIPxUDm5qez5rLEwWkie2SkGtA4P+GPTj+u8N6JbPrC8MtY8RmJA35Oo+A==",
       "bundleDependencies": [
         "@napi-rs/wasm-runtime",
         "@emnapi/core",
@@ -1347,9 +1481,9 @@ package-lock.json
       }
     },
     "node_modules/@tailwindcss/oxide-win32-arm64-msvc": {
-      "version": "4.1.5",
-      "resolved": "https://registry.npmjs.org/@tailwindcss/oxide-win32-arm64-msvc/-/oxide-win32-arm64-msvc-4.1.5.tgz",
-      "integrity": "sha512-oDKncffWzaovJbkuR7/OTNFRJQVdiw/n8HnzaCItrNQUeQgjy7oUiYpsm9HUBgpmvmDpSSbGaCa2Evzvk3eFmA==",
+      "version": "4.1.7",
+      "resolved": "https://registry.npmjs.org/@tailwindcss/oxide-win32-arm64-msvc/-/oxide-win32-arm64-msvc-4.1.7.tgz",
+      "integrity": "sha512-HUiSiXQ9gLJBAPCMVRk2RT1ZrBjto7WvqsPBwUrNK2BcdSxMnk19h4pjZjI7zgPhDxlAbJSumTC4ljeA9y0tEw==",
       "cpu": [
         "arm64"
       ],
@@ -1364,9 +1498,9 @@ package-lock.json
       }
     },
     "node_modules/@tailwindcss/oxide-win32-x64-msvc": {
-      "version": "4.1.5",
-      "resolved": "https://registry.npmjs.org/@tailwindcss/oxide-win32-x64-msvc/-/oxide-win32-x64-msvc-4.1.5.tgz",
-      "integrity": "sha512-WiR4dtyrFdbb+ov0LK+7XsFOsG+0xs0PKZKkt41KDn9jYpO7baE3bXiudPVkTqUEwNfiglCygQHl2jklvSBi7Q==",
+      "version": "4.1.7",
+      "resolved": "https://registry.npmjs.org/@tailwindcss/oxide-win32-x64-msvc/-/oxide-win32-x64-msvc-4.1.7.tgz",
+      "integrity": "sha512-rYHGmvoHiLJ8hWucSfSOEmdCBIGZIq7SpkPRSqLsH2Ab2YUNgKeAPT1Fi2cx3+hnYOrAb0jp9cRyode3bBW4mQ==",
       "cpu": [
         "x64"
       ],
@@ -1381,17 +1515,17 @@ package-lock.json
       }
     },
     "node_modules/@tailwindcss/postcss": {
-      "version": "4.1.5",
-      "resolved": "https://registry.npmjs.org/@tailwindcss/postcss/-/postcss-4.1.5.tgz",
-      "integrity": "sha512-5lAC2/pzuyfhsFgk6I58HcNy6vPK3dV/PoPxSDuOTVbDvCddYHzHiJZZInGIY0venvzzfrTEUAXJFULAfFmObg==",
+      "version": "4.1.7",
+      "resolved": "https://registry.npmjs.org/@tailwindcss/postcss/-/postcss-4.1.7.tgz",
+      "integrity": "sha512-88g3qmNZn7jDgrrcp3ZXEQfp9CVox7xjP1HN2TFKI03CltPVd/c61ydn5qJJL8FYunn0OqBaW5HNUga0kmPVvw==",
       "dev": true,
       "license": "MIT",
       "dependencies": {
         "@alloc/quick-lru": "^5.2.0",
-        "@tailwindcss/node": "4.1.5",
-        "@tailwindcss/oxide": "4.1.5",
+        "@tailwindcss/node": "4.1.7",
+        "@tailwindcss/oxide": "4.1.7",
         "postcss": "^8.4.41",
-        "tailwindcss": "4.1.5"
+        "tailwindcss": "4.1.7"
       }
     },
     "node_modules/@tanstack/react-virtual": {
@@ -1461,9 +1595,9 @@ package-lock.json
       "license": "MIT"
     },
     "node_modules/@types/node": {
-      "version": "20.17.32",
-      "resolved": "https://registry.npmjs.org/@types/node/-/node-20.17.32.tgz",
-      "integrity": "sha512-zeMXFn8zQ+UkjK4ws0RiOC9EWByyW1CcVmLe+2rQocXRsGEDxUCwPEIVgpsGcLHS/P8JkT0oa3839BRABS0oPw==",
+      "version": "20.17.51",
+      "resolved": "https://registry.npmjs.org/@types/node/-/node-20.17.51.tgz",
+      "integrity": "sha512-hccptBl7C8lHiKxTBsY6vYYmqpmw1E/aGR/8fmueE+B390L3pdMOpNSRvFO4ZnXzW5+p2HBXV0yNABd2vdk22Q==",
       "dev": true,
       "license": "MIT",
       "dependencies": {
@@ -1471,9 +1605,9 @@ package-lock.json
       }
     },
     "node_modules/@types/react": {
-      "version": "19.1.2",
-      "resolved": "https://registry.npmjs.org/@types/react/-/react-19.1.2.tgz",
-      "integrity": "sha512-oxLPMytKchWGbnQM9O7D67uPa9paTNxO7jVoNMXgkkErULBPhPARCfkKL9ytcIJJRGjbsVwW4ugJzyFFvm/Tiw==",
+      "version": "19.1.6",
+      "resolved": "https://registry.npmjs.org/@types/react/-/react-19.1.6.tgz",
+      "integrity": "sha512-JeG0rEWak0N6Itr6QUx+X60uQmN+5t3j9r/OVDtWzFXKaj6kD1BwJzOksD0FF6iWxZlbE1kB0q9vtnU2ekqa1Q==",
       "dev": true,
       "license": "MIT",
       "dependencies": {
@@ -1481,9 +1615,9 @@ package-lock.json
       }
     },
     "node_modules/@types/react-dom": {
-      "version": "19.1.3",
-      "resolved": "https://registry.npmjs.org/@types/react-dom/-/react-dom-19.1.3.tgz",
-      "integrity": "sha512-rJXC08OG0h3W6wDMFxQrZF00Kq6qQvw0djHRdzl3U5DnIERz0MRce3WVc7IS6JYBwtaP/DwYtRRjVlvivNveKg==",
+      "version": "19.1.5",
+      "resolved": "https://registry.npmjs.org/@types/react-dom/-/react-dom-19.1.5.tgz",
+      "integrity": "sha512-CMCjrWucUBZvohgZxkjd6S9h0nZxXjzus6yDfUb+xLxYM7VvjKNH1tQrE9GWLql1XoOP4/Ds3bwFqShHUYraGg==",
       "dev": true,
       "license": "MIT",
       "peerDependencies": {
@@ -1491,21 +1625,21 @@ package-lock.json
       }
     },
     "node_modules/@typescript-eslint/eslint-plugin": {
-      "version": "8.31.1",
-      "resolved": "https://registry.npmjs.org/@typescript-eslint/eslint-plugin/-/eslint-plugin-8.31.1.tgz",
-      "integrity": "sha512-oUlH4h1ABavI4F0Xnl8/fOtML/eu8nI2A1nYd+f+55XI0BLu+RIqKoCiZKNo6DtqZBEQm5aNKA20G3Z5w3R6GQ==",
+      "version": "8.33.0",
+      "resolved": "https://registry.npmjs.org/@typescript-eslint/eslint-plugin/-/eslint-plugin-8.33.0.tgz",
+      "integrity": "sha512-CACyQuqSHt7ma3Ns601xykeBK/rDeZa3w6IS6UtMQbixO5DWy+8TilKkviGDH6jtWCo8FGRKEK5cLLkPvEammQ==",
       "dev": true,
       "license": "MIT",
       "dependencies": {
         "@eslint-community/regexpp": "^4.10.0",
-        "@typescript-eslint/scope-manager": "8.31.1",
-        "@typescript-eslint/type-utils": "8.31.1",
-        "@typescript-eslint/utils": "8.31.1",
-        "@typescript-eslint/visitor-keys": "8.31.1",
+        "@typescript-eslint/scope-manager": "8.33.0",
+        "@typescript-eslint/type-utils": "8.33.0",
+        "@typescript-eslint/utils": "8.33.0",
+        "@typescript-eslint/visitor-keys": "8.33.0",
         "graphemer": "^1.4.0",
-        "ignore": "^5.3.1",
+        "ignore": "^7.0.0",
         "natural-compare": "^1.4.0",
-        "ts-api-utils": "^2.0.1"
+        "ts-api-utils": "^2.1.0"
       },
       "engines": {
         "node": "^18.18.0 || ^20.9.0 || >=21.1.0"
@@ -1515,22 +1649,32 @@ package-lock.json
         "url": "https://opencollective.com/typescript-eslint"
       },
       "peerDependencies": {
-        "@typescript-eslint/parser": "^8.0.0 || ^8.0.0-alpha.0",
+        "@typescript-eslint/parser": "^8.33.0",
         "eslint": "^8.57.0 || ^9.0.0",
         "typescript": ">=4.8.4 <5.9.0"
       }
     },
+    "node_modules/@typescript-eslint/eslint-plugin/node_modules/ignore": {
+      "version": "7.0.4",
+      "resolved": "https://registry.npmjs.org/ignore/-/ignore-7.0.4.tgz",
+      "integrity": "sha512-gJzzk+PQNznz8ysRrC0aOkBNVRBDtE1n53IqyqEf3PXrYwomFs5q4pGMizBMJF+ykh03insJ27hB8gSrD2Hn8A==",
+      "dev": true,
+      "license": "MIT",
+      "engines": {
+        "node": ">= 4"
+      }
+    },
     "node_modules/@typescript-eslint/parser": {
-      "version": "8.31.1",
-      "resolved": "https://registry.npmjs.org/@typescript-eslint/parser/-/parser-8.31.1.tgz",
-      "integrity": "sha512-oU/OtYVydhXnumd0BobL9rkJg7wFJ9bFFPmSmB/bf/XWN85hlViji59ko6bSKBXyseT9V8l+CN1nwmlbiN0G7Q==",
+      "version": "8.33.0",
+      "resolved": "https://registry.npmjs.org/@typescript-eslint/parser/-/parser-8.33.0.tgz",
+      "integrity": "sha512-JaehZvf6m0yqYp34+RVnihBAChkqeH+tqqhS0GuX1qgPpwLvmTPheKEs6OeCK6hVJgXZHJ2vbjnC9j119auStQ==",
       "dev": true,
       "license": "MIT",
       "dependencies": {
-        "@typescript-eslint/scope-manager": "8.31.1",
-        "@typescript-eslint/types": "8.31.1",
-        "@typescript-eslint/typescript-estree": "8.31.1",
-        "@typescript-eslint/visitor-keys": "8.31.1",
+        "@typescript-eslint/scope-manager": "8.33.0",
+        "@typescript-eslint/types": "8.33.0",
+        "@typescript-eslint/typescript-estree": "8.33.0",
+        "@typescript-eslint/visitor-keys": "8.33.0",
         "debug": "^4.3.4"
       },
       "engines": {
@@ -1545,15 +1689,16 @@ package-lock.json
         "typescript": ">=4.8.4 <5.9.0"
       }
     },
-    "node_modules/@typescript-eslint/scope-manager": {
-      "version": "8.31.1",
-      "resolved": "https://registry.npmjs.org/@typescript-eslint/scope-manager/-/scope-manager-8.31.1.tgz",
-      "integrity": "sha512-BMNLOElPxrtNQMIsFHE+3P0Yf1z0dJqV9zLdDxN/xLlWMlXK/ApEsVEKzpizg9oal8bAT5Sc7+ocal7AC1HCVw==",
+    "node_modules/@typescript-eslint/project-service": {
+      "version": "8.33.0",
+      "resolved": "https://registry.npmjs.org/@typescript-eslint/project-service/-/project-service-8.33.0.tgz",
+      "integrity": "sha512-d1hz0u9l6N+u/gcrk6s6gYdl7/+pp8yHheRTqP6X5hVDKALEaTn8WfGiit7G511yueBEL3OpOEpD+3/MBdoN+A==",
       "dev": true,
       "license": "MIT",
       "dependencies": {
-        "@typescript-eslint/types": "8.31.1",
-        "@typescript-eslint/visitor-keys": "8.31.1"
+        "@typescript-eslint/tsconfig-utils": "^8.33.0",
+        "@typescript-eslint/types": "^8.33.0",
+        "debug": "^4.3.4"
       },
       "engines": {
         "node": "^18.18.0 || ^20.9.0 || >=21.1.0"
@@ -1563,17 +1708,52 @@ package-lock.json
         "url": "https://opencollective.com/typescript-eslint"
       }
     },
-    "node_modules/@typescript-eslint/type-utils": {
-      "version": "8.31.1",
-      "resolved": "https://registry.npmjs.org/@typescript-eslint/type-utils/-/type-utils-8.31.1.tgz",
-      "integrity": "sha512-fNaT/m9n0+dpSp8G/iOQ05GoHYXbxw81x+yvr7TArTuZuCA6VVKbqWYVZrV5dVagpDTtj/O8k5HBEE/p/HM5LA==",
+    "node_modules/@typescript-eslint/scope-manager": {
+      "version": "8.33.0",
+      "resolved": "https://registry.npmjs.org/@typescript-eslint/scope-manager/-/scope-manager-8.33.0.tgz",
+      "integrity": "sha512-LMi/oqrzpqxyO72ltP+dBSP6V0xiUb4saY7WLtxSfiNEBI8m321LLVFU9/QDJxjDQG9/tjSqKz/E3380TEqSTw==",
       "dev": true,
       "license": "MIT",
       "dependencies": {
-        "@typescript-eslint/typescript-estree": "8.31.1",
-        "@typescript-eslint/utils": "8.31.1",
+        "@typescript-eslint/types": "8.33.0",
+        "@typescript-eslint/visitor-keys": "8.33.0"
+      },
+      "engines": {
+        "node": "^18.18.0 || ^20.9.0 || >=21.1.0"
+      },
+      "funding": {
+        "type": "opencollective",
+        "url": "https://opencollective.com/typescript-eslint"
+      }
+    },
+    "node_modules/@typescript-eslint/tsconfig-utils": {
+      "version": "8.33.0",
+      "resolved": "https://registry.npmjs.org/@typescript-eslint/tsconfig-utils/-/tsconfig-utils-8.33.0.tgz",
+      "integrity": "sha512-sTkETlbqhEoiFmGr1gsdq5HyVbSOF0145SYDJ/EQmXHtKViCaGvnyLqWFFHtEXoS0J1yU8Wyou2UGmgW88fEug==",
+      "dev": true,
+      "license": "MIT",
+      "engines": {
+        "node": "^18.18.0 || ^20.9.0 || >=21.1.0"
+      },
+      "funding": {
+        "type": "opencollective",
+        "url": "https://opencollective.com/typescript-eslint"
+      },
+      "peerDependencies": {
+        "typescript": ">=4.8.4 <5.9.0"
+      }
+    },
+    "node_modules/@typescript-eslint/type-utils": {
+      "version": "8.33.0",
+      "resolved": "https://registry.npmjs.org/@typescript-eslint/type-utils/-/type-utils-8.33.0.tgz",
+      "integrity": "sha512-lScnHNCBqL1QayuSrWeqAL5GmqNdVUQAAMTaCwdYEdWfIrSrOGzyLGRCHXcCixa5NK6i5l0AfSO2oBSjCjf4XQ==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "@typescript-eslint/typescript-estree": "8.33.0",
+        "@typescript-eslint/utils": "8.33.0",
         "debug": "^4.3.4",
-        "ts-api-utils": "^2.0.1"
+        "ts-api-utils": "^2.1.0"
       },
       "engines": {
         "node": "^18.18.0 || ^20.9.0 || >=21.1.0"
@@ -1588,9 +1768,9 @@ package-lock.json
       }
     },
     "node_modules/@typescript-eslint/types": {
-      "version": "8.31.1",
-      "resolved": "https://registry.npmjs.org/@typescript-eslint/types/-/types-8.31.1.tgz",
-      "integrity": "sha512-SfepaEFUDQYRoA70DD9GtytljBePSj17qPxFHA/h3eg6lPTqGJ5mWOtbXCk1YrVU1cTJRd14nhaXWFu0l2troQ==",
+      "version": "8.33.0",
+      "resolved": "https://registry.npmjs.org/@typescript-eslint/types/-/types-8.33.0.tgz",
+      "integrity": "sha512-DKuXOKpM5IDT1FA2g9x9x1Ug81YuKrzf4mYX8FAVSNu5Wo/LELHWQyM1pQaDkI42bX15PWl0vNPt1uGiIFUOpg==",
       "dev": true,
       "license": "MIT",
       "engines": {
@@ -1602,20 +1782,22 @@ package-lock.json
       }
     },
     "node_modules/@typescript-eslint/typescript-estree": {
-      "version": "8.31.1",
-      "resolved": "https://registry.npmjs.org/@typescript-eslint/typescript-estree/-/typescript-estree-8.31.1.tgz",
-      "integrity": "sha512-kaA0ueLe2v7KunYOyWYtlf/QhhZb7+qh4Yw6Ni5kgukMIG+iP773tjgBiLWIXYumWCwEq3nLW+TUywEp8uEeag==",
+      "version": "8.33.0",
+      "resolved": "https://registry.npmjs.org/@typescript-eslint/typescript-estree/-/typescript-estree-8.33.0.tgz",
+      "integrity": "sha512-vegY4FQoB6jL97Tu/lWRsAiUUp8qJTqzAmENH2k59SJhw0Th1oszb9Idq/FyyONLuNqT1OADJPXfyUNOR8SzAQ==",
       "dev": true,
       "license": "MIT",
       "dependencies": {
-        "@typescript-eslint/types": "8.31.1",
-        "@typescript-eslint/visitor-keys": "8.31.1",
+        "@typescript-eslint/project-service": "8.33.0",
+        "@typescript-eslint/tsconfig-utils": "8.33.0",
+        "@typescript-eslint/types": "8.33.0",
+        "@typescript-eslint/visitor-keys": "8.33.0",
         "debug": "^4.3.4",
         "fast-glob": "^3.3.2",
         "is-glob": "^4.0.3",
         "minimatch": "^9.0.4",
         "semver": "^7.6.0",
-        "ts-api-utils": "^2.0.1"
+        "ts-api-utils": "^2.1.0"
       },
       "engines": {
         "node": "^18.18.0 || ^20.9.0 || >=21.1.0"
@@ -1685,16 +1867,16 @@ package-lock.json
       }
     },
     "node_modules/@typescript-eslint/utils": {
-      "version": "8.31.1",
-      "resolved": "https://registry.npmjs.org/@typescript-eslint/utils/-/utils-8.31.1.tgz",
-      "integrity": "sha512-2DSI4SNfF5T4oRveQ4nUrSjUqjMND0nLq9rEkz0gfGr3tg0S5KB6DhwR+WZPCjzkZl3cH+4x2ce3EsL50FubjQ==",
+      "version": "8.33.0",
+      "resolved": "https://registry.npmjs.org/@typescript-eslint/utils/-/utils-8.33.0.tgz",
+      "integrity": "sha512-lPFuQaLA9aSNa7D5u2EpRiqdAUhzShwGg/nhpBlc4GR6kcTABttCuyjFs8BcEZ8VWrjCBof/bePhP3Q3fS+Yrw==",
       "dev": true,
       "license": "MIT",
       "dependencies": {
-        "@eslint-community/eslint-utils": "^4.4.0",
-        "@typescript-eslint/scope-manager": "8.31.1",
-        "@typescript-eslint/types": "8.31.1",
-        "@typescript-eslint/typescript-estree": "8.31.1"
+        "@eslint-community/eslint-utils": "^4.7.0",
+        "@typescript-eslint/scope-manager": "8.33.0",
+        "@typescript-eslint/types": "8.33.0",
+        "@typescript-eslint/typescript-estree": "8.33.0"
       },
       "engines": {
         "node": "^18.18.0 || ^20.9.0 || >=21.1.0"
@@ -1709,13 +1891,13 @@ package-lock.json
       }
     },
     "node_modules/@typescript-eslint/visitor-keys": {
-      "version": "8.31.1",
-      "resolved": "https://registry.npmjs.org/@typescript-eslint/visitor-keys/-/visitor-keys-8.31.1.tgz",
-      "integrity": "sha512-I+/rgqOVBn6f0o7NDTmAPWWC6NuqhV174lfYvAm9fUaWeiefLdux9/YI3/nLugEn9L8fcSi0XmpKi/r5u0nmpw==",
+      "version": "8.33.0",
+      "resolved": "https://registry.npmjs.org/@typescript-eslint/visitor-keys/-/visitor-keys-8.33.0.tgz",
+      "integrity": "sha512-7RW7CMYoskiz5OOGAWjJFxgb7c5UNjTG292gYhWeOAcFmYCtVCSqjqSBj5zMhxbXo2JOW95YYrUWJfU0zrpaGQ==",
       "dev": true,
       "license": "MIT",
       "dependencies": {
-        "@typescript-eslint/types": "8.31.1",
+        "@typescript-eslint/types": "8.33.0",
         "eslint-visitor-keys": "^4.2.0"
       },
       "engines": {
@@ -2354,9 +2536,9 @@ package-lock.json
       }
     },
     "node_modules/caniuse-lite": {
-      "version": "1.0.30001716",
-      "resolved": "https://registry.npmjs.org/caniuse-lite/-/caniuse-lite-1.0.30001716.tgz",
-      "integrity": "sha512-49/c1+x3Kwz7ZIWt+4DvK3aMJy9oYXXG6/97JKsnjdCk/6n9vVyWL8NAwVt95Lwt9eigI10Hl782kDfZUUlRXw==",
+      "version": "1.0.30001718",
+      "resolved": "https://registry.npmjs.org/caniuse-lite/-/caniuse-lite-1.0.30001718.tgz",
+      "integrity": "sha512-AflseV1ahcSunK53NfEs9gFWgOEmzr0f+kaMFA4xiLZlr9Hzt7HxcSpIFcnNCUkz6R6dWKa54rUz3HUmI3nVcw==",
       "funding": [
         {
           "type": "opencollective",
@@ -2388,6 +2570,16 @@ package-lock.json
       },
       "funding": {
         "url": "https://github.com/chalk/chalk?sponsor=1"
+      }
+    },
+    "node_modules/chownr": {
+      "version": "3.0.0",
+      "resolved": "https://registry.npmjs.org/chownr/-/chownr-3.0.0.tgz",
+      "integrity": "sha512-+IxzY9BZOQd/XuYPRmrvEVjF/nqj5kgT4kEq7VofrDoM1MxoRjEWkrCC3EtLi59TVawxTAn+orJwFQcrqEN1+g==",
+      "dev": true,
+      "license": "BlueOak-1.0.0",
+      "engines": {
+        "node": ">=18"
       }
     },
     "node_modules/client-only": {
@@ -2541,9 +2733,9 @@ package-lock.json
       }
     },
     "node_modules/debug": {
-      "version": "4.4.0",
-      "resolved": "https://registry.npmjs.org/debug/-/debug-4.4.0.tgz",
-      "integrity": "sha512-6WTZ/IxCY/T6BALoZHaE4ctp9xm+Z5kY/pzYaCHRFeyVhojxlrm+46y68HA6hr0TcwEssoxNiDEUJQjfPZ/RYA==",
+      "version": "4.4.1",
+      "resolved": "https://registry.npmjs.org/debug/-/debug-4.4.1.tgz",
+      "integrity": "sha512-KcKCqiftBJcZr++7ykoDIEwSa3XWowTfNPo92BYxjXiyYEVrUQh2aLyhxBCwww+heortUFxEJYcRzosstTEBYQ==",
       "dev": true,
       "license": "MIT",
       "dependencies": {
@@ -2661,9 +2853,9 @@ package-lock.json
       }
     },
     "node_modules/es-abstract": {
-      "version": "1.23.9",
-      "resolved": "https://registry.npmjs.org/es-abstract/-/es-abstract-1.23.9.tgz",
-      "integrity": "sha512-py07lI0wjxAC/DcfK1S6G7iANonniZwTISvdPzk9hzeH0IZIshbuuFxLIU96OyF89Yb9hiqWn8M/bY83KY5vzA==",
+      "version": "1.23.10",
+      "resolved": "https://registry.npmjs.org/es-abstract/-/es-abstract-1.23.10.tgz",
+      "integrity": "sha512-MtUbM072wlJNyeYAe0mhzrD+M6DIJa96CZAOBBrhDbgKnB4MApIKefcyAB1eOdYn8cUNZgvwBvEzdoAYsxgEIw==",
       "dev": true,
       "license": "MIT",
       "dependencies": {
@@ -2671,18 +2863,18 @@ package-lock.json
         "arraybuffer.prototype.slice": "^1.0.4",
         "available-typed-arrays": "^1.0.7",
         "call-bind": "^1.0.8",
-        "call-bound": "^1.0.3",
+        "call-bound": "^1.0.4",
         "data-view-buffer": "^1.0.2",
         "data-view-byte-length": "^1.0.2",
         "data-view-byte-offset": "^1.0.1",
         "es-define-property": "^1.0.1",
         "es-errors": "^1.3.0",
-        "es-object-atoms": "^1.0.0",
+        "es-object-atoms": "^1.1.1",
         "es-set-tostringtag": "^2.1.0",
         "es-to-primitive": "^1.3.0",
         "function.prototype.name": "^1.1.8",
-        "get-intrinsic": "^1.2.7",
-        "get-proto": "^1.0.0",
+        "get-intrinsic": "^1.3.0",
+        "get-proto": "^1.0.1",
         "get-symbol-description": "^1.1.0",
         "globalthis": "^1.0.4",
         "gopd": "^1.2.0",
@@ -2698,13 +2890,13 @@ package-lock.json
         "is-shared-array-buffer": "^1.0.4",
         "is-string": "^1.1.1",
         "is-typed-array": "^1.1.15",
-        "is-weakref": "^1.1.0",
+        "is-weakref": "^1.1.1",
         "math-intrinsics": "^1.1.0",
-        "object-inspect": "^1.13.3",
+        "object-inspect": "^1.13.4",
         "object-keys": "^1.1.1",
         "object.assign": "^4.1.7",
         "own-keys": "^1.0.1",
-        "regexp.prototype.flags": "^1.5.3",
+        "regexp.prototype.flags": "^1.5.4",
         "safe-array-concat": "^1.1.3",
         "safe-push-apply": "^1.0.0",
         "safe-regex-test": "^1.1.0",
@@ -2717,7 +2909,7 @@ package-lock.json
         "typed-array-byte-offset": "^1.0.4",
         "typed-array-length": "^1.0.7",
         "unbox-primitive": "^1.1.0",
-        "which-typed-array": "^1.1.18"
+        "which-typed-array": "^1.1.19"
       },
       "engines": {
         "node": ">= 0.4"
@@ -2848,9 +3040,9 @@ package-lock.json
       }
     },
     "node_modules/eslint": {
-      "version": "9.25.1",
-      "resolved": "https://registry.npmjs.org/eslint/-/eslint-9.25.1.tgz",
-      "integrity": "sha512-E6Mtz9oGQWDCpV12319d59n4tx9zOTXSTmc8BLVxBx+G/0RdM5MvEEJLU9c0+aleoePYYgVTOsRblx433qmhWQ==",
+      "version": "9.27.0",
+      "resolved": "https://registry.npmjs.org/eslint/-/eslint-9.27.0.tgz",
+      "integrity": "sha512-ixRawFQuMB9DZ7fjU3iGGganFDp3+45bPOdaRurcFHSXO1e/sYwUX/FtQZpLZJR6SjMoJH8hR2pPEAfDyCoU2Q==",
       "dev": true,
       "license": "MIT",
       "dependencies": {
@@ -2858,10 +3050,10 @@ package-lock.json
         "@eslint-community/regexpp": "^4.12.1",
         "@eslint/config-array": "^0.20.0",
         "@eslint/config-helpers": "^0.2.1",
-        "@eslint/core": "^0.13.0",
+        "@eslint/core": "^0.14.0",
         "@eslint/eslintrc": "^3.3.1",
-        "@eslint/js": "9.25.1",
-        "@eslint/plugin-kit": "^0.2.8",
+        "@eslint/js": "9.27.0",
+        "@eslint/plugin-kit": "^0.3.1",
         "@humanfs/node": "^0.16.6",
         "@humanwhocodes/module-importer": "^1.0.1",
         "@humanwhocodes/retry": "^0.4.2",
@@ -3273,6 +3465,15 @@ package-lock.json
         "node": ">=0.10.0"
       }
     },
+    "node_modules/events": {
+      "version": "3.3.0",
+      "resolved": "https://registry.npmjs.org/events/-/events-3.3.0.tgz",
+      "integrity": "sha512-mQw+2fkQbALzQ7V0MY0IqdnXNOeTtP4r0lN9z7AAawCXgqea7bDii20AYrIBrFd/Hx0M2Ocz6S111CaFkUcb0Q==",
+      "license": "MIT",
+      "engines": {
+        "node": ">=0.8.x"
+      }
+    },
     "node_modules/fast-deep-equal": {
       "version": "3.1.3",
       "resolved": "https://registry.npmjs.org/fast-deep-equal/-/fast-deep-equal-3.1.3.tgz",
@@ -3513,9 +3714,9 @@ package-lock.json
       }
     },
     "node_modules/get-tsconfig": {
-      "version": "4.10.0",
-      "resolved": "https://registry.npmjs.org/get-tsconfig/-/get-tsconfig-4.10.0.tgz",
-      "integrity": "sha512-kGzZ3LWWQcGIAmg6iWvXn0ei6WDtV26wzHRMwDSzmAbcXrTEXxHy6IehI6/4eT6VRKyMP1eF1VqwrVUmE/LR7A==",
+      "version": "4.10.1",
+      "resolved": "https://registry.npmjs.org/get-tsconfig/-/get-tsconfig-4.10.1.tgz",
+      "integrity": "sha512-auHyJ4AgMz7vgS8Hp3N6HXSmlMdUyhSUrfBF16w153rxtLIEOE+HGqaBppczZvnHLqQJfiHotCYpNhl0lUROFQ==",
       "dev": true,
       "license": "MIT",
       "dependencies": {
@@ -3594,6 +3795,27 @@ package-lock.json
       "integrity": "sha512-EtKwoO6kxCL9WO5xipiHTZlSzBm7WLT627TqC/uVRd0HKmq8NXyebnNYxDoBi7wt8eTWrUrKXCOVaFq9x1kgag==",
       "dev": true,
       "license": "MIT"
+    },
+    "node_modules/graphql": {
+      "version": "16.11.0",
+      "resolved": "https://registry.npmjs.org/graphql/-/graphql-16.11.0.tgz",
+      "integrity": "sha512-mS1lbMsxgQj6hge1XZ6p7GPhbrtFwUFYi3wRzXAC/FmYnyXMTvvI3td3rjmQ2u8ewXueaSvRPWaEcgVVOT9Jnw==",
+      "license": "MIT",
+      "engines": {
+        "node": "^12.22.0 || ^14.16.0 || ^16.0.0 || >=17.0.0"
+      }
+    },
+    "node_modules/graphql-request": {
+      "version": "7.2.0",
+      "resolved": "https://registry.npmjs.org/graphql-request/-/graphql-request-7.2.0.tgz",
+      "integrity": "sha512-0GR7eQHBFYz372u9lxS16cOtEekFlZYB2qOyq8wDvzRmdRSJ0mgUVX1tzNcIzk3G+4NY+mGtSz411wZdeDF/+A==",
+      "license": "MIT",
+      "dependencies": {
+        "@graphql-typed-document-node/core": "^3.2.0"
+      },
+      "peerDependencies": {
+        "graphql": "14 - 16"
+      }
     },
     "node_modules/gsap": {
       "version": "3.13.0",
@@ -4285,9 +4507,9 @@ package-lock.json
       }
     },
     "node_modules/lenis": {
-      "version": "1.3.1",
-      "resolved": "https://registry.npmjs.org/lenis/-/lenis-1.3.1.tgz",
-      "integrity": "sha512-OGRlQk7EkGUtjDdnH+U49Mp26G/wGJFHuyYJ8ZwATllwHQZOKYbeuVaPWYQ4lK0gHfAnk2m0u8qN8Y4dtrHaHw==",
+      "version": "1.3.3",
+      "resolved": "https://registry.npmjs.org/lenis/-/lenis-1.3.3.tgz",
+      "integrity": "sha512-DOopj/UKHS54E9l2g4BOpDUvsyvkd1zkv+ECtHxQ9Fto8ozzKSz7MccqT+KOyG0ABA/OHXZ7l9INx0peUoQ8rQ==",
       "license": "MIT",
       "funding": {
         "type": "github",
@@ -4325,9 +4547,9 @@ package-lock.json
       }
     },
     "node_modules/lightningcss": {
-      "version": "1.29.2",
-      "resolved": "https://registry.npmjs.org/lightningcss/-/lightningcss-1.29.2.tgz",
-      "integrity": "sha512-6b6gd/RUXKaw5keVdSEtqFVdzWnU5jMxTUjA2bVcMNPLwSQ08Sv/UodBVtETLCn7k4S1Ibxwh7k68IwLZPgKaA==",
+      "version": "1.30.1",
+      "resolved": "https://registry.npmjs.org/lightningcss/-/lightningcss-1.30.1.tgz",
+      "integrity": "sha512-xi6IyHML+c9+Q3W0S4fCQJOym42pyurFiJUHEcEyHS0CeKzia4yZDEsLlqOFykxOdHpNy0NmvVO31vcSqAxJCg==",
       "dev": true,
       "license": "MPL-2.0",
       "dependencies": {
@@ -4341,22 +4563,22 @@ package-lock.json
         "url": "https://opencollective.com/parcel"
       },
       "optionalDependencies": {
-        "lightningcss-darwin-arm64": "1.29.2",
-        "lightningcss-darwin-x64": "1.29.2",
-        "lightningcss-freebsd-x64": "1.29.2",
-        "lightningcss-linux-arm-gnueabihf": "1.29.2",
-        "lightningcss-linux-arm64-gnu": "1.29.2",
-        "lightningcss-linux-arm64-musl": "1.29.2",
-        "lightningcss-linux-x64-gnu": "1.29.2",
-        "lightningcss-linux-x64-musl": "1.29.2",
-        "lightningcss-win32-arm64-msvc": "1.29.2",
-        "lightningcss-win32-x64-msvc": "1.29.2"
+        "lightningcss-darwin-arm64": "1.30.1",
+        "lightningcss-darwin-x64": "1.30.1",
+        "lightningcss-freebsd-x64": "1.30.1",
+        "lightningcss-linux-arm-gnueabihf": "1.30.1",
+        "lightningcss-linux-arm64-gnu": "1.30.1",
+        "lightningcss-linux-arm64-musl": "1.30.1",
+        "lightningcss-linux-x64-gnu": "1.30.1",
+        "lightningcss-linux-x64-musl": "1.30.1",
+        "lightningcss-win32-arm64-msvc": "1.30.1",
+        "lightningcss-win32-x64-msvc": "1.30.1"
       }
     },
     "node_modules/lightningcss-darwin-arm64": {
-      "version": "1.29.2",
-      "resolved": "https://registry.npmjs.org/lightningcss-darwin-arm64/-/lightningcss-darwin-arm64-1.29.2.tgz",
-      "integrity": "sha512-cK/eMabSViKn/PG8U/a7aCorpeKLMlK0bQeNHmdb7qUnBkNPnL+oV5DjJUo0kqWsJUapZsM4jCfYItbqBDvlcA==",
+      "version": "1.30.1",
+      "resolved": "https://registry.npmjs.org/lightningcss-darwin-arm64/-/lightningcss-darwin-arm64-1.30.1.tgz",
+      "integrity": "sha512-c8JK7hyE65X1MHMN+Viq9n11RRC7hgin3HhYKhrMyaXflk5GVplZ60IxyoVtzILeKr+xAJwg6zK6sjTBJ0FKYQ==",
       "cpu": [
         "arm64"
       ],
@@ -4375,9 +4597,9 @@ package-lock.json
       }
     },
     "node_modules/lightningcss-darwin-x64": {
-      "version": "1.29.2",
-      "resolved": "https://registry.npmjs.org/lightningcss-darwin-x64/-/lightningcss-darwin-x64-1.29.2.tgz",
-      "integrity": "sha512-j5qYxamyQw4kDXX5hnnCKMf3mLlHvG44f24Qyi2965/Ycz829MYqjrVg2H8BidybHBp9kom4D7DR5VqCKDXS0w==",
+      "version": "1.30.1",
+      "resolved": "https://registry.npmjs.org/lightningcss-darwin-x64/-/lightningcss-darwin-x64-1.30.1.tgz",
+      "integrity": "sha512-k1EvjakfumAQoTfcXUcHQZhSpLlkAuEkdMBsI/ivWw9hL+7FtilQc0Cy3hrx0AAQrVtQAbMI7YjCgYgvn37PzA==",
       "cpu": [
         "x64"
       ],
@@ -4396,9 +4618,9 @@ package-lock.json
       }
     },
     "node_modules/lightningcss-freebsd-x64": {
-      "version": "1.29.2",
-      "resolved": "https://registry.npmjs.org/lightningcss-freebsd-x64/-/lightningcss-freebsd-x64-1.29.2.tgz",
-      "integrity": "sha512-wDk7M2tM78Ii8ek9YjnY8MjV5f5JN2qNVO+/0BAGZRvXKtQrBC4/cn4ssQIpKIPP44YXw6gFdpUF+Ps+RGsCwg==",
+      "version": "1.30.1",
+      "resolved": "https://registry.npmjs.org/lightningcss-freebsd-x64/-/lightningcss-freebsd-x64-1.30.1.tgz",
+      "integrity": "sha512-kmW6UGCGg2PcyUE59K5r0kWfKPAVy4SltVeut+umLCFoJ53RdCUWxcRDzO1eTaxf/7Q2H7LTquFHPL5R+Gjyig==",
       "cpu": [
         "x64"
       ],
@@ -4417,9 +4639,9 @@ package-lock.json
       }
     },
     "node_modules/lightningcss-linux-arm-gnueabihf": {
-      "version": "1.29.2",
-      "resolved": "https://registry.npmjs.org/lightningcss-linux-arm-gnueabihf/-/lightningcss-linux-arm-gnueabihf-1.29.2.tgz",
-      "integrity": "sha512-IRUrOrAF2Z+KExdExe3Rz7NSTuuJ2HvCGlMKoquK5pjvo2JY4Rybr+NrKnq0U0hZnx5AnGsuFHjGnNT14w26sg==",
+      "version": "1.30.1",
+      "resolved": "https://registry.npmjs.org/lightningcss-linux-arm-gnueabihf/-/lightningcss-linux-arm-gnueabihf-1.30.1.tgz",
+      "integrity": "sha512-MjxUShl1v8pit+6D/zSPq9S9dQ2NPFSQwGvxBCYaBYLPlCWuPh9/t1MRS8iUaR8i+a6w7aps+B4N0S1TYP/R+Q==",
       "cpu": [
         "arm"
       ],
@@ -4438,9 +4660,9 @@ package-lock.json
       }
     },
     "node_modules/lightningcss-linux-arm64-gnu": {
-      "version": "1.29.2",
-      "resolved": "https://registry.npmjs.org/lightningcss-linux-arm64-gnu/-/lightningcss-linux-arm64-gnu-1.29.2.tgz",
-      "integrity": "sha512-KKCpOlmhdjvUTX/mBuaKemp0oeDIBBLFiU5Fnqxh1/DZ4JPZi4evEH7TKoSBFOSOV3J7iEmmBaw/8dpiUvRKlQ==",
+      "version": "1.30.1",
+      "resolved": "https://registry.npmjs.org/lightningcss-linux-arm64-gnu/-/lightningcss-linux-arm64-gnu-1.30.1.tgz",
+      "integrity": "sha512-gB72maP8rmrKsnKYy8XUuXi/4OctJiuQjcuqWNlJQ6jZiWqtPvqFziskH3hnajfvKB27ynbVCucKSm2rkQp4Bw==",
       "cpu": [
         "arm64"
       ],
@@ -4459,9 +4681,9 @@ package-lock.json
       }
     },
     "node_modules/lightningcss-linux-arm64-musl": {
-      "version": "1.29.2",
-      "resolved": "https://registry.npmjs.org/lightningcss-linux-arm64-musl/-/lightningcss-linux-arm64-musl-1.29.2.tgz",
-      "integrity": "sha512-Q64eM1bPlOOUgxFmoPUefqzY1yV3ctFPE6d/Vt7WzLW4rKTv7MyYNky+FWxRpLkNASTnKQUaiMJ87zNODIrrKQ==",
+      "version": "1.30.1",
+      "resolved": "https://registry.npmjs.org/lightningcss-linux-arm64-musl/-/lightningcss-linux-arm64-musl-1.30.1.tgz",
+      "integrity": "sha512-jmUQVx4331m6LIX+0wUhBbmMX7TCfjF5FoOH6SD1CttzuYlGNVpA7QnrmLxrsub43ClTINfGSYyHe2HWeLl5CQ==",
       "cpu": [
         "arm64"
       ],
@@ -4480,9 +4702,9 @@ package-lock.json
       }
     },
     "node_modules/lightningcss-linux-x64-gnu": {
-      "version": "1.29.2",
-      "resolved": "https://registry.npmjs.org/lightningcss-linux-x64-gnu/-/lightningcss-linux-x64-gnu-1.29.2.tgz",
-      "integrity": "sha512-0v6idDCPG6epLXtBH/RPkHvYx74CVziHo6TMYga8O2EiQApnUPZsbR9nFNrg2cgBzk1AYqEd95TlrsL7nYABQg==",
+      "version": "1.30.1",
+      "resolved": "https://registry.npmjs.org/lightningcss-linux-x64-gnu/-/lightningcss-linux-x64-gnu-1.30.1.tgz",
+      "integrity": "sha512-piWx3z4wN8J8z3+O5kO74+yr6ze/dKmPnI7vLqfSqI8bccaTGY5xiSGVIJBDd5K5BHlvVLpUB3S2YCfelyJ1bw==",
       "cpu": [
         "x64"
       ],
@@ -4501,9 +4723,9 @@ package-lock.json
       }
     },
     "node_modules/lightningcss-linux-x64-musl": {
-      "version": "1.29.2",
-      "resolved": "https://registry.npmjs.org/lightningcss-linux-x64-musl/-/lightningcss-linux-x64-musl-1.29.2.tgz",
-      "integrity": "sha512-rMpz2yawkgGT8RULc5S4WiZopVMOFWjiItBT7aSfDX4NQav6M44rhn5hjtkKzB+wMTRlLLqxkeYEtQ3dd9696w==",
+      "version": "1.30.1",
+      "resolved": "https://registry.npmjs.org/lightningcss-linux-x64-musl/-/lightningcss-linux-x64-musl-1.30.1.tgz",
+      "integrity": "sha512-rRomAK7eIkL+tHY0YPxbc5Dra2gXlI63HL+v1Pdi1a3sC+tJTcFrHX+E86sulgAXeI7rSzDYhPSeHHjqFhqfeQ==",
       "cpu": [
         "x64"
       ],
@@ -4522,9 +4744,9 @@ package-lock.json
       }
     },
     "node_modules/lightningcss-win32-arm64-msvc": {
-      "version": "1.29.2",
-      "resolved": "https://registry.npmjs.org/lightningcss-win32-arm64-msvc/-/lightningcss-win32-arm64-msvc-1.29.2.tgz",
-      "integrity": "sha512-nL7zRW6evGQqYVu/bKGK+zShyz8OVzsCotFgc7judbt6wnB2KbiKKJwBE4SGoDBQ1O94RjW4asrCjQL4i8Fhbw==",
+      "version": "1.30.1",
+      "resolved": "https://registry.npmjs.org/lightningcss-win32-arm64-msvc/-/lightningcss-win32-arm64-msvc-1.30.1.tgz",
+      "integrity": "sha512-mSL4rqPi4iXq5YVqzSsJgMVFENoa4nGTT/GjO2c0Yl9OuQfPsIfncvLrEW6RbbB24WtZ3xP/2CCmI3tNkNV4oA==",
       "cpu": [
         "arm64"
       ],
@@ -4543,9 +4765,9 @@ package-lock.json
       }
     },
     "node_modules/lightningcss-win32-x64-msvc": {
-      "version": "1.29.2",
-      "resolved": "https://registry.npmjs.org/lightningcss-win32-x64-msvc/-/lightningcss-win32-x64-msvc-1.29.2.tgz",
-      "integrity": "sha512-EdIUW3B2vLuHmv7urfzMI/h2fmlnOQBk1xlsDxkN1tCWKjNFjfLhGxYk8C8mzpSfr+A6jFFIi8fU6LbQGsRWjA==",
+      "version": "1.30.1",
+      "resolved": "https://registry.npmjs.org/lightningcss-win32-x64-msvc/-/lightningcss-win32-x64-msvc-1.30.1.tgz",
+      "integrity": "sha512-PVqXh48wh4T53F/1CCu8PIPCxLzWyCnn/9T5W1Jpmdy5h9Cwd+0YQS6/LwhHXSafuc61/xg9Lv5OrCby6a++jg==",
       "cpu": [
         "x64"
       ],
@@ -4597,6 +4819,16 @@ package-lock.json
       },
       "bin": {
         "loose-envify": "cli.js"
+      }
+    },
+    "node_modules/magic-string": {
+      "version": "0.30.17",
+      "resolved": "https://registry.npmjs.org/magic-string/-/magic-string-0.30.17.tgz",
+      "integrity": "sha512-sNPKHvyjVf7gyjwS4xGTaW/mCnF8wnjtifKBEhxfZ7E/S8tQ0rssrwGNn6q8JH/ohItJfSQp9mBtQYuTlH5QnA==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "@jridgewell/sourcemap-codec": "^1.5.0"
       }
     },
     "node_modules/math-intrinsics": {
@@ -4656,6 +4888,45 @@ package-lock.json
         "url": "https://github.com/sponsors/ljharb"
       }
     },
+    "node_modules/minipass": {
+      "version": "7.1.2",
+      "resolved": "https://registry.npmjs.org/minipass/-/minipass-7.1.2.tgz",
+      "integrity": "sha512-qOOzS1cBTWYF4BH8fVePDBOO9iptMnGUEZwNc/cMWnTV2nVLZ7VoNWEPHkYczZA0pdoA7dl6e7FL659nX9S2aw==",
+      "dev": true,
+      "license": "ISC",
+      "engines": {
+        "node": ">=16 || 14 >=14.17"
+      }
+    },
+    "node_modules/minizlib": {
+      "version": "3.0.2",
+      "resolved": "https://registry.npmjs.org/minizlib/-/minizlib-3.0.2.tgz",
+      "integrity": "sha512-oG62iEk+CYt5Xj2YqI5Xi9xWUeZhDI8jjQmC5oThVH5JGCTgIjr7ciJDzC7MBzYd//WvR1OTmP5Q38Q8ShQtVA==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "minipass": "^7.1.2"
+      },
+      "engines": {
+        "node": ">= 18"
+      }
+    },
+    "node_modules/mkdirp": {
+      "version": "3.0.1",
+      "resolved": "https://registry.npmjs.org/mkdirp/-/mkdirp-3.0.1.tgz",
+      "integrity": "sha512-+NsyUUAZDmo6YVHzL/stxSu3t9YS1iljliy3BSDrXJ/dkn1KYdmtZODGGjLcc9XLgVVpH4KshHB8XmZgMhaBXg==",
+      "dev": true,
+      "license": "MIT",
+      "bin": {
+        "mkdirp": "dist/cjs/src/bin.js"
+      },
+      "engines": {
+        "node": ">=10"
+      },
+      "funding": {
+        "url": "https://github.com/sponsors/isaacs"
+      }
+    },
     "node_modules/ms": {
       "version": "2.1.3",
       "resolved": "https://registry.npmjs.org/ms/-/ms-2.1.3.tgz",
@@ -4682,9 +4953,9 @@ package-lock.json
       }
     },
     "node_modules/napi-postinstall": {
-      "version": "0.2.3",
-      "resolved": "https://registry.npmjs.org/napi-postinstall/-/napi-postinstall-0.2.3.tgz",
-      "integrity": "sha512-Mi7JISo/4Ij2tDZ2xBE2WH+/KvVlkhA6juEjpEeRAVPNCpN3nxJo/5FhDNKgBcdmcmhaH6JjgST4xY/23ZYK0w==",
+      "version": "0.2.4",
+      "resolved": "https://registry.npmjs.org/napi-postinstall/-/napi-postinstall-0.2.4.tgz",
+      "integrity": "sha512-ZEzHJwBhZ8qQSbknHqYcdtQVr8zUgGyM/q6h6qAyhtyVMNrSgDhrC4disf03dYW0e+czXyLnZINnCTEkWy0eJg==",
       "dev": true,
       "license": "MIT",
       "bin": {
@@ -4756,6 +5027,15 @@ package-lock.json
         "sass": {
           "optional": true
         }
+      }
+    },
+    "node_modules/next/node_modules/@swc/helpers": {
+      "version": "0.5.15",
+      "resolved": "https://registry.npmjs.org/@swc/helpers/-/helpers-0.5.15.tgz",
+      "integrity": "sha512-JQ5TuMi45Owi4/BIMAJBoSQoOJu12oOk/gADqlcUL9JEdHB8vyjUSsxqeNXnmXHjYKMi2WcYtezGEEhqUI/E2g==",
+      "license": "Apache-2.0",
+      "dependencies": {
+        "tslib": "^2.8.0"
       }
     },
     "node_modules/next/node_modules/postcss": {
@@ -5338,9 +5618,9 @@ package-lock.json
       "license": "MIT"
     },
     "node_modules/semver": {
-      "version": "7.7.1",
-      "resolved": "https://registry.npmjs.org/semver/-/semver-7.7.1.tgz",
-      "integrity": "sha512-hlq8tAfn0m/61p4BVRcPzIGr6LKiMwo4VM6dGi6pt4qcRkmNzTcWq6eCEjEh+qXjkMDvPlOFFSGwQjoEa6gyMA==",
+      "version": "7.7.2",
+      "resolved": "https://registry.npmjs.org/semver/-/semver-7.7.2.tgz",
+      "integrity": "sha512-RF0Fw+rO5AMf9MAyaRXI4AV0Ulj5lMHqVxxdSgiVbixSCXoEmmX/jk0CuJw4+3SqroYO9VoUh+HcuJivvtJemA==",
       "devOptional": true,
       "license": "ISC",
       "bin": {
@@ -5400,16 +5680,16 @@ package-lock.json
       }
     },
     "node_modules/sharp": {
-      "version": "0.34.1",
-      "resolved": "https://registry.npmjs.org/sharp/-/sharp-0.34.1.tgz",
-      "integrity": "sha512-1j0w61+eVxu7DawFJtnfYcvSv6qPFvfTaqzTQ2BLknVhHTwGS8sc63ZBF4rzkWMBVKybo4S5OBtDdZahh2A1xg==",
+      "version": "0.34.2",
+      "resolved": "https://registry.npmjs.org/sharp/-/sharp-0.34.2.tgz",
+      "integrity": "sha512-lszvBmB9QURERtyKT2bNmsgxXK0ShJrL/fvqlonCo7e6xBF8nT8xU6pW+PMIbLsz0RxQk3rgH9kd8UmvOzlMJg==",
       "hasInstallScript": true,
       "license": "Apache-2.0",
       "optional": true,
       "dependencies": {
         "color": "^4.2.3",
-        "detect-libc": "^2.0.3",
-        "semver": "^7.7.1"
+        "detect-libc": "^2.0.4",
+        "semver": "^7.7.2"
       },
       "engines": {
         "node": "^18.17.0 || ^20.3.0 || >=21.0.0"
@@ -5418,8 +5698,8 @@ package-lock.json
         "url": "https://opencollective.com/libvips"
       },
       "optionalDependencies": {
-        "@img/sharp-darwin-arm64": "0.34.1",
-        "@img/sharp-darwin-x64": "0.34.1",
+        "@img/sharp-darwin-arm64": "0.34.2",
+        "@img/sharp-darwin-x64": "0.34.2",
         "@img/sharp-libvips-darwin-arm64": "1.1.0",
         "@img/sharp-libvips-darwin-x64": "1.1.0",
         "@img/sharp-libvips-linux-arm": "1.1.0",
@@ -5429,15 +5709,16 @@ package-lock.json
         "@img/sharp-libvips-linux-x64": "1.1.0",
         "@img/sharp-libvips-linuxmusl-arm64": "1.1.0",
         "@img/sharp-libvips-linuxmusl-x64": "1.1.0",
-        "@img/sharp-linux-arm": "0.34.1",
-        "@img/sharp-linux-arm64": "0.34.1",
-        "@img/sharp-linux-s390x": "0.34.1",
-        "@img/sharp-linux-x64": "0.34.1",
-        "@img/sharp-linuxmusl-arm64": "0.34.1",
-        "@img/sharp-linuxmusl-x64": "0.34.1",
-        "@img/sharp-wasm32": "0.34.1",
-        "@img/sharp-win32-ia32": "0.34.1",
-        "@img/sharp-win32-x64": "0.34.1"
+        "@img/sharp-linux-arm": "0.34.2",
+        "@img/sharp-linux-arm64": "0.34.2",
+        "@img/sharp-linux-s390x": "0.34.2",
+        "@img/sharp-linux-x64": "0.34.2",
+        "@img/sharp-linuxmusl-arm64": "0.34.2",
+        "@img/sharp-linuxmusl-x64": "0.34.2",
+        "@img/sharp-wasm32": "0.34.2",
+        "@img/sharp-win32-arm64": "0.34.2",
+        "@img/sharp-win32-ia32": "0.34.2",
+        "@img/sharp-win32-x64": "0.34.2"
       }
     },
     "node_modules/shebang-command": {
@@ -5780,25 +6061,43 @@ package-lock.json
       }
     },
     "node_modules/tailwindcss": {
-      "version": "4.1.5",
-      "resolved": "https://registry.npmjs.org/tailwindcss/-/tailwindcss-4.1.5.tgz",
-      "integrity": "sha512-nYtSPfWGDiWgCkwQG/m+aX83XCwf62sBgg3bIlNiiOcggnS1x3uVRDAuyelBFL+vJdOPPCGElxv9DjHJjRHiVA==",
+      "version": "4.1.7",
+      "resolved": "https://registry.npmjs.org/tailwindcss/-/tailwindcss-4.1.7.tgz",
+      "integrity": "sha512-kr1o/ErIdNhTz8uzAYL7TpaUuzKIE6QPQ4qmSdxnoX/lo+5wmUHQA6h3L5yIqEImSRnAAURDirLu/BgiXGPAhg==",
       "license": "MIT"
     },
     "node_modules/tapable": {
-      "version": "2.2.1",
-      "resolved": "https://registry.npmjs.org/tapable/-/tapable-2.2.1.tgz",
-      "integrity": "sha512-GNzQvQTOIP6RyTfE2Qxb8ZVlNmw0n88vp1szwWRimP02mnTsx3Wtn5qRdqY9w2XduFNUgvOwhNnQsjwCp+kqaQ==",
+      "version": "2.2.2",
+      "resolved": "https://registry.npmjs.org/tapable/-/tapable-2.2.2.tgz",
+      "integrity": "sha512-Re10+NauLTMCudc7T5WLFLAwDhQ0JWdrMK+9B2M8zR5hRExKmsRDCBA7/aV/pNJFltmBFO5BAMlQFi/vq3nKOg==",
       "dev": true,
       "license": "MIT",
       "engines": {
         "node": ">=6"
       }
     },
+    "node_modules/tar": {
+      "version": "7.4.3",
+      "resolved": "https://registry.npmjs.org/tar/-/tar-7.4.3.tgz",
+      "integrity": "sha512-5S7Va8hKfV7W5U6g3aYxXmlPoZVAwUMy9AOKyF2fVuZa2UD3qZjg578OrLRt8PcNN1PleVaL/5/yYATNL0ICUw==",
+      "dev": true,
+      "license": "ISC",
+      "dependencies": {
+        "@isaacs/fs-minipass": "^4.0.0",
+        "chownr": "^3.0.0",
+        "minipass": "^7.1.2",
+        "minizlib": "^3.0.1",
+        "mkdirp": "^3.0.1",
+        "yallist": "^5.0.0"
+      },
+      "engines": {
+        "node": ">=18"
+      }
+    },
     "node_modules/tinyglobby": {
-      "version": "0.2.13",
-      "resolved": "https://registry.npmjs.org/tinyglobby/-/tinyglobby-0.2.13.tgz",
-      "integrity": "sha512-mEwzpUgrLySlveBwEVDMKk5B57bhLPYovRfPAXD5gA/98Opn0rCDj3GtLwFvCvH5RK9uPCExUROW5NjDwvqkxw==",
+      "version": "0.2.14",
+      "resolved": "https://registry.npmjs.org/tinyglobby/-/tinyglobby-0.2.14.tgz",
+      "integrity": "sha512-tX5e7OM1HnYr2+a2C/4V0htOcSQcoSTH9KgJnVvNm5zm/cyEWKJ7j7YutsH9CxMdtOkkLFy2AHrMci9IM8IPZQ==",
       "dev": true,
       "license": "MIT",
       "dependencies": {
@@ -6183,6 +6482,16 @@ package-lock.json
         "node": ">=0.10.0"
       }
     },
+    "node_modules/yallist": {
+      "version": "5.0.0",
+      "resolved": "https://registry.npmjs.org/yallist/-/yallist-5.0.0.tgz",
+      "integrity": "sha512-YgvUTfwqyc7UXVMrB+SImsVYSmTS8X/tSrtdNZMImM+n7+QTriRXyXim0mBrTXNeqzVF0KWGgHPeiyViFFrNDw==",
+      "dev": true,
+      "license": "BlueOak-1.0.0",
+      "engines": {
+        "node": ">=18"
+      }
+    },
     "node_modules/yocto-queue": {
       "version": "0.1.0",
       "resolved": "https://registry.npmjs.org/yocto-queue/-/yocto-queue-0.1.0.tgz",
@@ -6215,6 +6524,9 @@ package.json
     "@headlessui/react": "^2.2.4",
     "@heroicons/react": "^2.2.0",
     "clsx": "^2.1.1",
+    "events": "^3.3.0",
+    "graphql": "^16.11.0",
+    "graphql-request": "^7.1.2",
     "gsap": "^3.13.0",
     "lenis": "^1.3.1",
     "next": "15.3.1",
@@ -6311,8 +6623,15 @@ export default function CartOverlay({ isOpen, onClose }: CartOverlayProps) {
   const [isMounted, setIsMounted] = useState(false);
 
   // Use cart from context
-  const { cartItems, updateItemQuantity, removeItemFromCart, clearCart } =
-    useCart();
+  const {
+    cartItems,
+    updateItemQuantity,
+    removeItemFromCart,
+    clearCart,
+    proceedToCheckout,
+  } = useCart();
+
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
@@ -6396,11 +6715,20 @@ export default function CartOverlay({ isOpen, onClose }: CartOverlayProps) {
     0
   );
 
-  const handleCheckout = () => {
-    console.log("Checkout initiated with items:", cartItems);
-    alert("Proceeding to checkout!");
-    // Actual checkout logic would go here
-    // clearCart(); // Example: clear cart after successful checkout
+  const handleCheckout = async () => {
+    try {
+      setIsCheckingOut(true);
+      await proceedToCheckout();
+      // Cart will be cleared automatically in proceedToCheckout
+      // Close the cart overlay after successful checkout initiation
+      handleCloseStart();
+    } catch (error) {
+      console.error("Checkout failed:", error);
+      // You might want to show an error message to the user here
+      alert("Checkout failed. Please try again.");
+    } finally {
+      setIsCheckingOut(false);
+    }
   };
 
   if (!isMounted) {
@@ -6434,7 +6762,7 @@ export default function CartOverlay({ isOpen, onClose }: CartOverlayProps) {
           <div className="ml-auto">
             <button
               onClick={handleCloseStart}
-              className="text-gray-600 hover:text-black transition-colors p-1 border border-gray-300 rounded-md"
+              className="text-gray-600 hover:text-black transition-colors p-1 border border-gray-300 rounded-md no-underline-effect"
             >
               <XMarkIcon className="h-6 w-6" />
             </button>
@@ -6447,7 +6775,7 @@ export default function CartOverlay({ isOpen, onClose }: CartOverlayProps) {
             <div className="flex-grow flex flex-col items-center justify-start text-center pt-16">
               <ShoppingBagIcon className="h-24 w-24 text-gray-600 mb-6" />
               <p className="text-xl font-medium text-gray-700">
-                Your cart is empty.
+                Your bag is empty.
               </p>
             </div>
           ) : (
@@ -6471,14 +6799,14 @@ export default function CartOverlay({ isOpen, onClose }: CartOverlayProps) {
                   <div className="flex items-center space-x-2">
                     <button
                       onClick={() => handleQuantityChange(item.id, -1)}
-                      className="px-2 py-1 hover:bg-gray-100"
+                      className="px-2 py-1 hover:bg-gray-100 no-underline-effect"
                     >
                       -
                     </button>
                     <span>{item.quantity}</span>
                     <button
                       onClick={() => handleQuantityChange(item.id, 1)}
-                      className="px-2 py-1 hover:bg-gray-100"
+                      className="px-2 py-1 hover:bg-gray-100 no-underline-effect"
                     >
                       +
                     </button>
@@ -6488,7 +6816,7 @@ export default function CartOverlay({ isOpen, onClose }: CartOverlayProps) {
                   </p>
                   <button
                     onClick={() => removeItemFromCart(item.id)}
-                    className="ml-2 text-gray-500 hover:text-gray-700 text-lg"
+                    className="ml-2 text-gray-500 hover:text-gray-700 text-lg no-underline-effect"
                     aria-label={`Remove ${item.name}`}
                   >
                     &times;
@@ -6508,21 +6836,515 @@ export default function CartOverlay({ isOpen, onClose }: CartOverlayProps) {
             </div>
             <button
               onClick={clearCart}
-              className="w-full text-gray-700 hover:text-gray-900 py-2 text-sm lowercase tracking-wider transition-colors border border-gray-300 hover:bg-gray-100 rounded-md"
+              className="w-full text-gray-700 hover:text-gray-900 py-2 text-sm lowercase tracking-wider transition-colors border border-gray-300 hover:bg-gray-100 rounded-md no-underline-effect"
             >
               clear bag
             </button>
             <button
               onClick={handleCheckout}
-              className="w-full bg-[#BEBDBA] hover:bg-[#acaaaa] text-white py-3 rounded-md text-lg font-serif tracking-wider transition-colors lowercase"
+              disabled={isCheckingOut}
+              className="w-full bg-[#171717] text-[#F8F4EC] hover:bg-black py-3 text-base lowercase tracking-wider transition-colors rounded-md disabled:opacity-50 checkout-btn no-underline-effect"
             >
-              checkout
+              {isCheckingOut ? "Processing..." : "checkout"}
             </button>
           </div>
         )}
       </div>
     </div>,
     document.body
+  );
+}
+
+----
+src/app/components/ClientLayout.tsx
+"use client";
+
+import { useEffect } from "react";
+import SplashScreen from "./SplashScreen";
+import Navbar from "./Navbar";
+import Footer from "./Footer";
+import CustomCursor from "./CustomCursor";
+import { useSplash } from "@/context/SplashContext";
+
+interface ClientLayoutProps {
+  children: React.ReactNode;
+}
+
+export default function ClientLayout({ children }: ClientLayoutProps) {
+  const { showSplash, setShowSplash } = useSplash();
+
+  const handleLoadComplete = () => {
+    setShowSplash(false);
+  };
+
+  // Prevent scrolling when splash screen is visible
+  useEffect(() => {
+    if (showSplash) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [showSplash]);
+
+  return (
+    <>
+      <CustomCursor />
+      {showSplash && <SplashScreen onLoadComplete={handleLoadComplete} />}
+
+      <div
+        className={`transition-opacity duration-500 ${
+          !showSplash ? "opacity-100" : "opacity-0"
+        }`}
+      >
+        <Navbar />
+        <main className="flex-grow bg-white">{children}</main>
+        <Footer />
+      </div>
+    </>
+  );
+}
+
+----
+src/app/components/CustomCursor.tsx
+"use client";
+
+import { useEffect, useRef, useCallback } from "react";
+import { usePathname } from "next/navigation";
+import { useSplash } from "@/context/SplashContext";
+import gsap from "gsap";
+
+export default function CustomCursor() {
+  const cursorWrapperRef = useRef<HTMLDivElement>(null);
+  const outerCursorRef = useRef<HTMLDivElement>(null);
+  const innerCursorRef = useRef<HTMLDivElement>(null);
+  const enlargeCursorTweenRef = useRef<gsap.core.Tween | null>(null);
+  const magneticTweenRef = useRef<gsap.core.Tween | null>(null);
+  const isCursorActiveRef = useRef(false);
+  const isStuckRef = useRef(false);
+  const stuckToRef = useRef<Element | null>(null);
+
+  const pathname = usePathname();
+  const { showSplash } = useSplash();
+
+  // Configuration
+  const fullCursorSize = 40;
+  const easing = "power2.out";
+  const lerpAmount = 0.15; // Normal mouse following smoothness
+  const stuckLerpAmount = 0.2; // Magnetic snap smoothness - reduced for smoother movement
+
+  // Mouse position tracking
+  const mousePos = useRef({ x: 0, y: 0 });
+  const currentPos = useRef({ x: 0, y: 0 });
+
+  // Store original cursor properties
+  const cursorOriginals = useRef({
+    width: 6,
+    height: 6,
+    borderColor: "white",
+    backgroundColor: "white",
+    borderRadius: "50%", // Store original border radius
+  });
+
+  const updateMousePosition = useCallback((e: MouseEvent) => {
+    mousePos.current = { x: e.clientX, y: e.clientY };
+  }, []);
+
+  // Render loop for smooth cursor movement
+  const render = useCallback(() => {
+    if (!cursorWrapperRef.current) return;
+
+    let targetX, targetY, currentLerpAmount;
+
+    if (isStuckRef.current && stuckToRef.current) {
+      // Magnetic mode: target the center of the stuck element
+      const targetRect = stuckToRef.current.getBoundingClientRect();
+      targetX = targetRect.left + targetRect.width / 2;
+      targetY = targetRect.top + targetRect.height / 2;
+      currentLerpAmount = stuckLerpAmount;
+      console.log("Magnetic mode - targeting:", targetX, targetY); // Debug log
+    } else {
+      // Normal mode: follow mouse
+      targetX = mousePos.current.x;
+      targetY = mousePos.current.y;
+      currentLerpAmount = lerpAmount;
+    }
+
+    // Linear interpolation for smooth movement
+    currentPos.current.x +=
+      (targetX - currentPos.current.x) * currentLerpAmount;
+    currentPos.current.y +=
+      (targetY - currentPos.current.y) * currentLerpAmount;
+
+    // Update cursor position
+    gsap.set(cursorWrapperRef.current, {
+      x: currentPos.current.x,
+      y: currentPos.current.y,
+    });
+
+    requestAnimationFrame(render);
+  }, [lerpAmount, stuckLerpAmount]);
+
+  const startRenderLoop = useCallback(() => {
+    console.log("Starting render loop"); // Debug log
+    render();
+  }, [render]);
+
+  // Magnetic hover handlers for buttons
+  const handleMagneticEnter = useCallback((e: Event) => {
+    const target = e.currentTarget as Element;
+    console.log("Magnetic enter triggered on:", target); // Debug log
+    if (!outerCursorRef.current || !target) return;
+
+    // Check if this element should use enlarging circle instead of magnetic box
+    const shouldUseCircle =
+      target.closest('a[href="/"]') || // Logo link
+      target.classList.contains("clear-cart-btn") ||
+      target.textContent?.toLowerCase().includes("wash care") ||
+      target.textContent?.toLowerCase().includes("size chart") ||
+      target.textContent?.trim() === "+" || // Cart quantity increase
+      target.textContent?.trim() === "-" || // Cart quantity decrease
+      target.getAttribute("aria-label")?.includes("Remove") ||
+      (target as HTMLElement).querySelector(".h-6.w-6"); // Close button with icon
+
+    if (shouldUseCircle) {
+      // Use enlarging circle effect
+      if (enlargeCursorTweenRef.current) {
+        enlargeCursorTweenRef.current.play();
+      }
+      // Fade out inner dot for circle effect too
+      if (innerCursorRef.current) {
+        gsap.to(innerCursorRef.current, {
+          duration: 0.2,
+          opacity: 0,
+          ease: "power3.out",
+        });
+      }
+      return;
+    }
+
+    isStuckRef.current = true;
+    stuckToRef.current = target;
+
+    const targetRect = target.getBoundingClientRect();
+    console.log("Target rect:", targetRect); // Debug log
+
+    // Kill any existing magnetic tween
+    if (magneticTweenRef.current) {
+      magneticTweenRef.current.kill();
+    }
+
+    // Fade out inner dot during magnetic effect
+    if (innerCursorRef.current) {
+      gsap.to(innerCursorRef.current, {
+        duration: 0.2,
+        opacity: 0,
+        ease: "power3.out",
+      });
+    }
+
+    // Create magnetic effect: rounded rectangular border only (no background)
+    magneticTweenRef.current = gsap.to(outerCursorRef.current, {
+      duration: 0.2,
+      width: targetRect.width + 16,
+      height: targetRect.height + 24,
+      backgroundColor: "transparent",
+      borderColor: "rgba(128, 128, 128, 0.8)",
+      borderWidth: "2px",
+      borderRadius: "8px",
+      opacity: 1,
+      ease: "power3.out",
+    });
+  }, []);
+
+  const handleMagneticLeave = useCallback(() => {
+    console.log("Magnetic leave triggered"); // Debug log
+    if (!outerCursorRef.current) return;
+
+    // Check if we were using circle effect
+    if (!isStuckRef.current) {
+      // We were using circle effect, reverse it
+      if (enlargeCursorTweenRef.current) {
+        enlargeCursorTweenRef.current.reverse();
+      }
+      // Fade inner dot back in
+      if (innerCursorRef.current) {
+        gsap.to(innerCursorRef.current, {
+          duration: 0.2,
+          opacity: 0.6,
+          ease: "power3.out",
+        });
+      }
+      return;
+    }
+
+    isStuckRef.current = false;
+    stuckToRef.current = null;
+
+    // Kill any existing magnetic tween
+    if (magneticTweenRef.current) {
+      magneticTweenRef.current.kill();
+    }
+
+    // Fade inner dot back in
+    if (innerCursorRef.current) {
+      gsap.to(innerCursorRef.current, {
+        duration: 0.2,
+        opacity: 0.6,
+        ease: "power3.out",
+      });
+    }
+
+    // Revert to original appearance - ensure circular shape
+    magneticTweenRef.current = gsap.to(outerCursorRef.current, {
+      duration: 0.2,
+      width: cursorOriginals.current.width,
+      height: cursorOriginals.current.height,
+      backgroundColor: cursorOriginals.current.backgroundColor,
+      borderColor: cursorOriginals.current.borderColor,
+      borderWidth: "2px",
+      borderRadius: "50%", // Explicitly ensure circular shape
+      opacity: 1,
+      ease: "power3.out",
+    });
+  }, []);
+
+  // Initialize cursor and animations
+  const initializeCursor = useCallback(() => {
+    if (!outerCursorRef.current || !cursorWrapperRef.current) return;
+
+    // Check if device has fine pointer (mouse/trackpad)
+    const hasFinePointer = window.matchMedia("(pointer: fine)").matches;
+    if (!hasFinePointer) return;
+
+    // Reset cursor state to prevent phantom element issues
+    isStuckRef.current = false;
+    stuckToRef.current = null;
+
+    // Show custom cursor only if splash screen is not showing
+    if (cursorWrapperRef.current) {
+      cursorWrapperRef.current.style.display = showSplash ? "none" : "block";
+      if (!showSplash) {
+        gsap.to(cursorWrapperRef.current, { duration: 0.3, autoAlpha: 1 });
+      }
+    }
+
+    if (!showSplash) {
+      document.body.classList.add("custom-cursor-active");
+      isCursorActiveRef.current = true;
+    }
+
+    // Reset cursor to original state
+    gsap.set(outerCursorRef.current, {
+      width: cursorOriginals.current.width,
+      height: cursorOriginals.current.height,
+      backgroundColor: cursorOriginals.current.backgroundColor,
+      borderColor: cursorOriginals.current.borderColor,
+      borderRadius: "50%",
+      opacity: 1,
+    });
+
+    // Create GSAP tween for regular enlarging cursor effect (for special elements)
+    enlargeCursorTweenRef.current = gsap.to(outerCursorRef.current, {
+      duration: 0.3,
+      width: fullCursorSize,
+      height: fullCursorSize,
+      backgroundColor: "grey",
+      borderColor: "grey",
+      opacity: 0.6,
+      ease: easing,
+      paused: true,
+    });
+
+    // Function to attach magnetic listeners to elements
+    const attachMagneticListeners = () => {
+      // Don't attach listeners during splash screen
+      if (showSplash) return;
+
+      // Remove existing listeners first
+      const existingMagneticElements = document.querySelectorAll(
+        "[data-magnetic-attached]"
+      );
+      existingMagneticElements.forEach((element) => {
+        element.removeEventListener("mouseenter", handleMagneticEnter);
+        element.removeEventListener("mouseleave", handleMagneticLeave);
+        element.removeAttribute("data-magnetic-attached");
+      });
+
+      // Attach magnetic event listeners to buttons and links
+      const magneticElements = document.querySelectorAll("button, a");
+      console.log(
+        "Found magnetic elements (buttons + links):",
+        magneticElements.length
+      );
+
+      magneticElements.forEach((element, index) => {
+        // Skip if already has magnetic listeners
+        if (element.hasAttribute("data-magnetic-attached")) return;
+
+        console.log(
+          `Attaching magnetic listeners to element ${index}:`,
+          element
+        );
+        element.addEventListener("mouseenter", handleMagneticEnter);
+        element.addEventListener("mouseleave", handleMagneticLeave);
+        element.setAttribute("data-magnetic-attached", "true");
+      });
+    };
+
+    // Initial attachment with delay to ensure DOM is ready (only if not showing splash)
+    if (!showSplash) {
+      setTimeout(attachMagneticListeners, 100);
+    }
+
+    // Set up MutationObserver to watch for dynamically added elements
+    const observer = new MutationObserver((mutations) => {
+      // Don't reattach during splash screen
+      if (showSplash) return;
+
+      let shouldReattach = false;
+      mutations.forEach((mutation) => {
+        if (mutation.type === "childList" && mutation.addedNodes.length > 0) {
+          mutation.addedNodes.forEach((node) => {
+            if (node.nodeType === Node.ELEMENT_NODE) {
+              const element = node as Element;
+              if (
+                element.matches("button, a") ||
+                element.querySelector("button, a")
+              ) {
+                shouldReattach = true;
+              }
+            }
+          });
+        }
+      });
+
+      if (shouldReattach) {
+        console.log("DOM changed, reattaching magnetic listeners");
+        setTimeout(attachMagneticListeners, 100);
+      }
+    });
+
+    // Start observing
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+    });
+
+    // Add mouse move listener
+    document.addEventListener("mousemove", updateMousePosition);
+
+    // Start render loop only if not showing splash
+    if (!showSplash) {
+      startRenderLoop();
+    }
+
+    // Cleanup function
+    return () => {
+      // Reset state
+      isStuckRef.current = false;
+      stuckToRef.current = null;
+
+      // Remove magnetic listeners
+      const magneticElements = document.querySelectorAll(
+        "[data-magnetic-attached]"
+      );
+      magneticElements.forEach((element) => {
+        element.removeEventListener("mouseenter", handleMagneticEnter);
+        element.removeEventListener("mouseleave", handleMagneticLeave);
+        element.removeAttribute("data-magnetic-attached");
+      });
+
+      // Disconnect observer
+      observer.disconnect();
+
+      document.removeEventListener("mousemove", updateMousePosition);
+
+      if (enlargeCursorTweenRef.current) {
+        enlargeCursorTweenRef.current.kill();
+        enlargeCursorTweenRef.current = null;
+      }
+
+      if (magneticTweenRef.current) {
+        magneticTweenRef.current.kill();
+        magneticTweenRef.current = null;
+      }
+    };
+  }, [
+    handleMagneticEnter,
+    handleMagneticLeave,
+    updateMousePosition,
+    startRenderLoop,
+    fullCursorSize,
+    easing,
+    showSplash,
+  ]);
+
+  // Initialize on mount and pathname changes
+  useEffect(() => {
+    const cleanup = initializeCursor();
+    return cleanup;
+  }, [initializeCursor, pathname]);
+
+  // Handle splash screen visibility changes
+  useEffect(() => {
+    if (!cursorWrapperRef.current) return;
+
+    if (showSplash) {
+      // Hide cursor during splash screen
+      cursorWrapperRef.current.style.display = "none";
+      document.body.classList.remove("custom-cursor-active");
+      isCursorActiveRef.current = false;
+    } else {
+      // Show cursor after splash screen
+      const hasFinePointer = window.matchMedia("(pointer: fine)").matches;
+      if (hasFinePointer) {
+        cursorWrapperRef.current.style.display = "block";
+        gsap.to(cursorWrapperRef.current, { duration: 0.3, autoAlpha: 1 });
+        document.body.classList.add("custom-cursor-active");
+        isCursorActiveRef.current = true;
+
+        // Start render loop and attach listeners after splash
+        startRenderLoop();
+        setTimeout(() => {
+          // Re-initialize listeners after splash screen
+          initializeCursor();
+        }, 100);
+      }
+    }
+  }, [showSplash, startRenderLoop, initializeCursor]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (isCursorActiveRef.current) {
+        document.body.classList.remove("custom-cursor-active");
+      }
+      if (enlargeCursorTweenRef.current) {
+        enlargeCursorTweenRef.current.kill();
+      }
+      if (magneticTweenRef.current) {
+        magneticTweenRef.current.kill();
+      }
+    };
+  }, []);
+
+  return (
+    <div
+      ref={cursorWrapperRef}
+      className="cursor-wrapper"
+      style={{ display: "none" }}
+    >
+      <div ref={outerCursorRef} className="custom-cursor custom-cursor--outer">
+        <div
+          ref={innerCursorRef}
+          className="custom-cursor custom-cursor--inner"
+        ></div>
+      </div>
+    </div>
   );
 }
 
@@ -6551,7 +7373,11 @@ const Footer = () => {
 
           {/* Column 2: Social/Shop */}
           <div className="w-full sm:w-auto md:w-1/4 mb-6 md:mb-0 flex flex-col items-start md:items-center">
-            <Link href="#" className="hover:opacity-75 mb-1">
+            <Link
+              href="#"
+              className="hover:opacity-75 mb-1"
+              data-underline-button-effect
+            >
               instagram
             </Link>
             {/* Removed TikTok and Shop Lello */}
@@ -6559,20 +7385,36 @@ const Footer = () => {
 
           {/* Column 3: Legal */}
           <div className="w-full sm:w-auto md:w-1/4 mb-6 md:mb-0 flex flex-col items-start md:items-center">
-            <Link href="#" className="hover:opacity-75 mb-1">
+            <Link
+              href="#"
+              className="hover:opacity-75 mb-1"
+              data-underline-button-effect
+            >
               terms of use
             </Link>
-            <Link href="#" className="hover:opacity-75">
+            <Link
+              href="/privacy-policy"
+              className="hover:opacity-75"
+              data-underline-button-effect
+            >
               privacy policy
             </Link>
           </div>
 
           {/* Column 4: Company */}
           <div className="w-full sm:w-auto md:w-1/4 mb-6 md:mb-0 flex flex-col items-start md:items-end">
-            <Link href="#" className="hover:opacity-75 mb-1">
+            <Link
+              href="#"
+              className="hover:opacity-75 mb-1"
+              data-underline-button-effect
+            >
               about us
             </Link>
-            <Link href="#" className="hover:opacity-75 mb-1">
+            <Link
+              href="#"
+              className="hover:opacity-75 mb-1"
+              data-underline-button-effect
+            >
               contact us
             </Link>
             {/* Removed Credits */}
@@ -6581,6 +7423,7 @@ const Footer = () => {
               target="_blank"
               rel="noopener noreferrer"
               className="hover:opacity-75 mt-4"
+              data-underline-button-effect
             >
               juneof.com
             </a>
@@ -6805,7 +7648,7 @@ const Navbar: React.FC = () => {
     }`;
 
   const navLinkBaseClasses =
-    "text-sm uppercase tracking-wider hover:opacity-75"; // Default styling for text links
+    "text-lg lowercase tracking-wider hover:opacity-75"; // Changed from text-base to text-lg for even bigger font
 
   // Determine if the navbar is effectively transparent for item styling
   const isEffectivelyTransparent = transparent && !isNavItemHovered;
@@ -6848,8 +7691,9 @@ const Navbar: React.FC = () => {
                 className={`${navLinkBaseClasses} ${getLinkItemClasses(
                   isEffectivelyTransparent
                 )}`}
+                data-underline-button-effect
               >
-                Shop
+                shop
               </Link>
               {/* Bag Button with Notification Bubble */}
               <div className="relative">
@@ -6862,7 +7706,7 @@ const Navbar: React.FC = () => {
                     isEffectivelyTransparent
                   )}`}
                 >
-                  Bag
+                  bag
                 </button>
                 {totalCartItems > 0 && (
                   <span className="absolute -top-4 -right-4 flex items-center justify-center w-5 h-5 bg-gray-800 text-white text-xs rounded-full">
@@ -6871,22 +7715,20 @@ const Navbar: React.FC = () => {
                 )}
               </div>
               <Link
-                href="https://instagram.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`hover:opacity-75 ${getLinkItemClasses(
-                  isEffectivelyTransparent
-                )}`}
-              >
-                <InstagramIcon />
-              </Link>
-              <Link
-                href="/account"
-                className={`hover:opacity-75 ${getLinkItemClasses(
-                  isEffectivelyTransparent
-                )}`}
+                href="/profile"
+                className={`${getLinkItemClasses(isEffectivelyTransparent)}`}
+                data-underline-button-effect
               >
                 <UserIcon />
+              </Link>
+              <Link
+                href="https://www.instagram.com/juneofofficial/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`${getLinkItemClasses(isEffectivelyTransparent)}`}
+                data-underline-button-effect
+              >
+                <InstagramIcon />
               </Link>
             </div>
           </nav>
@@ -6914,13 +7756,34 @@ interface ProductCardProps {
   name: string;
   price: number;
   productUrl: string;
+  currencyCode?: string; // Optional currency code from Shopify
 }
 
-// Simple price formatter for Rupees
-const formatPrice = (price: number): string => {
-  return `₹ ${price.toLocaleString("en-IN", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+// Enhanced price formatter that handles different currencies
+const formatPrice = (price: number, currencyCode?: string): string => {
+  // If no currency code provided, default to Rupees
+  if (!currencyCode || currencyCode === "INR") {
+    return `₹ ${price.toLocaleString("en-IN", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  }
+
+  // Handle other common currencies
+  const currencySymbols: { [key: string]: string } = {
+    USD: "$",
+    EUR: "€",
+    GBP: "£",
+    CAD: "C$",
+    AUD: "A$",
+    JPY: "¥",
+  };
+
+  const symbol = currencySymbols[currencyCode] || currencyCode;
+
+  return `${symbol} ${price.toLocaleString("en-US", {
+    minimumFractionDigits: currencyCode === "JPY" ? 0 : 2,
+    maximumFractionDigits: currencyCode === "JPY" ? 0 : 2,
   })}`;
 };
 
@@ -6930,6 +7793,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   name,
   price,
   productUrl,
+  currencyCode,
 }) => {
   const cardRef = useRef<HTMLAnchorElement>(null);
   const defaultImageRef = useRef<HTMLDivElement>(null);
@@ -7018,122 +7882,13 @@ const ProductCard: React.FC<ProductCardProps> = ({
         {name}
       </h3>
       <p className="text-sm text-gray-900 font-medium lowercase">
-        {formatPrice(price)}
+        {formatPrice(price, currencyCode)}
       </p>
     </Link>
   );
 };
 
 export default ProductCard;
-
-----
-src/app/components/RevealOnScrollUp.tsx
-"use client";
-
-import React, { useRef, useEffect, ReactNode } from "react";
-import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-
-gsap.registerPlugin(ScrollTrigger);
-
-interface RevealOnScrollUpProps {
-  children: ReactNode[]; // Expecting two children: [mainContent, revealTarget]
-}
-
-const RevealOnScrollUp: React.FC<RevealOnScrollUpProps> = ({ children }) => {
-  const mainContentRef = useRef<HTMLDivElement>(null);
-  const revealTargetRef = useRef<HTMLDivElement>(null);
-  const triggerRef = useRef<HTMLDivElement>(null); // Ref for the container/trigger
-
-  useEffect(() => {
-    const mainEl = mainContentRef.current;
-    const revealEl = revealTargetRef.current;
-    const triggerEl = triggerRef.current;
-
-    if (
-      !mainEl ||
-      !revealEl ||
-      !triggerEl ||
-      !children ||
-      children.length !== 2
-    ) {
-      console.warn("RevealOnScrollUp: Refs or children structure invalid.");
-      return;
-    }
-
-    gsap.set(revealEl, { position: "sticky", bottom: 0, zIndex: 1 });
-    gsap.set(mainEl, { position: "relative", zIndex: 2 });
-    gsap.set(triggerEl, { backgroundColor: "white", overflow: "clip" }); // Adjust background as needed
-
-    let st: ScrollTrigger | null = null;
-    let timeoutId: NodeJS.Timeout | null = null;
-
-    const createST = () => {
-      if (timeoutId) clearTimeout(timeoutId);
-
-      const revealHeight = revealEl.offsetHeight;
-      if (revealHeight === 0) {
-        console.warn(
-          "Reveal target height still 0 after attempt. Animation might fail."
-        );
-        return;
-      }
-
-      st?.kill();
-
-      st = ScrollTrigger.create({
-        trigger: triggerEl,
-        pin: triggerEl,
-        pinSpacing: false,
-        start: "bottom bottom",
-        end: `+=${revealHeight}`,
-        scrub: 1,
-        animation: gsap.to(mainEl, {
-          y: -revealHeight,
-          ease: "none",
-        }),
-        invalidateOnRefresh: true,
-      });
-      console.log(
-        "ScrollTrigger created in RevealOnScrollUp with height:",
-        revealHeight
-      );
-    };
-
-    const initialHeight = revealEl.offsetHeight;
-    if (initialHeight > 0) {
-      createST();
-    } else {
-      console.warn(
-        "RevealOnScrollUp: Target height 0 initially, delaying setup..."
-      );
-      timeoutId = setTimeout(createST, 150);
-    }
-
-    return () => {
-      if (timeoutId) clearTimeout(timeoutId);
-      st?.kill();
-    };
-  }, [children]);
-
-  if (!children || children.length !== 2) {
-    console.error(
-      "RevealOnScrollUp requires exactly two children: the main content and the element to reveal."
-    );
-    return <>{children}</>;
-  }
-
-  const [mainContent, revealTarget] = children;
-
-  return (
-    <div ref={triggerRef}>
-      <div ref={mainContentRef}>{mainContent}</div>
-      <div ref={revealTargetRef}>{revealTarget}</div>
-    </div>
-  );
-};
-
-export default RevealOnScrollUp;
 
 ----
 src/app/components/SizeChart.tsx
@@ -7301,51 +8056,231 @@ export default function SizeChart({ isOpen, onClose }: SizeChartProps) {
 }
 
 ----
-src/app/components/SmoothScrollProvider.tsx
+src/app/components/SplashScreen.tsx
 "use client";
 
-import { useEffect } from "react";
-import { usePathname } from "next/navigation";
-import Lenis from "lenis";
+import { useState, useEffect, useLayoutEffect, useRef } from "react";
+import Image from "next/image";
 import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 
-gsap.registerPlugin(ScrollTrigger);
+interface SplashScreenProps {
+  onLoadComplete: () => void;
+}
 
-export default function SmoothScrollProvider() {
-  const pathname = usePathname();
+export default function SplashScreen({ onLoadComplete }: SplashScreenProps) {
+  const [isLoading, setIsLoading] = useState(true);
+  const [showWipeAnimation, setShowWipeAnimation] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(0);
 
+  const overlayPathRef = useRef<SVGPathElement | null>(null);
+  const splashScreenRef = useRef<HTMLDivElement | null>(null);
+
+  // Hide cursor during splash screen
   useEffect(() => {
-    console.log("SmoothScrollProvider effect running for path:", pathname);
-
-    const lenis = new Lenis({
-      lerp: 0.1,
-      smoothWheel: true,
-    });
-
-    lenis.on("scroll", ScrollTrigger.update);
-
-    const tickerCallback = (time: number) => {
-      lenis.raf(time * 1000);
-    };
-    gsap.ticker.add(tickerCallback);
-
-    gsap.ticker.lagSmoothing(0);
-
-    const rafId = requestAnimationFrame(() => {
-      console.log("Refreshing ScrollTrigger in provider...");
-      ScrollTrigger.refresh();
-    });
+    document.body.classList.add("splash-screen-active");
 
     return () => {
-      console.log("Cleaning up SmoothScrollProvider for path:", pathname);
-      cancelAnimationFrame(rafId);
-      gsap.ticker.remove(tickerCallback);
-      lenis.destroy();
+      document.body.classList.remove("splash-screen-active");
     };
-  }, [pathname]);
+  }, []);
 
-  return null;
+  useEffect(() => {
+    let progressValue = 0;
+
+    // Function to check if page is fully loaded
+    const checkPageLoad = () => {
+      return new Promise<void>((resolve) => {
+        const checkComplete = () => {
+          // Check document ready state
+          if (document.readyState !== "complete") {
+            setTimeout(checkComplete, 100);
+            return;
+          }
+
+          // Wait for all images to load
+          const images = Array.from(document.images);
+          const imagePromises = images.map((img) => {
+            if (img.complete && img.naturalHeight !== 0) {
+              return Promise.resolve();
+            }
+            return new Promise<void>((resolve) => {
+              const timeout = setTimeout(() => resolve(), 3000); // 3s timeout per image
+              img.onload = () => {
+                clearTimeout(timeout);
+                resolve();
+              };
+              img.onerror = () => {
+                clearTimeout(timeout);
+                resolve(); // Continue even if image fails
+              };
+            });
+          });
+
+          // Wait for fonts to load
+          const fontPromise = document.fonts
+            ? document.fonts.ready
+            : Promise.resolve();
+
+          // Wait for any pending network requests to complete
+          const networkPromise = new Promise<void>((resolve) => {
+            // Give some time for any pending requests
+            setTimeout(resolve, 1000);
+          });
+
+          Promise.all([...imagePromises, fontPromise, networkPromise]).then(
+            () => {
+              // Additional delay to ensure everything is rendered
+              setTimeout(resolve, 800);
+            }
+          );
+        };
+
+        checkComplete();
+      });
+    };
+
+    // Simulate progressive loading with real checks
+    const progressInterval = setInterval(() => {
+      progressValue += Math.random() * 6 + 1; // Slower, more realistic progress
+
+      if (progressValue >= 90) {
+        setLoadingProgress(90);
+        clearInterval(progressInterval);
+
+        // Now wait for actual page load
+        checkPageLoad().then(() => {
+          setLoadingProgress(100);
+
+          setTimeout(() => {
+            setIsLoading(false);
+            setShowWipeAnimation(true);
+          }, 600);
+        });
+      } else {
+        setLoadingProgress(Math.min(progressValue, 90));
+      }
+    }, 200);
+
+    // Fallback timeout to prevent infinite loading
+    const fallbackTimer = setTimeout(() => {
+      clearInterval(progressInterval);
+      setLoadingProgress(100);
+
+      setTimeout(() => {
+        setIsLoading(false);
+        setShowWipeAnimation(true);
+      }, 600);
+    }, 12000); // 12 second maximum
+
+    return () => {
+      clearInterval(progressInterval);
+      clearTimeout(fallbackTimer);
+    };
+  }, []);
+
+  useLayoutEffect(() => {
+    if (
+      showWipeAnimation &&
+      overlayPathRef.current &&
+      splashScreenRef.current
+    ) {
+      const tl = gsap.timeline({
+        onComplete: () => {
+          if (splashScreenRef.current) {
+            // Optionally hide or remove the splash screen element after animation
+            // For now, we rely on ClientLayout to handle visibility based on SplashContext
+          }
+          onLoadComplete();
+        },
+      });
+
+      tl
+        // Phase 1: Overlay Wipe-Up Animation (Covers the logo)
+        .set(overlayPathRef.current, {
+          attr: { d: "M 0 100 V 100 Q 50 100 100 100 V 100 z" },
+        })
+        .to(
+          overlayPathRef.current,
+          {
+            duration: 0.8,
+            ease: "power4.in",
+            attr: { d: "M 0 100 V 50 Q 50 0 100 50 V 100 z" },
+          },
+          0
+        )
+        .to(overlayPathRef.current, {
+          duration: 0.3,
+          ease: "power2",
+          attr: { d: "M 0 100 V 0 Q 50 0 100 0 V 100 z" },
+        })
+        // Phase 2: Menu Reveal Animation (Wipes away the overlay to reveal content)
+        .set(overlayPathRef.current, {
+          attr: { d: "M 0 0 V 100 Q 50 100 100 100 V 0 z" },
+        })
+        .to(overlayPathRef.current, {
+          duration: 0.3,
+          ease: "power2.in",
+          attr: { d: "M 0 0 V 50 Q 50 0 100 50 V 0 z" },
+        })
+        .to(overlayPathRef.current, {
+          duration: 0.8,
+          ease: "power4",
+          attr: { d: "M 0 0 V 0 Q 50 0 100 0 V 0 z" },
+        });
+    }
+  }, [showWipeAnimation, onLoadComplete]);
+
+  return (
+    <>
+      {/* Main splash screen */}
+      <div
+        ref={splashScreenRef}
+        className={`fixed inset-0 z-50 bg-transparent transition-opacity duration-300 ${
+          showWipeAnimation ? "opacity-0 pointer-events-none" : "opacity-100"
+        }`}
+      >
+        {/* Logo - Top Left Corner, Large but Balanced */}
+        <div className="absolute top-6 left-6 md:top-8 md:left-8 lg:top-12 lg:left-12">
+          <div className="relative w-96 h-96 md:w-[28rem] md:h-[28rem] lg:w-[32rem] lg:h-[32rem] xl:w-[36rem] xl:h-[36rem] 2xl:w-[40rem] 2xl:h-[40rem] splash-logo">
+            <Image
+              src="/juneof-logo.svg"
+              alt="Juneof Logo"
+              fill
+              className="object-contain"
+              priority
+            />
+          </div>
+        </div>
+
+        {/* Progress Bar - Bottom Center */}
+        {isLoading && (
+          <div className="absolute bottom-16 left-1/2 transform -translate-x-1/2">
+            <div className="w-80 md:w-96 h-1 bg-gray-200 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-gray-500 to-gray-700 rounded-full transition-all duration-300 ease-out"
+                style={{ width: `${Math.min(loadingProgress, 100)}%` }}
+              ></div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* GSAP Wipe Overlay */}
+      <div className="fixed inset-0 z-[51] pointer-events-none">
+        <svg
+          className="absolute w-full h-full"
+          viewBox="0 0 100 100"
+          preserveAspectRatio="none"
+        >
+          <path
+            ref={overlayPathRef}
+            className="fill-black"
+            d="M 0 100 V 100 Q 50 100 100 100 V 100 z"
+          />
+        </svg>
+      </div>
+    </>
+  );
 }
 
 ----
@@ -7538,16 +8473,198 @@ input[type="reset"] {
   cursor: default !important;
 }
 
+/* Custom Cursor Styles */
+.cursor-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 10000;
+  transform: translate(-50%, -50%); /* Center the cursor on mouse position */
+}
+
+.custom-cursor--outer {
+  width: 6px;
+  height: 6px;
+  border: 2px solid white;
+  background: white;
+  border-radius: 50%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box; /* Ensure border doesn't affect size calculations */
+  flex-shrink: 0; /* Prevent flex distortion */
+}
+
+.custom-cursor--inner {
+  width: 8px;
+  height: 8px;
+  background: #171717;
+  border-radius: 50%;
+  position: absolute;
+  opacity: 0.6;
+}
+
+/* Hide native cursor when custom cursor is active */
+body.custom-cursor-active,
+body.custom-cursor-active * {
+  cursor: none !important;
+}
+
+/* Hide all cursors during splash screen */
+body.splash-screen-active,
+body.splash-screen-active * {
+  cursor: none !important;
+}
+
+/* Splash Screen Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes progressBar {
+  0% {
+    width: 0%;
+  }
+  50% {
+    width: 70%;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
+@keyframes logoFloat {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.splash-logo {
+  animation: logoFloat 3s ease-in-out infinite;
+}
+
+.splash-content {
+  animation: fadeInUp 0.8s ease-out;
+}
+
+.progress-bar-fill {
+  animation: progressBar 2s ease-in-out;
+}
+
+/* == BUTTON UNDERLINE HOVER EFFECT (ADAPTED FROM DEMO 3 LINK STYLE) == */
+
+/* 
+  Target buttons that should have the effect. 
+  Exclude specific buttons using :not() with their respective classes.
+  NEW: Added :not(.size-btn) - REPLACE .size-btn WITH YOUR ACTUAL SIZE BUTTON CLASS.
+
+  Consider also targeting other elements that act as buttons if needed, e.g.:
+  a[role="button"]:not(...), div[role="button"]:not(...)
+*/
+button:not(.add-to-cart-btn):not(.clear-cart-btn):not(.checkout-btn):not(.size-btn):not(.no-underline-effect),
+/* Add similar lines for other elements if they act as buttons and need this effect: */
+/* e.g., a.button-like-link:not(...), */
+[data-underline-button-effect]:not(.add-to-cart-btn):not(.clear-cart-btn):not(.checkout-btn):not(.size-btn):not(.no-underline-effect) {
+  position: relative; /* Required for the ::after pseudo-element positioning */
+  /* 
+      Ensure these buttons have a visible text color for `currentColor` to work.
+      You might need to explicitly set a text color if it's inheriting something problematic.
+      e.g., color: var(--color-text-body);
+
+      Other base styles might be needed if they are unstyled or heavily styled:
+      background: transparent;
+      border: none;
+      padding-left: 0; 
+      padding-right: 0;
+      cursor: pointer;
+    */
+}
+
+button:not(.add-to-cart-btn):not(.clear-cart-btn):not(.checkout-btn):not(.size-btn):not(.no-underline-effect)::after,
+/* Corresponding ::after for other targeted elements */
+[data-underline-button-effect]:not(.add-to-cart-btn):not(.clear-cart-btn):not(.checkout-btn):not(.size-btn):not(.no-underline-effect)::after {
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 1.5px; /* Slightly thicker for better visibility on buttons */
+  background: currentColor; /* Uses the button's current text color */
+  bottom: -3px; /* Adjusted position for the thicker line */
+  left: 0;
+  opacity: 0;
+  transform-origin: 50% 50%; /* Underline grows from the center */
+  transform: scaleX(0);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease-out;
+}
+
+button:not(.add-to-cart-btn):not(.clear-cart-btn):not(.checkout-btn):not(.size-btn):not(.no-underline-effect):hover::after,
+button:not(.add-to-cart-btn):not(.clear-cart-btn):not(.checkout-btn):not(.size-btn):not(.no-underline-effect):focus::after,
+/* Corresponding :hover::after for other targeted elements */
+[data-underline-button-effect]:not(.add-to-cart-btn):not(.clear-cart-btn):not(.checkout-btn):not(.size-btn):not(.no-underline-effect):hover::after,
+[data-underline-button-effect]:not(.add-to-cart-btn):not(.clear-cart-btn):not(.checkout-btn):not(.size-btn):not(.no-underline-effect):focus::after {
+  opacity: 1;
+  transform-origin: 50% 50%; /* Underline grows from the center */
+  transform: scaleX(1);
+}
+
+/*
+  README FOR BUTTON UNDERLINE EFFECT:
+
+  1. EXCLUSION CLASSES:
+     To exclude a button/element from this effect, add one of the following classes to it:
+     - `.add-to-cart-btn`
+     - `.clear-cart-btn`
+     - `.checkout-btn`
+     - `.size-btn` (REPLACE THIS WITH YOUR ACTUAL SIZE BUTTON CLASS NAME)
+     - Or, for any other button/element you want to exclude: `.no-underline-effect`
+
+  2. TARGETING OTHER ELEMENTS (NON-<button>s):
+     If elements like footer links should have this effect, they WON'T be targeted by `button:not(...)`.
+     You can either:
+       a) Add the attribute `data-underline-button-effect` to them in your HTML/JSX.
+          e.g., <a href="/" data-underline-button-effect>Footer Link</a>
+       b) Or, create a more specific selector for them if they have a common class.
+          e.g., if all footer links that need this are `a.footer-action-link`, you could add:
+          a.footer-action-link:not(...) { ... base styles ... }
+          a.footer-action-link:not(...)::after { ... underline styles ... }
+          a.footer-action-link:not(...):hover::after, a.footer-action-link:not(...):focus::after { ... hover styles ... }
+          The provided CSS now includes a generic `[data-underline-button-effect]` selector as an example of method (a).
+
+  3. ADAPTATION & DEBUGGING:
+     - **REPLACE `.size-btn`** with the class your size buttons actually use.
+     - If your excluded buttons use different classes or IDs, update the `:not()` selectors.
+     - Use browser developer tools to INSPECT elements where the effect is missing:
+        - Are they `<button>` elements? If not, use method 2a or 2b.
+        - Do they have one of the exclusion classes by mistake?
+        - Check their `color` property. If it's transparent or matches their background, `currentColor` for the underline will be invisible.
+        - Check their `position`. It needs to be `relative` (or `absolute`/`fixed`) for the `::after` to position correctly.
+        - Do they already have an `::after` pseudo-element with conflicting styles?
+
+  4. STYLING CONFLICTS:
+     If buttons have existing `position` properties or complex `::after` pseudo-elements,
+     you might need to adjust these styles or the button's own styles.
+*/
+
 ----
 src/app/layout.tsx
 import { Old_Standard_TT } from "next/font/google";
 import "./globals.css";
 import type { Metadata } from "next";
-import Footer from "@/app/components/Footer";
-import RevealOnScrollUp from "@/app/components/RevealOnScrollUp";
-import SmoothScrollProvider from "@/app/components/SmoothScrollProvider";
-import Navbar from "@/app/components/Navbar";
 import { CartProvider } from "@/context/CartContext";
+import { SplashProvider } from "@/context/SplashContext";
+import ClientLayout from "@/app/components/ClientLayout";
 
 const oldStandardTT = Old_Standard_TT({
   weight: ["400", "700"],
@@ -7568,14 +8685,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${oldStandardTT.className} flex flex-col min-h-screen`}>
-        <CartProvider>
-          <SmoothScrollProvider />
-          <Navbar />
-          <RevealOnScrollUp>
-            <main className="flex-grow bg-white">{children}</main>
-            <Footer />
-          </RevealOnScrollUp>
-        </CartProvider>
+        <SplashProvider>
+          <CartProvider>
+            <ClientLayout>{children}</ClientLayout>
+          </CartProvider>
+        </SplashProvider>
       </body>
     </html>
   );
@@ -7605,6 +8719,12 @@ export default function Home() {
         className="border border-gray-900 px-8 py-4 text-xl tracking-widest hover:bg-gray-100 transition-colors"
       >
         PRIVACY POLICY
+      </Link>
+      <Link
+        href="/shopify-test"
+        className="border border-gray-900 px-8 py-4 text-xl tracking-widest hover:bg-gray-100 transition-colors"
+      >
+        SHOPIFY TEST
       </Link>
     </main>
   );
@@ -7654,16 +8774,19 @@ export default function PrivacyPolicyPage() {
   }, []);
 
   return (
-    <div className="relative overflow-hidden">
-      <main
-        ref={mainElementRef}
-        className="relative flex min-h-screen text-black"
-      >
+    <div className="relative">
+      {/* Clipping container for the parallax image */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div
           ref={backgroundRef}
           className="absolute inset-0 z-0 h-[130%] bg-[url('https://picsum.photos/1920/1080')] bg-cover bg-center"
         ></div>
+      </div>
 
+      <main
+        ref={mainElementRef}
+        className="relative flex min-h-screen text-black"
+      >
         {/* Left Column (Sticky Title) */}
         <div className="relative sticky top-0 z-10 flex h-screen w-[40%] flex-shrink-0 flex-col justify-center p-8 border-r border-gray-300">
           <h1 className="text-xl font-medium tracking-widest lowercase text-black mix-blend-difference">
@@ -7756,29 +8879,54 @@ export default function PrivacyPolicyPage() {
 }
 
 ----
-src/app/product/page.tsx
+src/app/product/[handle]/ProductPageClient.tsx
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
-import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import SizeChart from "../components/SizeChart";
-import WashCareOverlay from "../components/WashCareOverlay";
-import Lenis from "lenis";
+import { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
+import SizeChart from "../../components/SizeChart";
+import WashCareOverlay from "../../components/WashCareOverlay";
 import Image from "next/image";
 import { useCart } from "@/context/CartContext";
+import { ShopifyProductDetails } from "@/lib/shopify";
 
-export default function ProductPage() {
+interface ProductPageClientProps {
+  product: ShopifyProductDetails;
+}
+
+// Enhanced price formatter that handles different currencies
+const formatPrice = (price: number, currencyCode?: string): string => {
+  if (!currencyCode || currencyCode === "INR") {
+    return `₹ ${price.toLocaleString("en-IN", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  }
+
+  const currencySymbols: { [key: string]: string } = {
+    USD: "$",
+    EUR: "€",
+    GBP: "£",
+    CAD: "C$",
+    AUD: "A$",
+    JPY: "¥",
+  };
+
+  const symbol = currencySymbols[currencyCode] || currencyCode;
+
+  return `${symbol} ${price.toLocaleString("en-US", {
+    minimumFractionDigits: currencyCode === "JPY" ? 0 : 2,
+    maximumFractionDigits: currencyCode === "JPY" ? 0 : 2,
+  })}`;
+};
+
+export default function ProductPageClient({ product }: ProductPageClientProps) {
   const [selectedSize, setSelectedSize] = useState("in between");
   const [isSizeChartOpen, setIsSizeChartOpen] = useState(false);
   const [isWashCareOpen, setIsWashCareOpen] = useState(false);
-  const lenisRef = useRef<Lenis | null>(null);
   const { addItemToCart } = useCart();
 
-  const router = useRouter();
-  const pathname = usePathname();
   const searchParams = useSearchParams();
-
-  const currentUrlSize = searchParams.get("size");
 
   const sizes = [
     "extra petite",
@@ -7788,102 +8936,69 @@ export default function ProductPage() {
     "extra curvy",
   ];
 
-  // Effect to initialize Lenis for smooth scrolling
-  useEffect(() => {
-    const lenis = new Lenis({
-      lerp: 0.1, // Adjust for desired smoothness
-      smoothWheel: true, // Enable smooth scroll for wheel events
-    });
-
-    lenisRef.current = lenis;
-
-    function raf(time: number) {
-      lenis.raf(time);
-      requestAnimationFrame(raf);
-    }
-
-    const rafId = requestAnimationFrame(raf);
-
-    // Cleanup function to destroy Lenis instance on unmount
-    return () => {
-      cancelAnimationFrame(rafId);
-      lenis.destroy();
-      lenisRef.current = null;
-    };
-  }, []); // Empty dependency array ensures this runs only once on mount
-
-  // Effect to stop/start Lenis scrolling based on *either* overlay's visibility
-  useEffect(() => {
-    if (isSizeChartOpen || isWashCareOpen) {
-      lenisRef.current?.stop();
-    } else {
-      lenisRef.current?.start();
-    }
-  }, [isSizeChartOpen, isWashCareOpen]);
-
-  // Effect to sync local state `selectedSize` with the URL parameter
+  // Initialize size from URL parameter on mount only
   useEffect(() => {
     const sizeFromUrl = searchParams.get("size");
-    // Update local state if URL parameter exists, otherwise use default
-    setSelectedSize(sizeFromUrl || "in between");
-  }, [searchParams]); // Rerun when searchParams change
+    if (sizeFromUrl) {
+      setSelectedSize(sizeFromUrl);
+    }
+  }, []); // Empty dependency array - only run on mount
 
-  // Handler to update URL when a size is selected
-  // Use useCallback to prevent unnecessary re-creation on renders
-  const handleSizeSelect = useCallback(
-    (newSize: string) => {
-      // Create new search params object based on current params
-      const params = new URLSearchParams(searchParams.toString());
-      // Set the new size parameter
-      params.set("size", newSize);
-      // Navigate, replacing the current history entry is often better for filters
-      // Use push() if you prefer adding a new history entry for each filter change
-      router.replace(`${pathname}?${params.toString()}`);
-    },
-    [pathname, router, searchParams] // Dependencies for useCallback
-  );
+  // Handler to update size selection without URL changes
+  const handleSizeSelect = useCallback((newSize: string) => {
+    setSelectedSize(newSize);
+  }, []);
 
-  // ADDED handleAddToCart function
+  // Handle add to cart
   const handleAddToCart = () => {
+    // Get the first available variant ID (you might want to make this more sophisticated)
+    const variantId = product.variants.edges[0]?.node?.id;
+
     const productToAdd = {
-      name: "rabari stitch shirt", // Placeholder - make dynamic if needed
-      price: 29000, // Placeholder - make dynamic if needed
+      name: product.title.toLowerCase(),
+      price: parseFloat(product.priceRange.minVariantPrice.amount),
       size: selectedSize,
-      imageUrl: "https://picsum.photos/id/11/100/150", // Placeholder image for cart item
+      imageUrl:
+        product.images.edges[0]?.node?.originalSrc ||
+        "https://picsum.photos/id/11/100/150",
+      variantId: variantId,
+      productHandle: product.handle,
     };
     addItemToCart(productToAdd);
-    // If Toast is re-added later, trigger it here:
-    // setToastMessage("added to cart");
-    // setShowToast(true);
-    console.log("Added to cart:", productToAdd); // For debugging, can be removed
+    console.log("Added to cart:", productToAdd);
   };
+
+  const price = parseFloat(product.priceRange.minVariantPrice.amount);
+  const currencyCode = product.priceRange.minVariantPrice.currencyCode;
 
   return (
     <>
       <main className="flex min-h-screen bg-[#F8F4EC] text-gray-900">
         {/* Left Column (Sticky) */}
         <div className="sticky top-0 flex h-screen w-1/4 flex-col justify-center p-8 border-r border-gray-300">
-          {/* Inner container spanning full height */}
           <div className="flex flex-col h-full">
-            {/* Wrapper div for main content: Grows and centers its child */}
             <div className="flex-grow flex flex-col justify-center">
-              {/* Original content block */}
               <div className="space-y-6">
                 <div className="flex justify-between items-center">
                   <h1 className="text-xl font-medium tracking-widest lowercase">
-                    rabari stitch shirt
+                    {product.title.toLowerCase()}
                   </h1>
-                  <span className="text-lg font-medium">₹ 29,000</span>
+                  <span className="text-lg font-medium">
+                    {formatPrice(price, currencyCode)}
+                  </span>
                 </div>
 
                 {/* Product Information */}
                 <div className="space-y-2 text-sm tracking-wider text-gray-700">
-                  <p className="lowercase">
-                    hand embroidered rabari stitch done by nomadic pastoralist
-                    tribes from kutch region
-                  </p>
-                  <p className="lowercase">100% handwoven ramie fabric</p>
-                  <p className="lowercase">mother of pearl buttons</p>
+                  {product.description && (
+                    <p className="lowercase">{product.description}</p>
+                  )}
+                  {product.tags.length > 0 && (
+                    <p className="lowercase">{product.tags.join(" • ")}</p>
+                  )}
+                  {product.vendor && (
+                    <p className="lowercase">by {product.vendor}</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -7901,44 +9016,73 @@ export default function ProductPage() {
         {/* Middle Column (Now Scrolls with Page) */}
         <div className="flex-grow p-8">
           <div className="space-y-8">
-            {/* Picsum Images */}
-            <Image
-              key="picsum-11"
-              src="https://picsum.photos/id/11/600/1000"
-              alt="Product image 1 (W:600)"
-              width={600}
-              height={1000}
-              className="w-full h-auto select-none pointer-events-none"
-              priority
-              draggable={false}
-            />
-            <Image
-              key="picsum-22"
-              src="https://picsum.photos/id/22/900/600"
-              alt="Product image 2 (W:900)"
-              width={900}
-              height={600}
-              className="w-full h-auto select-none pointer-events-none"
-              draggable={false}
-            />
-            <Image
-              key="picsum-33"
-              src="https://picsum.photos/id/33/700/800"
-              alt="Product image 3 (W:700)"
-              width={700}
-              height={800}
-              className="w-full h-auto select-none pointer-events-none"
-              draggable={false}
-            />
-            <Image
-              key="picsum-44"
-              src="https://picsum.photos/id/44/850/1200"
-              alt="Product image 4 (W:850)"
-              width={850}
-              height={1200}
-              className="w-full h-auto select-none pointer-events-none"
-              draggable={false}
-            />
+            {product.images.edges.length > 0 ? (
+              product.images.edges.map((imageEdge, index) => {
+                // Define specific sizes for each image position to match original design
+                const imageSizes = [
+                  { width: 600, height: 1000 }, // First image: portrait
+                  { width: 900, height: 600 }, // Second image: landscape
+                  { width: 700, height: 800 }, // Third image: slightly wider portrait
+                  { width: 850, height: 1200 }, // Fourth image: tall portrait
+                ];
+
+                // Use predefined size or default for additional images
+                const size = imageSizes[index] || { width: 600, height: 800 };
+
+                return (
+                  <Image
+                    key={`product-image-${index}`}
+                    src={imageEdge.node.originalSrc}
+                    alt={
+                      imageEdge.node.altText ||
+                      `${product.title} - Image ${index + 1}`
+                    }
+                    width={size.width}
+                    height={size.height}
+                    className="w-full h-auto select-none pointer-events-none"
+                    priority={index === 0}
+                    draggable={false}
+                  />
+                );
+              })
+            ) : (
+              // Fallback images with original specific sizes
+              <>
+                <Image
+                  src="https://picsum.photos/id/11/600/1000"
+                  alt="Product image 1 (W:600)"
+                  width={600}
+                  height={1000}
+                  className="w-full h-auto select-none pointer-events-none"
+                  priority
+                  draggable={false}
+                />
+                <Image
+                  src="https://picsum.photos/id/22/900/600"
+                  alt="Product image 2 (W:900)"
+                  width={900}
+                  height={600}
+                  className="w-full h-auto select-none pointer-events-none"
+                  draggable={false}
+                />
+                <Image
+                  src="https://picsum.photos/id/33/700/800"
+                  alt="Product image 3 (W:700)"
+                  width={700}
+                  height={800}
+                  className="w-full h-auto select-none pointer-events-none"
+                  draggable={false}
+                />
+                <Image
+                  src="https://picsum.photos/id/44/850/1200"
+                  alt="Product image 4 (W:850)"
+                  width={850}
+                  height={1200}
+                  className="w-full h-auto select-none pointer-events-none"
+                  draggable={false}
+                />
+              </>
+            )}
           </div>
         </div>
 
@@ -7963,7 +9107,7 @@ export default function ProductPage() {
                   key={size}
                   onClick={() => handleSizeSelect(size)}
                   className={`hover:text-gray-600 transition-colors lowercase ${
-                    (currentUrlSize || "in between") === size
+                    selectedSize === size
                       ? "underline font-medium"
                       : "text-gray-700"
                   }`}
@@ -7998,51 +9142,316 @@ export default function ProductPage() {
 }
 
 ----
+src/app/product/[handle]/not-found.tsx
+import Link from "next/link";
+
+export default function ProductNotFound() {
+  return (
+    <main className="min-h-screen bg-[#F8F4EC] flex items-center justify-center p-8">
+      <div className="text-center space-y-6 max-w-md">
+        <h1 className="text-3xl font-medium tracking-widest lowercase text-gray-900">
+          product not found
+        </h1>
+
+        <p className="text-gray-700 tracking-wider lowercase">
+          the product you&apos;re looking for doesn&apos;t exist or may have
+          been removed.
+        </p>
+
+        <div className="space-y-4">
+          <Link
+            href="/product-listing"
+            className="block w-full border border-gray-900 py-3 text-center text-base tracking-widest hover:bg-gray-100 transition-colors lowercase"
+          >
+            browse all products
+          </Link>
+
+          <Link
+            href="/"
+            className="block text-sm tracking-widest lowercase hover:text-gray-600 transition-colors"
+          >
+            return home
+          </Link>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+----
+src/app/product/[handle]/page.tsx
+import { notFound } from "next/navigation";
+import {
+  storefrontApiRequest,
+  GET_PRODUCT_BY_HANDLE_QUERY,
+  GET_PRODUCTS_FOR_LISTING_QUERY,
+  ShopifyProductByHandleData,
+  ShopifyProductDetails,
+  ShopifyProductsData,
+} from "@/lib/shopify";
+import ProductPageClient from "./ProductPageClient";
+
+interface ProductPageProps {
+  params: {
+    handle: string;
+  };
+}
+
+// Generate static params for all products
+export async function generateStaticParams() {
+  try {
+    const data = await storefrontApiRequest<ShopifyProductsData>(
+      GET_PRODUCTS_FOR_LISTING_QUERY,
+      { first: 50 } // Generate static pages for first 50 products
+    );
+
+    return data.products.edges.map((edge) => ({
+      handle: edge.node.handle,
+    }));
+  } catch (error) {
+    console.error("Failed to generate static params:", error);
+    return [];
+  }
+}
+
+// Server component to fetch product data
+export default async function ProductPage({ params }: ProductPageProps) {
+  let product: ShopifyProductDetails | null = null;
+
+  try {
+    const data = await storefrontApiRequest<ShopifyProductByHandleData>(
+      GET_PRODUCT_BY_HANDLE_QUERY,
+      { handle: params.handle }
+    );
+
+    if (!data.productByHandle) {
+      notFound();
+    }
+
+    product = data.productByHandle;
+  } catch (error) {
+    console.error("Failed to fetch product:", error);
+    notFound();
+  }
+
+  // Pass the product data to the client component
+  return <ProductPageClient product={product} />;
+}
+
+----
+src/app/product/page.tsx
+import { redirect } from "next/navigation";
+
+export default function ProductIndexPage() {
+  // Redirect to product listing page since individual products require a handle
+  redirect("/product-listing");
+}
+
+----
 src/app/product-listing/page.tsx
 import ProductCard from "../components/ProductCard";
+import {
+  storefrontApiRequest,
+  GET_PRODUCTS_FOR_LISTING_QUERY,
+  ShopifyProductsData,
+  ShopifyProductNode,
+} from "@/lib/shopify";
 
-export default function ProductListingPage() {
-  // Re-added hoverImageUrl to data
-  const product = {
-    imageUrl: "https://picsum.photos/id/237/300/450",
-    hoverImageUrl: "https://picsum.photos/id/238/300/450", // Added hover image URL
-    name: "MALLO BLACK TROUSERS",
-    price: 30000.0,
-    productUrl: "/product",
+// Function to fetch Shopify products for listing
+async function fetchShopifyProducts() {
+  try {
+    const data = await storefrontApiRequest<ShopifyProductsData>(
+      GET_PRODUCTS_FOR_LISTING_QUERY,
+      { first: 20 } // Fetch up to 20 products
+    );
+    return data.products.edges.map((edge) => edge.node);
+  } catch (error) {
+    console.error("Failed to fetch Shopify products:", error);
+    return [];
+  }
+}
+
+// Function to transform Shopify product data to ProductCard props
+function transformShopifyProduct(product: ShopifyProductNode) {
+  // Get the first image, or use a placeholder if no images
+  const primaryImage =
+    product.images.edges[0]?.node?.originalSrc ||
+    "https://picsum.photos/300/450";
+
+  // For hover image, try to use the second image, or use a slightly different placeholder
+  const hoverImage =
+    product.images.edges[1]?.node?.originalSrc ||
+    product.images.edges[0]?.node?.originalSrc ||
+    "https://picsum.photos/id/238/300/450";
+
+  // Convert price from string to number (Shopify returns price as string)
+  const price = parseFloat(product.priceRange.minVariantPrice.amount);
+  const currencyCode = product.priceRange.minVariantPrice.currencyCode;
+
+  return {
+    imageUrl: primaryImage,
+    hoverImageUrl: hoverImage,
+    name: product.title.toUpperCase(),
+    price: price,
+    productUrl: `/product/${product.handle}`,
+    currencyCode: currencyCode,
   };
+}
+
+export default async function ProductListingPage() {
+  const shopifyProducts = await fetchShopifyProducts();
+
+  // Transform Shopify products to match ProductCard props
+  const products = shopifyProducts.map(transformShopifyProduct);
+
+  // Fallback to mock data if no Shopify products are available
+  const fallbackProducts = [
+    {
+      imageUrl: "https://picsum.photos/id/237/300/450",
+      hoverImageUrl: "https://picsum.photos/id/238/300/450",
+      name: "MALLO BLACK TROUSERS",
+      price: 30000.0,
+      productUrl: "/product/mallo-black-trousers",
+      currencyCode: "INR",
+    },
+    {
+      imageUrl: "https://picsum.photos/id/239/300/450",
+      hoverImageUrl: "https://picsum.photos/id/240/300/450",
+      name: "CLASSIC WHITE SHIRT",
+      price: 25000.0,
+      productUrl: "/product/classic-white-shirt",
+      currencyCode: "INR",
+    },
+    {
+      imageUrl: "https://picsum.photos/id/241/300/450",
+      hoverImageUrl: "https://picsum.photos/id/242/300/450",
+      name: "DENIM JACKET",
+      price: 45000.0,
+      productUrl: "/product/denim-jacket",
+      currencyCode: "INR",
+    },
+    {
+      imageUrl: "https://picsum.photos/id/243/300/450",
+      hoverImageUrl: "https://picsum.photos/id/244/300/450",
+      name: "SUMMER DRESS",
+      price: 35000.0,
+      productUrl: "/product/summer-dress",
+      currencyCode: "INR",
+    },
+  ];
+
+  const displayProducts = products.length > 0 ? products : fallbackProducts;
 
   return (
     <main className="min-h-screen bg-[#F8F4EC] p-8">
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-        <ProductCard
-          imageUrl={product.imageUrl}
-          hoverImageUrl={product.hoverImageUrl}
-          name={product.name}
-          price={product.price}
-          productUrl={product.productUrl}
-        />
-        <ProductCard
-          imageUrl={product.imageUrl}
-          hoverImageUrl={product.hoverImageUrl}
-          name={product.name}
-          price={product.price}
-          productUrl={product.productUrl}
-        />
-        <ProductCard
-          imageUrl={product.imageUrl}
-          hoverImageUrl={product.hoverImageUrl}
-          name={product.name}
-          price={product.price}
-          productUrl={product.productUrl}
-        />
-        <ProductCard
-          imageUrl={product.imageUrl}
-          hoverImageUrl={product.hoverImageUrl}
-          name={product.name}
-          price={product.price}
-          productUrl={product.productUrl}
-        />
+      {products.length === 0 && (
+        <div className="mb-6 p-4 bg-yellow-100 border border-yellow-400 rounded">
+          <p className="text-yellow-800">
+            No Shopify products found. Displaying mock data. Check your Shopify
+            configuration.
+          </p>
+        </div>
+      )}
+
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 lowercase tracking-widest">
+          Our Collection
+        </h1>
+        <p className="text-gray-600 mt-2">
+          {products.length > 0
+            ? `Showing ${products.length} products from our Shopify store`
+            : "Showing sample products"}
+        </p>
       </div>
+
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+        {displayProducts.map((product, index) => (
+          <ProductCard
+            key={
+              products.length > 0
+                ? `shopify-${product.productUrl}`
+                : `fallback-${index}`
+            }
+            imageUrl={product.imageUrl}
+            hoverImageUrl={product.hoverImageUrl}
+            name={product.name}
+            price={product.price}
+            productUrl={product.productUrl}
+            currencyCode={product.currencyCode}
+          />
+        ))}
+      </div>
+    </main>
+  );
+}
+
+----
+src/app/shopify-test/page.tsx
+import {
+  storefrontApiRequest,
+  GET_FIRST_5_PRODUCTS_QUERY,
+  ShopifyProductsData, // Import the type for the expected data
+} from "@/lib/shopify"; // Adjust path if your lib folder is elsewhere
+
+async function fetchShopifyProducts() {
+  try {
+    // Use the type when calling the API request
+    const data = await storefrontApiRequest<ShopifyProductsData>(
+      GET_FIRST_5_PRODUCTS_QUERY
+    );
+    return data.products.edges.map((edge) => edge.node); // Extract just the product nodes
+  } catch (error) {
+    console.error("Failed to fetch Shopify products for test page:", error);
+    return null; // Return null or an empty array on error
+  }
+}
+
+export default async function ShopifyTestPage() {
+  const products = await fetchShopifyProducts();
+
+  if (!products) {
+    return (
+      <main style={{ padding: "20px", fontFamily: "monospace" }}>
+        <h1>Shopify Test Page</h1>
+        <p style={{ color: "red" }}>
+          Error fetching products from Shopify. Check console for details.
+        </p>
+      </main>
+    );
+  }
+
+  if (products.length === 0) {
+    return (
+      <main style={{ padding: "20px", fontFamily: "monospace" }}>
+        <h1>Shopify Test Page</h1>
+        <p>No products found in your Shopify store, or an issue occurred.</p>
+      </main>
+    );
+  }
+
+  return (
+    <main
+      style={{
+        padding: "20px",
+        fontFamily: "monospace",
+        backgroundColor: "#f0f0f0",
+      }}
+    >
+      <h1>Shopify Test Page - Raw Product Data</h1>
+      <p>Fetched {products.length} product(s).</p>
+      <hr style={{ margin: "20px 0" }} />
+      <h2>Products:</h2>
+      <pre
+        style={{
+          backgroundColor: "#fff",
+          padding: "15px",
+          border: "1px solid #ccc",
+          whiteSpace: "pre-wrap",
+          wordBreak: "break-all",
+        }}
+      >
+        {JSON.stringify(products, null, 2)}
+      </pre>
     </main>
   );
 }
@@ -8052,6 +9461,7 @@ src/context/CartContext.tsx
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode } from "react";
+import { createCheckoutAndRedirect } from "@/lib/shopify";
 
 export interface CartItem {
   id: string; // Unique ID for the cart item (e.g., productID + size)
@@ -8060,6 +9470,8 @@ export interface CartItem {
   price: number;
   quantity: number;
   imageUrl: string;
+  variantId?: string; // Shopify variant ID for checkout
+  productHandle?: string; // Shopify product handle
 }
 
 interface CartContextType {
@@ -8068,6 +9480,7 @@ interface CartContextType {
   removeItemFromCart: (itemId: string) => void;
   updateItemQuantity: (itemId: string, change: number) => void;
   clearCart: () => void;
+  proceedToCheckout: (email?: string) => Promise<void>;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -8165,6 +9578,18 @@ export const CartProvider = ({ children }: CartProviderProps) => {
     setCartItems([]);
   };
 
+  const proceedToCheckout = async (email?: string) => {
+    try {
+      await createCheckoutAndRedirect(cartItems, email);
+      // Clear cart after successful checkout initiation
+      clearCart();
+    } catch (error) {
+      console.error("Checkout failed:", error);
+      // You might want to show a toast or error message to the user here
+      throw error;
+    }
+  };
+
   return (
     <CartContext.Provider
       value={{
@@ -8173,12 +9598,75 @@ export const CartProvider = ({ children }: CartProviderProps) => {
         removeItemFromCart,
         updateItemQuantity,
         clearCart,
+        proceedToCheckout,
       }}
     >
       {children}
     </CartContext.Provider>
   );
 };
+
+----
+src/context/SplashContext.tsx
+"use client";
+
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
+
+interface SplashContextType {
+  showSplash: boolean;
+  setShowSplash: (show: boolean) => void;
+  hasShownSplash: boolean;
+}
+
+const SplashContext = createContext<SplashContextType | undefined>(undefined);
+
+export function SplashProvider({ children }: { children: ReactNode }) {
+  const [showSplash, setShowSplash] = useState(true);
+  const [hasShownSplash, setHasShownSplash] = useState(false);
+
+  // Check if splash has been shown in this session
+  useEffect(() => {
+    const splashShown = sessionStorage.getItem("splashShown");
+    if (splashShown === "true") {
+      setShowSplash(false);
+      setHasShownSplash(true);
+    }
+  }, []);
+
+  const handleSetShowSplash = (show: boolean) => {
+    setShowSplash(show);
+    if (!show && !hasShownSplash) {
+      setHasShownSplash(true);
+      sessionStorage.setItem("splashShown", "true");
+    }
+  };
+
+  return (
+    <SplashContext.Provider
+      value={{
+        showSplash,
+        setShowSplash: handleSetShowSplash,
+        hasShownSplash,
+      }}
+    >
+      {children}
+    </SplashContext.Provider>
+  );
+}
+
+export function useSplash() {
+  const context = useContext(SplashContext);
+  if (context === undefined) {
+    throw new Error("useSplash must be used within a SplashProvider");
+  }
+  return context;
+}
 
 ----
 src/lib/animations.ts
@@ -8268,6 +9756,575 @@ export class BlurScrollEffect_Effect4 {
         },
       }
     );
+  }
+}
+
+----
+src/lib/shopify.ts
+import { GraphQLClient } from "graphql-request";
+
+// Retrieve environment variables
+// The '!' (non-null assertion operator) tells TypeScript that these values will definitely be present.
+// Ensure they are correctly set in your .env.local file.
+const domain = process.env.NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN!;
+const storefrontAccessToken =
+  process.env.NEXT_PUBLIC_SHOPIFY_STOREFRONT_ACCESS_TOKEN!;
+
+// Basic check for environment variables
+if (!domain || !storefrontAccessToken) {
+  throw new Error(
+    "Shopify domain or storefront access token is not defined in environment variables. " +
+      "Please check your .env.local file and ensure NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN and " +
+      "NEXT_PUBLIC_SHOPIFY_STOREFRONT_ACCESS_TOKEN are set."
+  );
+}
+
+// Create a new GraphQL client instance
+const storefrontClient = new GraphQLClient(
+  `https://${domain}/api/2024-04/graphql.json`, // Using API version 2024-04. Adjust if Shopify updates.
+  {
+    headers: {
+      "X-Shopify-Storefront-Access-Token": storefrontAccessToken,
+      "Content-Type": "application/json",
+    },
+  }
+);
+
+// Define a more specific GraphQL error type
+interface GraphQLError {
+  message: string;
+  locations?: { line: number; column: number }[];
+  path?: (string | number)[];
+  extensions?: Record<string, unknown>;
+}
+
+// Helper function to make requests
+// It takes a GraphQL query string and optional variables
+export async function storefrontApiRequest<T = unknown>(
+  query: string,
+  variables?: Record<string, unknown>
+): Promise<T> {
+  try {
+    const data = await storefrontClient.request<T>(query, variables);
+    return data;
+  } catch (error: unknown) {
+    // Log the error for more detailed debugging
+    let errorMessage = "An unknown error occurred";
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    console.error("Shopify Storefront API Error:", errorMessage);
+
+    // Check if error is an object and has response property
+    if (typeof error === "object" && error !== null && "response" in error) {
+      const responseError = error as {
+        response?: { errors?: GraphQLError[]; message?: string };
+        request?: { query?: string; variables?: Record<string, unknown> };
+        message?: string;
+      };
+      if (responseError.response && responseError.response.errors) {
+        console.error(
+          "GraphQL Errors:",
+          JSON.stringify(responseError.response.errors, null, 2)
+        );
+      }
+    }
+
+    // Check if error is an object and has request property
+    if (typeof error === "object" && error !== null && "request" in error) {
+      const requestError = error as {
+        request?: { query?: string; variables?: Record<string, unknown> };
+      };
+      if (requestError.request) {
+        console.error("GraphQL Query:", requestError.request.query);
+        console.error("GraphQL Variables:", requestError.request.variables);
+      }
+    }
+    // Re-throw a more generic error or a structured error object
+    throw new Error(`Shopify API request failed. ${errorMessage}`);
+  }
+}
+
+// gql tagged template literal (optional, but good for editor syntax highlighting)
+export const gql = String.raw;
+
+// --- Example Query to get first 5 products ---
+export const GET_FIRST_5_PRODUCTS_QUERY = gql`
+  query GetFirst5Products {
+    products(first: 5) {
+      edges {
+        node {
+          id
+          title
+          handle
+          description
+          priceRange {
+            minVariantPrice {
+              amount
+              currencyCode
+            }
+          }
+          images(first: 1) {
+            edges {
+              node {
+                originalSrc
+                altText
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
+// --- New Query to get more products with multiple images for product listing ---
+export const GET_PRODUCTS_FOR_LISTING_QUERY = gql`
+  query GetProductsForListing($first: Int = 20) {
+    products(first: $first) {
+      edges {
+        node {
+          id
+          title
+          handle
+          description
+          priceRange {
+            minVariantPrice {
+              amount
+              currencyCode
+            }
+          }
+          images(first: 3) {
+            edges {
+              node {
+                originalSrc
+                altText
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
+// --- Query to get a single product by handle for dynamic product pages ---
+export const GET_PRODUCT_BY_HANDLE_QUERY = gql`
+  query GetProductByHandle($handle: String!) {
+    productByHandle(handle: $handle) {
+      id
+      title
+      handle
+      description
+      descriptionHtml
+      priceRange {
+        minVariantPrice {
+          amount
+          currencyCode
+        }
+        maxVariantPrice {
+          amount
+          currencyCode
+        }
+      }
+      images(first: 10) {
+        edges {
+          node {
+            originalSrc
+            altText
+            width
+            height
+          }
+        }
+      }
+      variants(first: 10) {
+        edges {
+          node {
+            id
+            title
+            price {
+              amount
+              currencyCode
+            }
+            availableForSale
+            selectedOptions {
+              name
+              value
+            }
+          }
+        }
+      }
+      options {
+        id
+        name
+        values
+      }
+      tags
+      vendor
+      productType
+    }
+  }
+`;
+
+// --- Mutation to create a checkout ---
+export const CREATE_CHECKOUT_MUTATION = gql`
+  mutation CreateCheckout($input: CheckoutCreateInput!) {
+    checkoutCreate(input: $input) {
+      checkout {
+        id
+        webUrl
+        totalTaxV2 {
+          amount
+          currencyCode
+        }
+        totalPriceV2 {
+          amount
+          currencyCode
+        }
+        subtotalPriceV2 {
+          amount
+          currencyCode
+        }
+        lineItems(first: 250) {
+          edges {
+            node {
+              id
+              title
+              quantity
+              variant {
+                id
+                title
+                price {
+                  amount
+                  currencyCode
+                }
+                product {
+                  id
+                  title
+                  handle
+                }
+              }
+            }
+          }
+        }
+      }
+      checkoutUserErrors {
+        field
+        message
+      }
+    }
+  }
+`;
+
+// --- Mutation to add line items to existing checkout ---
+export const CHECKOUT_LINE_ITEMS_ADD_MUTATION = gql`
+  mutation CheckoutLineItemsAdd(
+    $checkoutId: ID!
+    $lineItems: [CheckoutLineItemInput!]!
+  ) {
+    checkoutLineItemsAdd(checkoutId: $checkoutId, lineItems: $lineItems) {
+      checkout {
+        id
+        webUrl
+        totalTaxV2 {
+          amount
+          currencyCode
+        }
+        totalPriceV2 {
+          amount
+          currencyCode
+        }
+        subtotalPriceV2 {
+          amount
+          currencyCode
+        }
+        lineItems(first: 250) {
+          edges {
+            node {
+              id
+              title
+              quantity
+              variant {
+                id
+                title
+                price {
+                  amount
+                  currencyCode
+                }
+                product {
+                  id
+                  title
+                  handle
+                }
+              }
+            }
+          }
+        }
+      }
+      checkoutUserErrors {
+        field
+        message
+      }
+    }
+  }
+`;
+
+// --- Define a basic type for the product data you expect from the query ---
+// This helps with TypeScript type safety.
+export interface ShopifyProductImage {
+  originalSrc: string;
+  altText: string | null;
+}
+
+export interface ShopifyMoney {
+  amount: string;
+  currencyCode: string;
+}
+
+export interface ShopifyPriceRange {
+  minVariantPrice: ShopifyMoney;
+}
+
+export interface ShopifyProductNode {
+  id: string;
+  title: string;
+  handle: string;
+  description: string;
+  priceRange: ShopifyPriceRange;
+  images: {
+    edges: {
+      node: ShopifyProductImage;
+    }[];
+  };
+}
+
+export interface ShopifyProductsData {
+  products: {
+    edges: {
+      node: ShopifyProductNode;
+    }[];
+  };
+}
+
+// --- Define types for single product data ---
+export interface ShopifyProductVariant {
+  id: string;
+  title: string;
+  price: ShopifyMoney;
+  availableForSale: boolean;
+  selectedOptions: {
+    name: string;
+    value: string;
+  }[];
+}
+
+export interface ShopifyProductOption {
+  id: string;
+  name: string;
+  values: string[];
+}
+
+export interface ShopifyProductDetails {
+  id: string;
+  title: string;
+  handle: string;
+  description: string;
+  descriptionHtml: string;
+  priceRange: {
+    minVariantPrice: ShopifyMoney;
+    maxVariantPrice: ShopifyMoney;
+  };
+  images: {
+    edges: {
+      node: ShopifyProductImage & {
+        width: number;
+        height: number;
+      };
+    }[];
+  };
+  variants: {
+    edges: {
+      node: ShopifyProductVariant;
+    }[];
+  };
+  options: ShopifyProductOption[];
+  tags: string[];
+  vendor: string;
+  productType: string;
+}
+
+export interface ShopifyProductByHandleData {
+  productByHandle: ShopifyProductDetails | null;
+}
+
+// --- Define types for checkout functionality ---
+export interface ShopifyCheckoutLineItem {
+  id: string;
+  title: string;
+  quantity: number;
+  variant: {
+    id: string;
+    title: string;
+    price: ShopifyMoney;
+    product: {
+      id: string;
+      title: string;
+      handle: string;
+    };
+  };
+}
+
+export interface ShopifyCheckout {
+  id: string;
+  webUrl: string;
+  totalTaxV2: ShopifyMoney;
+  totalPriceV2: ShopifyMoney;
+  subtotalPriceV2: ShopifyMoney;
+  lineItems: {
+    edges: {
+      node: ShopifyCheckoutLineItem;
+    }[];
+  };
+}
+
+export interface ShopifyCheckoutUserError {
+  field: string[];
+  message: string;
+}
+
+export interface ShopifyCheckoutCreateData {
+  checkoutCreate: {
+    checkout: ShopifyCheckout | null;
+    checkoutUserErrors: ShopifyCheckoutUserError[];
+  };
+}
+
+export interface ShopifyCheckoutLineItemsAddData {
+  checkoutLineItemsAdd: {
+    checkout: ShopifyCheckout | null;
+    checkoutUserErrors: ShopifyCheckoutUserError[];
+  };
+}
+
+export interface CheckoutLineItemInput {
+  variantId: string;
+  quantity: number;
+  customAttributes?: {
+    key: string;
+    value: string;
+  }[];
+}
+
+export interface CheckoutCreateInput {
+  lineItems?: CheckoutLineItemInput[];
+  email?: string;
+  shippingAddress?: {
+    firstName?: string;
+    lastName?: string;
+    company?: string;
+    address1?: string;
+    address2?: string;
+    city?: string;
+    country?: string;
+    province?: string;
+    zip?: string;
+    phone?: string;
+  };
+}
+
+// --- Helper functions for checkout functionality ---
+
+/**
+ * Create a new Shopify checkout with line items
+ */
+export async function createCheckout(
+  lineItems: CheckoutLineItemInput[],
+  email?: string
+): Promise<ShopifyCheckout> {
+  try {
+    const input: CheckoutCreateInput = {
+      lineItems,
+      email,
+    };
+
+    const data = await storefrontApiRequest<ShopifyCheckoutCreateData>(
+      CREATE_CHECKOUT_MUTATION,
+      { input }
+    );
+
+    if (data.checkoutCreate.checkoutUserErrors.length > 0) {
+      throw new Error(
+        `Checkout creation failed: ${data.checkoutCreate.checkoutUserErrors
+          .map((error) => error.message)
+          .join(", ")}`
+      );
+    }
+
+    if (!data.checkoutCreate.checkout) {
+      throw new Error("Checkout creation failed: No checkout returned");
+    }
+
+    return data.checkoutCreate.checkout;
+  } catch (error) {
+    console.error("Failed to create checkout:", error);
+    throw error;
+  }
+}
+
+/**
+ * Convert cart items to Shopify checkout line items
+ * Note: This requires mapping cart items to actual Shopify variant IDs
+ */
+export function convertCartItemsToLineItems(
+  cartItems: Array<{
+    name: string;
+    size: string;
+    quantity: number;
+    variantId?: string; // We'll need to add this to cart items
+  }>
+): CheckoutLineItemInput[] {
+  return cartItems
+    .filter((item) => item.variantId) // Only include items with variant IDs
+    .map((item) => ({
+      variantId: item.variantId!,
+      quantity: item.quantity,
+      customAttributes: [
+        {
+          key: "Size",
+          value: item.size,
+        },
+      ],
+    }));
+}
+
+/**
+ * Create checkout and redirect to Shopify checkout page
+ */
+export async function createCheckoutAndRedirect(
+  cartItems: Array<{
+    name: string;
+    size: string;
+    quantity: number;
+    variantId?: string;
+  }>,
+  email?: string
+): Promise<void> {
+  try {
+    const lineItems = convertCartItemsToLineItems(cartItems);
+
+    if (lineItems.length === 0) {
+      throw new Error(
+        "No valid items to checkout. Please ensure products have variant IDs."
+      );
+    }
+
+    const checkout = await createCheckout(lineItems, email);
+
+    // Redirect to Shopify checkout page
+    window.location.href = checkout.webUrl;
+  } catch (error) {
+    console.error("Checkout failed:", error);
+    throw error;
   }
 }
 

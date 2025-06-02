@@ -11,13 +11,34 @@ interface ProductCardProps {
   name: string;
   price: number;
   productUrl: string;
+  currencyCode?: string; // Optional currency code from Shopify
 }
 
-// Simple price formatter for Rupees
-const formatPrice = (price: number): string => {
-  return `₹ ${price.toLocaleString("en-IN", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+// Enhanced price formatter that handles different currencies
+const formatPrice = (price: number, currencyCode?: string): string => {
+  // If no currency code provided, default to Rupees
+  if (!currencyCode || currencyCode === "INR") {
+    return `₹ ${price.toLocaleString("en-IN", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  }
+
+  // Handle other common currencies
+  const currencySymbols: { [key: string]: string } = {
+    USD: "$",
+    EUR: "€",
+    GBP: "£",
+    CAD: "C$",
+    AUD: "A$",
+    JPY: "¥",
+  };
+
+  const symbol = currencySymbols[currencyCode] || currencyCode;
+
+  return `${symbol} ${price.toLocaleString("en-US", {
+    minimumFractionDigits: currencyCode === "JPY" ? 0 : 2,
+    maximumFractionDigits: currencyCode === "JPY" ? 0 : 2,
   })}`;
 };
 
@@ -27,6 +48,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   name,
   price,
   productUrl,
+  currencyCode,
 }) => {
   const cardRef = useRef<HTMLAnchorElement>(null);
   const defaultImageRef = useRef<HTMLDivElement>(null);
@@ -115,7 +137,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
         {name}
       </h3>
       <p className="text-sm text-gray-900 font-medium lowercase">
-        {formatPrice(price)}
+        {formatPrice(price, currencyCode)}
       </p>
     </Link>
   );

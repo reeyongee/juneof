@@ -29,8 +29,15 @@ export default function CartOverlay({ isOpen, onClose }: CartOverlayProps) {
   const [isMounted, setIsMounted] = useState(false);
 
   // Use cart from context
-  const { cartItems, updateItemQuantity, removeItemFromCart, clearCart } =
-    useCart();
+  const {
+    cartItems,
+    updateItemQuantity,
+    removeItemFromCart,
+    clearCart,
+    proceedToCheckout,
+  } = useCart();
+
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
@@ -114,11 +121,20 @@ export default function CartOverlay({ isOpen, onClose }: CartOverlayProps) {
     0
   );
 
-  const handleCheckout = () => {
-    console.log("Checkout initiated with items:", cartItems);
-    alert("Proceeding to checkout!");
-    // Actual checkout logic would go here
-    // clearCart(); // Example: clear cart after successful checkout
+  const handleCheckout = async () => {
+    try {
+      setIsCheckingOut(true);
+      await proceedToCheckout();
+      // Cart will be cleared automatically in proceedToCheckout
+      // Close the cart overlay after successful checkout initiation
+      handleCloseStart();
+    } catch (error) {
+      console.error("Checkout failed:", error);
+      // You might want to show an error message to the user here
+      alert("Checkout failed. Please try again.");
+    } finally {
+      setIsCheckingOut(false);
+    }
   };
 
   if (!isMounted) {
@@ -152,7 +168,7 @@ export default function CartOverlay({ isOpen, onClose }: CartOverlayProps) {
           <div className="ml-auto">
             <button
               onClick={handleCloseStart}
-              className="text-gray-600 hover:text-black transition-colors p-1 border border-gray-300 rounded-md"
+              className="text-gray-600 hover:text-black transition-colors p-1 border border-gray-300 rounded-md no-underline-effect"
             >
               <XMarkIcon className="h-6 w-6" />
             </button>
@@ -189,14 +205,14 @@ export default function CartOverlay({ isOpen, onClose }: CartOverlayProps) {
                   <div className="flex items-center space-x-2">
                     <button
                       onClick={() => handleQuantityChange(item.id, -1)}
-                      className="px-2 py-1 hover:bg-gray-100"
+                      className="px-2 py-1 hover:bg-gray-100 no-underline-effect"
                     >
                       -
                     </button>
                     <span>{item.quantity}</span>
                     <button
                       onClick={() => handleQuantityChange(item.id, 1)}
-                      className="px-2 py-1 hover:bg-gray-100"
+                      className="px-2 py-1 hover:bg-gray-100 no-underline-effect"
                     >
                       +
                     </button>
@@ -206,7 +222,7 @@ export default function CartOverlay({ isOpen, onClose }: CartOverlayProps) {
                   </p>
                   <button
                     onClick={() => removeItemFromCart(item.id)}
-                    className="ml-2 text-gray-500 hover:text-gray-700 text-lg"
+                    className="ml-2 text-gray-500 hover:text-gray-700 text-lg no-underline-effect"
                     aria-label={`Remove ${item.name}`}
                   >
                     &times;
@@ -226,15 +242,16 @@ export default function CartOverlay({ isOpen, onClose }: CartOverlayProps) {
             </div>
             <button
               onClick={clearCart}
-              className="w-full text-gray-700 hover:text-gray-900 py-2 text-sm lowercase tracking-wider transition-colors border border-gray-300 hover:bg-gray-100 rounded-md"
+              className="w-full text-gray-700 hover:text-gray-900 py-2 text-sm lowercase tracking-wider transition-colors border border-gray-300 hover:bg-gray-100 rounded-md no-underline-effect"
             >
               clear bag
             </button>
             <button
               onClick={handleCheckout}
-              className="w-full bg-[#BEBDBA] hover:bg-[#acaaaa] text-white py-3 rounded-md text-lg font-serif tracking-wider transition-colors lowercase"
+              disabled={isCheckingOut}
+              className="w-full bg-[#171717] text-[#F8F4EC] hover:bg-black py-3 text-base lowercase tracking-wider transition-colors rounded-md disabled:opacity-50 checkout-btn no-underline-effect"
             >
-              checkout
+              {isCheckingOut ? "Processing..." : "checkout"}
             </button>
           </div>
         )}
