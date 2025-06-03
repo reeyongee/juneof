@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, ReactNode } from "react";
 import { createCheckoutAndRedirect } from "@/lib/shopify";
+import { toast } from "sonner";
 
 export interface CartItem {
   id: string; // Unique ID for the cart item (e.g., productID + size)
@@ -91,10 +92,27 @@ export const CartProvider = ({ children }: CartProviderProps) => {
         ];
       }
     });
+
+    // Show toast notification for adding item to cart
+    toast.success("Added to bag", {
+      description: `${newItemData.name} (${newItemData.size}) added to your bag`,
+      duration: 2500,
+    });
   };
 
   const removeItemFromCart = (itemId: string) => {
+    // Find the item being removed for toast notification
+    const itemToRemove = cartItems.find((item) => item.id === itemId);
+
     setCartItems((prevItems) => prevItems.filter((item) => item.id !== itemId));
+
+    // Show toast notification for removing item
+    if (itemToRemove) {
+      toast.info("Removed from bag", {
+        description: `${itemToRemove.name} (${itemToRemove.size}) removed from your bag`,
+        duration: 2500,
+      });
+    }
   };
 
   const updateItemQuantity = (itemId: string, change: number) => {
@@ -115,7 +133,38 @@ export const CartProvider = ({ children }: CartProviderProps) => {
   };
 
   const clearCart = () => {
+    const itemCount = cartItems.length;
     setCartItems([]);
+
+    // Show toast notification for clearing cart
+    if (itemCount > 0) {
+      toast.info("Bag cleared", {
+        description: `Removed ${itemCount} item${
+          itemCount === 1 ? "" : "s"
+        } from your bag`,
+        duration: 2500,
+      });
+    }
+
+    // Reset cursor state to prevent cursor disappearing issue
+    // This ensures the cursor is properly visible after DOM changes
+    setTimeout(() => {
+      // Dispatch a custom event to trigger cursor reinitialization
+      const cursorResetEvent = new CustomEvent("cursor-reset", {
+        bubbles: true,
+        detail: { reason: "cart-cleared" },
+      });
+      document.dispatchEvent(cursorResetEvent);
+
+      // Also trigger a mousemove event to refresh cursor position
+      const rect = document.body.getBoundingClientRect();
+      const mouseEvent = new MouseEvent("mousemove", {
+        clientX: rect.width / 2,
+        clientY: rect.height / 2,
+        bubbles: true,
+      });
+      document.dispatchEvent(mouseEvent);
+    }, 150);
   };
 
   const proceedToCheckout = async (email?: string) => {

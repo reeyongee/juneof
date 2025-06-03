@@ -316,6 +316,52 @@ export default function CustomCursor() {
     // Add mouse move listener
     document.addEventListener("mousemove", updateMousePosition);
 
+    // Add cursor reset event listener
+    const handleCursorReset = (e: CustomEvent) => {
+      console.log("Cursor reset triggered:", e.detail);
+      // Reset cursor state
+      isStuckRef.current = false;
+      stuckToRef.current = null;
+
+      // Kill any existing tweens
+      if (enlargeCursorTweenRef.current) {
+        enlargeCursorTweenRef.current.kill();
+      }
+      if (magneticTweenRef.current) {
+        magneticTweenRef.current.kill();
+      }
+
+      // Reset cursor to original state
+      if (outerCursorRef.current) {
+        gsap.set(outerCursorRef.current, {
+          width: cursorOriginals.current.width,
+          height: cursorOriginals.current.height,
+          backgroundColor: cursorOriginals.current.backgroundColor,
+          borderColor: cursorOriginals.current.borderColor,
+          borderRadius: "50%",
+          opacity: 1,
+        });
+      }
+
+      // Reset inner cursor
+      if (innerCursorRef.current) {
+        gsap.set(innerCursorRef.current, {
+          opacity: 1,
+        });
+      }
+
+      // Ensure cursor wrapper is visible
+      if (cursorWrapperRef.current) {
+        cursorWrapperRef.current.style.display = "block";
+        gsap.set(cursorWrapperRef.current, { autoAlpha: 1 });
+      }
+    };
+
+    document.addEventListener(
+      "cursor-reset",
+      handleCursorReset as EventListener
+    );
+
     // Start render loop only if not showing splash
     if (!showSplash) {
       startRenderLoop();
@@ -341,6 +387,10 @@ export default function CustomCursor() {
       observer.disconnect();
 
       document.removeEventListener("mousemove", updateMousePosition);
+      document.removeEventListener(
+        "cursor-reset",
+        handleCursorReset as EventListener
+      );
 
       if (enlargeCursorTweenRef.current) {
         enlargeCursorTweenRef.current.kill();

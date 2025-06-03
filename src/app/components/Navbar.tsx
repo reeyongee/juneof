@@ -5,6 +5,7 @@ import Link from "next/link";
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import CartOverlay from "./CartOverlay";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
 
 // Placeholder SVGs - Replace with actual SVGs
 const InstagramIcon = () => (
@@ -49,10 +50,13 @@ const Navbar: React.FC = () => {
   const [transparent, setTransparent] = useState(false);
   const [isNavItemHovered, setIsNavItemHovered] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const profileDropdownTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const HOVER_DELAY_MS = 300;
 
   const { cartItems } = useCart();
+  const { isSignedIn, signOut } = useAuth();
 
   const totalCartItems = cartItems.reduce(
     (sum, item) => sum + item.quantity,
@@ -187,6 +191,9 @@ const Navbar: React.FC = () => {
       if (hoverTimeoutRef.current) {
         clearTimeout(hoverTimeoutRef.current);
       }
+      if (profileDropdownTimeoutRef.current) {
+        clearTimeout(profileDropdownTimeoutRef.current);
+      }
     };
   }, []);
 
@@ -284,13 +291,63 @@ const Navbar: React.FC = () => {
                   </span>
                 )}
               </div>
-              <Link
-                href="/profile"
-                className={`${getLinkItemClasses(isEffectivelyTransparent)}`}
-                data-underline-button-effect
+              {/* Profile Dropdown */}
+              <div
+                className="relative"
+                onMouseEnter={() => {
+                  if (profileDropdownTimeoutRef.current) {
+                    clearTimeout(profileDropdownTimeoutRef.current);
+                  }
+                  setIsProfileDropdownOpen(true);
+                }}
+                onMouseLeave={() => {
+                  profileDropdownTimeoutRef.current = setTimeout(() => {
+                    setIsProfileDropdownOpen(false);
+                  }, 150);
+                }}
               >
-                <UserIcon />
-              </Link>
+                <button
+                  className={`${getLinkItemClasses(
+                    isEffectivelyTransparent
+                  )} hover:opacity-75 transition-opacity`}
+                  data-underline-button-effect
+                >
+                  <UserIcon />
+                </button>
+                {isProfileDropdownOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-48 bg-[#F8F4EC] border border-gray-200 shadow-lg z-50">
+                    <div className="py-1">
+                      {isSignedIn ? (
+                        <>
+                          <Link
+                            href="/dashboard"
+                            className="block px-4 py-2 text-lg lowercase tracking-wider hover:opacity-75 hover:bg-gray-100 transition-colors text-center"
+                          >
+                            dashboard
+                          </Link>
+                          <button
+                            onClick={() => {
+                              signOut();
+                              // Optionally redirect to home page
+                              window.location.href = "/";
+                            }}
+                            className="block w-full px-4 py-2 text-lg lowercase tracking-wider hover:opacity-75 hover:bg-gray-100 transition-colors text-center"
+                          >
+                            sign out
+                          </button>
+                        </>
+                      ) : (
+                        <Link
+                          href="/signin"
+                          className="block px-4 py-2 text-lg lowercase tracking-wider hover:opacity-75 hover:bg-gray-100 transition-colors text-center"
+                        >
+                          signin/register
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
               <Link
                 href="https://www.instagram.com/juneofofficial/"
                 target="_blank"

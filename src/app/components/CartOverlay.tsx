@@ -1,10 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import gsap from "gsap";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import { useCart } from "@/context/CartContext";
+import { useAddress } from "@/context/AddressContext";
+import { useAuth } from "@/context/AuthContext";
+import AddressSelectionOverlay from "./AddressSelectionOverlay";
 import { ShoppingBagIcon, XMarkIcon } from "@heroicons/react/24/outline";
 
 // Define props interface
@@ -27,6 +31,8 @@ export default function CartOverlay({ isOpen, onClose }: CartOverlayProps) {
   const [isAnimatingOut, setIsAnimatingOut] = useState(false);
   const tl = useRef<gsap.core.Timeline | null>(null);
   const [isMounted, setIsMounted] = useState(false);
+  const [isAddressSelectionOpen, setIsAddressSelectionOpen] = useState(false);
+  const router = useRouter();
 
   // Use cart from context
   const {
@@ -37,7 +43,18 @@ export default function CartOverlay({ isOpen, onClose }: CartOverlayProps) {
     proceedToCheckout,
   } = useCart();
 
+  // Use address from context
+  const { addresses, selectedAddressId } = useAddress();
+
+  // Use auth from context
+  const { isSignedIn } = useAuth();
+
   const [isCheckingOut, setIsCheckingOut] = useState(false);
+
+  // Get selected address for display
+  const selectedAddress = addresses.find(
+    (addr) => addr.id === selectedAddressId
+  );
 
   useEffect(() => {
     setIsMounted(true);
@@ -160,15 +177,28 @@ export default function CartOverlay({ isOpen, onClose }: CartOverlayProps) {
       >
         {/* Header */}
         <div className="relative flex items-center p-6 border-b border-gray-300">
+          {/* Clear Bag Button - positioned in upper left */}
+          <div className="mr-auto">
+            {cartItems.length > 0 && (
+              <button
+                onClick={clearCart}
+                className="text-sm tracking-widest lowercase hover:text-gray-600 transition-colors no-underline-effect regular-cursor clear-cart-btn"
+              >
+                clear bag
+              </button>
+            )}
+          </div>
+
           {/* Centered Title */}
           <div className="absolute inset-x-0 top-1/2 transform -translate-y-1/2 text-center pointer-events-none">
             <h2 className="text-2xl font-serif lowercase inline-block">bag</h2>
           </div>
+
           {/* Close Button pushed to the right */}
           <div className="ml-auto">
             <button
               onClick={handleCloseStart}
-              className="text-gray-600 hover:text-black transition-colors p-1 border border-gray-300 rounded-md no-underline-effect"
+              className="text-gray-600 hover:text-black transition-colors p-1 border border-gray-300 no-underline-effect"
             >
               <XMarkIcon className="h-6 w-6" />
             </button>
@@ -236,26 +266,83 @@ export default function CartOverlay({ isOpen, onClose }: CartOverlayProps) {
         {/* Footer */}
         {cartItems.length > 0 && (
           <div className="p-6 border-t border-gray-300 space-y-4">
+            {/* Address Selection */}
+            <div>
+              {!isSignedIn ? (
+                <button
+                  onClick={() => {
+                    router.push("/signin");
+                    handleCloseStart();
+                  }}
+                  className="w-full bg-[#F8F4EC] border border-gray-300 p-3 text-xs hover:border-gray-400 transition-colors no-underline-effect"
+                >
+                  <div className="flex justify-center">
+                    <span className="text-gray-600 lowercase tracking-wider italic">
+                      sign in to view addresses
+                    </span>
+                  </div>
+                </button>
+              ) : selectedAddress ? (
+                <div className="bg-[#F8F4EC] border border-gray-300 p-3 text-xs">
+                  <div className="space-y-3">
+                    <div>
+                      <p className="font-medium text-black lowercase tracking-wider truncate">
+                        {selectedAddress.name}
+                      </p>
+                    </div>
+                    <div className="text-gray-600 lowercase tracking-wider">
+                      <p className="truncate">{selectedAddress.addressLine1}</p>
+                      <p className="truncate">
+                        {selectedAddress.city}, {selectedAddress.state}{" "}
+                        {selectedAddress.pincode}
+                      </p>
+                    </div>
+                    <div className="flex justify-center">
+                      <button
+                        onClick={() => setIsAddressSelectionOpen(true)}
+                        className="text-xs tracking-widest lowercase hover:text-gray-600 transition-colors underline"
+                      >
+                        change address
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-[#F8F4EC] border border-gray-300 p-3 text-xs">
+                  <div className="flex justify-center">
+                    <button
+                      onClick={() => setIsAddressSelectionOpen(true)}
+                      className="text-xs tracking-widest lowercase hover:text-gray-600 transition-colors underline"
+                    >
+                      select address
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div className="flex justify-between items-center">
               <p className="text-lg font-serif lowercase">Subtotal</p>
               <p className="text-lg font-medium">{formatPrice(subtotal)}</p>
             </div>
             <button
-              onClick={clearCart}
-              className="w-full text-gray-700 hover:text-gray-900 py-2 text-sm lowercase tracking-wider transition-colors border border-gray-300 hover:bg-gray-100 rounded-md no-underline-effect"
-            >
-              clear bag
-            </button>
-            <button
               onClick={handleCheckout}
               disabled={isCheckingOut}
-              className="w-full bg-[#171717] text-[#F8F4EC] hover:bg-black py-3 text-base lowercase tracking-wider transition-colors rounded-md disabled:opacity-50 checkout-btn no-underline-effect"
+              className="w-full bg-[#171717] text-[#F8F4EC] hover:bg-black py-3 text-base lowercase tracking-wider transition-colors disabled:opacity-50 checkout-btn no-underline-effect"
             >
               {isCheckingOut ? "Processing..." : "checkout"}
             </button>
           </div>
         )}
       </div>
+
+      {/* Address Selection Overlay - only show if signed in */}
+      {isSignedIn && (
+        <AddressSelectionOverlay
+          isOpen={isAddressSelectionOpen}
+          onClose={() => setIsAddressSelectionOpen(false)}
+        />
+      )}
     </div>,
     document.body
   );

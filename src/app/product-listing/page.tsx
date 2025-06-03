@@ -94,7 +94,7 @@ export default async function ProductListingPage() {
   return (
     <main className="min-h-screen bg-[#F8F4EC] p-8">
       {products.length === 0 && (
-        <div className="mb-6 p-4 bg-yellow-100 border border-yellow-400 rounded">
+        <div className="mb-6 p-4 bg-yellow-100 border border-yellow-400">
           <p className="text-yellow-800">
             No Shopify products found. Displaying mock data. Check your Shopify
             configuration.
