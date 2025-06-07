@@ -124,7 +124,16 @@ export const AddressProvider: React.FC<{ children: React.ReactNode }> = ({
       lastUsed: new Date(),
     };
 
-    setAddresses((prev) => [...prev, newAddress]);
+    setAddresses((prev) => {
+      // If the new address is set as default, clear default flag from all existing addresses
+      if (newAddress.isDefault) {
+        return [
+          ...prev.map((addr) => ({ ...addr, isDefault: false })),
+          newAddress,
+        ];
+      }
+      return [...prev, newAddress];
+    });
     setSelectedAddressId(newAddress.id);
   };
 

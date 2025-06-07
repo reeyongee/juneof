@@ -7,7 +7,7 @@ import { createPortal } from "react-dom";
 import Image from "next/image";
 import { useCart } from "@/context/CartContext";
 import { useAddress } from "@/context/AddressContext";
-import { useAuth } from "@/context/AuthContext";
+import { useSession } from "next-auth/react";
 import AddressSelectionOverlay from "./AddressSelectionOverlay";
 import { ShoppingBagIcon, XMarkIcon } from "@heroicons/react/24/outline";
 
@@ -46,8 +46,9 @@ export default function CartOverlay({ isOpen, onClose }: CartOverlayProps) {
   // Use address from context
   const { addresses, selectedAddressId } = useAddress();
 
-  // Use auth from context
-  const { isSignedIn } = useAuth();
+  // Use auth from NextAuth
+  const { status } = useSession();
+  const isSignedIn = status === "authenticated";
 
   const [isCheckingOut, setIsCheckingOut] = useState(false);
 
@@ -325,13 +326,25 @@ export default function CartOverlay({ isOpen, onClose }: CartOverlayProps) {
               <p className="text-lg font-serif lowercase">Subtotal</p>
               <p className="text-lg font-medium">{formatPrice(subtotal)}</p>
             </div>
-            <button
-              onClick={handleCheckout}
-              disabled={isCheckingOut}
-              className="w-full bg-[#171717] text-[#F8F4EC] hover:bg-black py-3 text-base lowercase tracking-wider transition-colors disabled:opacity-50 checkout-btn no-underline-effect"
-            >
-              {isCheckingOut ? "Processing..." : "checkout"}
-            </button>
+            {!isSignedIn ? (
+              <button
+                onClick={() => {
+                  router.push("/signin");
+                  handleCloseStart();
+                }}
+                className="w-full bg-[#171717] text-[#F8F4EC] hover:bg-black py-3 text-base lowercase tracking-wider transition-colors no-underline-effect"
+              >
+                sign in to checkout
+              </button>
+            ) : (
+              <button
+                onClick={handleCheckout}
+                disabled={isCheckingOut}
+                className="w-full bg-[#171717] text-[#F8F4EC] hover:bg-black py-3 text-base lowercase tracking-wider transition-colors disabled:opacity-50 checkout-btn no-underline-effect"
+              >
+                {isCheckingOut ? "Processing..." : "checkout"}
+              </button>
+            )}
           </div>
         )}
       </div>

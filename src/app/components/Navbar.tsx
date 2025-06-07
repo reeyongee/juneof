@@ -5,7 +5,7 @@ import Link from "next/link";
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import CartOverlay from "./CartOverlay";
 import { useCart } from "@/context/CartContext";
-import { useAuth } from "@/context/AuthContext";
+import { useSession, signOut } from "next-auth/react";
 
 // Placeholder SVGs - Replace with actual SVGs
 const InstagramIcon = () => (
@@ -56,7 +56,8 @@ const Navbar: React.FC = () => {
   const HOVER_DELAY_MS = 300;
 
   const { cartItems } = useCart();
-  const { isSignedIn, signOut } = useAuth();
+  const { status } = useSession();
+  const isSignedIn = status === "authenticated";
 
   const totalCartItems = cartItems.reduce(
     (sum, item) => sum + item.quantity,

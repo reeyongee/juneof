@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/context/AuthContext";
+import { useSession } from "next-auth/react";
 import { useAddress } from "@/context/AddressContext";
 import AddAddressOverlay from "@/app/components/AddAddressOverlay";
 import { toast } from "sonner";
@@ -129,7 +129,9 @@ const formatDate = (dateString: string): string => {
 export default function DashboardPage() {
   const [activeSection, setActiveSection] = useState("orders");
   const [isAddAddressOpen, setIsAddAddressOpen] = useState(false);
-  const { userEmail, isSignedIn } = useAuth();
+  const { data: session, status } = useSession();
+  const isSignedIn = status === "authenticated";
+  const userEmail = session?.user?.email;
   const {
     addresses,
     selectedAddressId,
@@ -139,8 +141,9 @@ export default function DashboardPage() {
   } = useAddress();
   const router = useRouter();
 
-  // Extract name from email or use fallback
-  const userName = userEmail ? userEmail.split("@")[0] : "user";
+  // Use actual name from session, fallback to email username, then "user"
+  const userName =
+    session?.user?.name || (userEmail ? userEmail.split("@")[0] : "user");
 
   // Redirect to signin if not authenticated
   useEffect(() => {

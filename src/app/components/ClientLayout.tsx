@@ -6,7 +6,7 @@ import Navbar from "./Navbar";
 import Footer from "./Footer";
 import CustomCursor from "./CustomCursor";
 import { useSplash } from "@/context/SplashContext";
-import { AuthProvider } from "@/context/AuthContext";
+import { SessionProvider } from "next-auth/react";
 import { AddressProvider } from "@/context/AddressContext";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -45,7 +45,7 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
   }, [showSplash]);
 
   return (
-    <AuthProvider>
+    <SessionProvider>
       <AddressProvider>
         <CustomCursor />
         {showSplash && <SplashScreen onLoadComplete={handleLoadComplete} />}
@@ -63,6 +63,6 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
         </div>
         <Toaster position="bottom-left" />
       </AddressProvider>
-    </AuthProvider>
+    </SessionProvider>
   );
 }

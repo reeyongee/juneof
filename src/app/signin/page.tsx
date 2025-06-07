@@ -7,7 +7,7 @@ import * as z from "zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { useAuth } from "@/context/AuthContext";
+import { signIn } from "next-auth/react";
 import {
   Card,
   CardContent,
@@ -25,7 +25,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { DUMMY_CREDENTIALS } from "@/lib/auth-constants";
 
 const signInSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -37,7 +36,6 @@ type SignInFormValues = z.infer<typeof signInSchema>;
 export default function SignInPage() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const { signIn } = useAuth();
 
   const form = useForm<SignInFormValues>({
     resolver: zodResolver(signInSchema),
@@ -50,37 +48,40 @@ export default function SignInPage() {
   const onSubmit = async (data: SignInFormValues) => {
     setIsLoading(true);
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    // Check against dummy credentials
-    if (
-      data.email === DUMMY_CREDENTIALS.email &&
-      data.password === DUMMY_CREDENTIALS.password
-    ) {
-      console.log("Sign in successful!", data);
-
-      // Sign in the user
-      signIn(data.email);
-
-      // Show success toast
-      toast.success("Welcome back!", {
-        description: "You have successfully signed in.",
-        duration: 3000,
+    try {
+      const result = await signIn("credentials", {
+        redirect: false, // Important: handle redirect manually
+        email: data.email,
+        password: data.password,
       });
 
-      // Redirect to home page after a short delay
-      setTimeout(() => {
-        router.push("/dashboard");
-      }, 1000);
-    } else {
-      form.setError("root", {
-        message:
-          "oops that didn't work. we didn't find you in our database. maybe try again? or click on the register button below.",
+      if (result?.error) {
+        // Handle error - show friendly message on the form (no toast needed)
+        form.setError("root", {
+          message:
+            "oops! that's not the right email or password! maybe try again? or register below if you're not an existing user",
+        });
+      } else if (result?.ok) {
+        // Sign-in successful
+        toast.success("Welcome back!", {
+          description: "You have successfully signed in.",
+          duration: 3000,
+        });
+
+        // Redirect to dashboard after a short delay
+        setTimeout(() => {
+          router.push("/dashboard");
+        }, 1000);
+      }
+    } catch (error) {
+      console.error("Sign-in error:", error);
+      toast.error("Sign-in failed", {
+        description: "An unexpected error occurred. Please try again.",
+        duration: 4000,
       });
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   };
 
   return (

@@ -8,6 +8,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Check, X } from "lucide-react";
+import { signIn } from "next-auth/react";
 import {
   Card,
   CardContent,
@@ -92,23 +93,99 @@ export default function RegisterPage() {
   const onSubmit = async (data: RegisterFormValues) => {
     setIsLoading(true);
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      // Debug: Log the environment variables (remove in production)
+      console.log("Supabase URL:", process.env.NEXT_PUBLIC_SUPABASE_URL);
+      console.log("Has Anon Key:", !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
-    console.log("Registration successful!", data);
+      const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/register-email-user`;
+      console.log("Attempting to call:", url);
 
-    // Show success toast
-    toast.success("Welcome to juneof!", {
-      description: "Your account has been created successfully.",
-      duration: 3000,
-    });
+      // Make a POST request to the Supabase Edge Function
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          name: data.name,
+          email: data.email,
+          password: data.password,
+        }),
+      });
 
-    // Redirect to signin page after a short delay
-    setTimeout(() => {
-      router.push("/signin");
-    }, 1000);
+      console.log("Response status:", response.status);
+      console.log(
+        "Response headers:",
+        Object.fromEntries(response.headers.entries())
+      );
 
-    setIsLoading(false);
+      // Check if response is actually JSON
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        const textResponse = await response.text();
+        console.error("Non-JSON response received:", textResponse);
+        throw new Error(
+          `Server returned non-JSON response: ${response.status} ${response.statusText}`
+        );
+      }
+
+      const result = await response.json();
+      console.log("Response data:", result);
+
+      if (!response.ok) {
+        throw new Error(
+          result.error ||
+            `Registration failed: ${response.status} ${response.statusText}`
+        );
+      }
+
+      // Show success toast
+      toast.success("Welcome to juneof!", {
+        description: "Your account has been created successfully.",
+        duration: 3000,
+      });
+
+      // Automatically sign the user in
+      const signInResult = await signIn("credentials", {
+        email: data.email,
+        password: data.password,
+        redirect: false,
+      });
+
+      if (signInResult?.error) {
+        // If auto sign-in fails, redirect to sign-in page with success message
+        toast.info("Please sign in", {
+          description:
+            "Account created successfully. Please sign in to continue.",
+          duration: 3000,
+        });
+        setTimeout(() => {
+          router.push("/signin");
+        }, 1000);
+      } else {
+        // If auto sign-in succeeds, redirect to dashboard
+        toast.success("Signed in successfully!", {
+          description: "Welcome to your dashboard.",
+          duration: 2000,
+        });
+        setTimeout(() => {
+          router.push("/dashboard");
+        }, 1000);
+      }
+    } catch (error) {
+      console.error("Registration error:", error);
+      toast.error("Registration failed", {
+        description:
+          error instanceof Error
+            ? error.message
+            : "An unexpected error occurred. Please try again.",
+        duration: 4000,
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
