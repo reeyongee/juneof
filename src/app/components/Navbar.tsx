@@ -56,7 +56,7 @@ const Navbar: React.FC = () => {
   const HOVER_DELAY_MS = 300;
 
   const { cartItems } = useCart();
-  const { status } = useSession();
+  const { data: session, status } = useSession(); // Get session for id_token
   const isSignedIn = status === "authenticated";
 
   const totalCartItems = cartItems.reduce(
@@ -67,6 +67,34 @@ const Navbar: React.FC = () => {
   const handleCloseCart = useCallback(() => {
     setIsCartOpen(false);
   }, []);
+
+  const handleSignOut = async () => {
+    const shopifyIdToken = (session as { shopifyIdToken?: string })
+      ?.shopifyIdToken; // Get the ID token from the session
+
+    await signOut({ redirect: false }); // Sign out from NextAuth session without immediate redirect
+
+    // Construct Shopify logout URL
+    // Use NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN for the <shop-id>
+    const shopDomain = process.env.NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN;
+    // Define where Shopify should redirect after its logout (e.g., your app's signin page)
+    // This MUST be one of the "Logout URI" you configured in Shopify's Custom App settings.
+    const postLogoutRedirect = `${window.location.origin}/signin`;
+
+    if (shopDomain) {
+      let shopifyLogoutUrl = `https://shopify.com/authentication/${shopDomain}/logout?post_logout_redirect_uri=${encodeURIComponent(
+        postLogoutRedirect
+      )}`;
+
+      if (shopifyIdToken) {
+        shopifyLogoutUrl += `&id_token_hint=${shopifyIdToken}`;
+      }
+      window.location.href = shopifyLogoutUrl; // Redirect to Shopify's logout endpoint
+    } else {
+      // Fallback if shopDomain is not set, just redirect to local signin
+      window.location.href = "/signin";
+    }
+  };
 
   useEffect(() => {
     // --- Bottom Observer (for hiding navbar) ---
@@ -327,11 +355,7 @@ const Navbar: React.FC = () => {
                             dashboard
                           </Link>
                           <button
-                            onClick={() => {
-                              signOut();
-                              // Optionally redirect to home page
-                              window.location.href = "/";
-                            }}
+                            onClick={handleSignOut}
                             className="block w-full px-4 py-2 text-lg lowercase tracking-wider hover:opacity-75 hover:bg-gray-100 transition-colors text-center"
                           >
                             sign out
@@ -342,7 +366,7 @@ const Navbar: React.FC = () => {
                           href="/signin"
                           className="block px-4 py-2 text-lg lowercase tracking-wider hover:opacity-75 hover:bg-gray-100 transition-colors text-center"
                         >
-                          signin/register
+                          sign in
                         </Link>
                       )}
                     </div>
