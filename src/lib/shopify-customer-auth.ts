@@ -117,7 +117,13 @@ export async function exchangeCodeForTokens(
 
   const headers: Record<string, string> = {
     "content-type": "application/x-www-form-urlencoded",
+    "User-Agent": "Mozilla/5.0 (compatible; Shopify-Customer-Account-API)",
   };
+
+  // Add Origin header if we're in a browser environment
+  if (typeof window !== "undefined") {
+    headers["Origin"] = window.location.origin;
+  }
 
   // For confidential clients, use client secret in Authorization header
   if (clientSecret) {
@@ -135,9 +141,30 @@ export async function exchangeCodeForTokens(
   );
 
   if (!response.ok) {
-    throw new Error(
-      `Token exchange failed: ${response.status} ${response.statusText}`
-    );
+    const errorText = await response.text();
+    let errorMessage = `Token exchange failed: ${response.status} ${response.statusText}`;
+
+    try {
+      const errorJson = JSON.parse(errorText);
+      errorMessage += ` - ${JSON.stringify(errorJson)}`;
+    } catch {
+      errorMessage += ` - ${errorText}`;
+    }
+
+    // Log additional debugging info for 401 errors
+    if (response.status === 401) {
+      console.error("Token Exchange 401 Error Details:", {
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries()),
+        clientId: config.clientId,
+        shopId: config.shopId,
+        redirectUri: config.redirectUri,
+        hasClientSecret: !!clientSecret,
+      });
+    }
+
+    throw new Error(errorMessage);
   }
 
   return response.json();
@@ -156,7 +183,13 @@ export async function refreshAccessToken(
 
   const headers: Record<string, string> = {
     "content-type": "application/x-www-form-urlencoded",
+    "User-Agent": "Mozilla/5.0 (compatible; Shopify-Customer-Account-API)",
   };
+
+  // Add Origin header if we're in a browser environment
+  if (typeof window !== "undefined") {
+    headers["Origin"] = window.location.origin;
+  }
 
   // For confidential clients, use client secret in Authorization header
   if (clientSecret) {
@@ -174,9 +207,29 @@ export async function refreshAccessToken(
   );
 
   if (!response.ok) {
-    throw new Error(
-      `Token refresh failed: ${response.status} ${response.statusText}`
-    );
+    const errorText = await response.text();
+    let errorMessage = `Token refresh failed: ${response.status} ${response.statusText}`;
+
+    try {
+      const errorJson = JSON.parse(errorText);
+      errorMessage += ` - ${JSON.stringify(errorJson)}`;
+    } catch {
+      errorMessage += ` - ${errorText}`;
+    }
+
+    // Log additional debugging info for 401 errors
+    if (response.status === 401) {
+      console.error("Token Refresh 401 Error Details:", {
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries()),
+        clientId: config.clientId,
+        shopId: config.shopId,
+        hasClientSecret: !!clientSecret,
+      });
+    }
+
+    throw new Error(errorMessage);
   }
 
   return response.json();
@@ -189,14 +242,23 @@ export async function makeCustomerAccountRequest(
   query: string,
   variables?: Record<string, unknown>
 ) {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${accessToken}`,
+    // Required headers to prevent 401/403 errors
+    "User-Agent": "Mozilla/5.0 (compatible; Shopify-Customer-Account-API)",
+  };
+
+  // Add Origin header if we're in a browser environment
+  if (typeof window !== "undefined") {
+    headers["Origin"] = window.location.origin;
+  }
+
   const response = await fetch(
     `https://shopify.com/${shopId}/account/customer/api/2025-04/graphql`,
     {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-      },
+      headers,
       body: JSON.stringify({
         query,
         variables: variables || {},
@@ -204,10 +266,34 @@ export async function makeCustomerAccountRequest(
     }
   );
 
+  // Enhanced error handling
   if (!response.ok) {
-    throw new Error(
-      `GraphQL request failed: ${response.status} ${response.statusText}`
-    );
+    const errorText = await response.text();
+    let errorMessage = `GraphQL request failed: ${response.status} ${response.statusText}`;
+
+    try {
+      const errorJson = JSON.parse(errorText);
+      if (errorJson.errors) {
+        errorMessage += ` - ${JSON.stringify(errorJson.errors)}`;
+      }
+    } catch {
+      errorMessage += ` - ${errorText}`;
+    }
+
+    // Log additional debugging info for 401 errors
+    if (response.status === 401) {
+      console.error("401 Error Details:", {
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries()),
+        shopId,
+        accessToken: accessToken
+          ? `${accessToken.substring(0, 10)}...`
+          : "missing",
+      });
+    }
+
+    throw new Error(errorMessage);
   }
 
   return response.json();
