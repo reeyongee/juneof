@@ -4,6 +4,7 @@ import ShopifyProvider from "./ShopifyProvider";
 const CUSTOMER_SHOP_ID = process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_SHOP_ID;
 
 export const authOptions: AuthOptions = {
+  debug: process.env.NODE_ENV === "development",
   providers: [
     ShopifyProvider({
       clientId: process.env.SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID!,

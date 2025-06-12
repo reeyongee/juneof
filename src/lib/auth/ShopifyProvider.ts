@@ -1,11 +1,7 @@
 import { OAuthConfig, OAuthUserConfig } from "next-auth/providers/oauth";
-import { cookies } from "next/headers";
 
 const CUSTOMER_SHOP_ID = process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_SHOP_ID;
 const CUSTOMER_API_VERSION = "2024-07";
-
-// cookies name to store access token
-const CUSTOMER_ACCOUNT_ACCESS_TOKEN_COOKIE = "customer-access-token";
 
 interface ShopifyCustomer {
   id: string;
@@ -34,83 +30,17 @@ const ShopifyProvider = (
     id: "shopify",
     name: "Shopify",
     type: "oauth",
-    checks: ["state", "nonce"],
+    checks: ["state", "nonce", "pkce"],
     authorization: {
       url: `https://shopify.com/authentication/${CUSTOMER_SHOP_ID}/oauth/authorize`,
       params: {
         scope: "openid email customer-account-api:full",
         client_id: options.clientId,
         response_type: "code",
+        code_challenge_method: "S256",
       },
     },
-    token: {
-      request: async ({ params, checks, provider }) => {
-        if (!params.code) {
-          throw new Error("code search params is missing");
-        }
-
-        if (!checks.code_verifier) {
-          throw new Error("code_verifier is missing");
-        }
-
-        const credentials = btoa(
-          `${provider.clientId}:${provider.clientSecret}`
-        );
-
-        const tokenResponse = await fetch(
-          `https://shopify.com/authentication/${CUSTOMER_SHOP_ID}/oauth/token`,
-          {
-            method: "POST",
-            headers: {
-              "content-type": "application/x-www-form-urlencoded",
-              Authorization: `Basic ${credentials}`,
-            },
-            body: new URLSearchParams({
-              grant_type: "authorization_code",
-              client_id: provider.clientId!,
-              redirect_uri: provider.callbackUrl,
-              code: params.code,
-              code_verifier: checks.code_verifier,
-            }),
-          }
-        );
-
-        if (!tokenResponse.ok) {
-          throw new Error(
-            `${tokenResponse.status} (RequestID ${tokenResponse.headers.get(
-              "x-request-id"
-            )}): ${await tokenResponse.text()}`
-          );
-        }
-
-        interface AccessTokenResponse {
-          access_token: string;
-          expires_in: number; // in seconds
-          id_token: string;
-          refresh_token: string;
-        }
-        const data = (await tokenResponse.json()) as AccessTokenResponse;
-
-        // store access token into cookies so we can retrieve it when calling customer account api in server and client
-        const cookieStore = await cookies();
-        cookieStore.set(
-          CUSTOMER_ACCOUNT_ACCESS_TOKEN_COOKIE,
-          data.access_token,
-          {
-            expires: Date.now() + data.expires_in * 1000,
-          }
-        );
-
-        return {
-          tokens: {
-            access_token: data.access_token,
-            id_token: data.id_token,
-            refresh_token: data.refresh_token,
-            expires_in: data.expires_in,
-          },
-        };
-      },
-    },
+    token: `https://shopify.com/authentication/${CUSTOMER_SHOP_ID}/oauth/token`,
     userinfo: {
       request: async ({ tokens }) => {
         if (!tokens.access_token) {
