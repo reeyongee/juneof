@@ -5,7 +5,7 @@ import Link from "next/link";
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import CartOverlay from "./CartOverlay";
 import { useCart } from "@/context/CartContext";
-import { useSession, signOut } from "next-auth/react";
+import { useSession, signIn, signOut } from "next-auth/react"; // Import NextAuth hooks
 
 // Placeholder SVGs - Replace with actual SVGs
 const InstagramIcon = () => (
@@ -56,8 +56,7 @@ const Navbar: React.FC = () => {
   const HOVER_DELAY_MS = 300;
 
   const { cartItems } = useCart();
-  const { data: session, status } = useSession(); // Get session for id_token
-  const isSignedIn = status === "authenticated";
+  const { data: session, status } = useSession(); // Get session data and status
 
   const totalCartItems = cartItems.reduce(
     (sum, item) => sum + item.quantity,
@@ -67,34 +66,6 @@ const Navbar: React.FC = () => {
   const handleCloseCart = useCallback(() => {
     setIsCartOpen(false);
   }, []);
-
-  const handleSignOut = async () => {
-    const shopifyIdToken = (session as { shopifyIdToken?: string })
-      ?.shopifyIdToken; // Get the ID token from the session
-
-    await signOut({ redirect: false }); // Sign out from NextAuth session without immediate redirect
-
-    // Construct Shopify logout URL
-    // Use NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN for the <shop-id>
-    const shopDomain = process.env.NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN;
-    // Define where Shopify should redirect after its logout (e.g., your app's signin page)
-    // This MUST be one of the "Logout URI" you configured in Shopify's Custom App settings.
-    const postLogoutRedirect = `${window.location.origin}/signin`;
-
-    if (shopDomain) {
-      let shopifyLogoutUrl = `https://shopify.com/authentication/${shopDomain}/logout?post_logout_redirect_uri=${encodeURIComponent(
-        postLogoutRedirect
-      )}`;
-
-      if (shopifyIdToken) {
-        shopifyLogoutUrl += `&id_token_hint=${shopifyIdToken}`;
-      }
-      window.location.href = shopifyLogoutUrl; // Redirect to Shopify's logout endpoint
-    } else {
-      // Fallback if shopDomain is not set, just redirect to local signin
-      window.location.href = "/signin";
-    }
-  };
 
   useEffect(() => {
     // --- Bottom Observer (for hiding navbar) ---
@@ -320,14 +291,14 @@ const Navbar: React.FC = () => {
                   </span>
                 )}
               </div>
-              {/* Profile Dropdown */}
+              {/* Auth Dropdown / Button */}
               <div
                 className="relative"
                 onMouseEnter={() => {
                   if (profileDropdownTimeoutRef.current) {
                     clearTimeout(profileDropdownTimeoutRef.current);
                   }
-                  setIsProfileDropdownOpen(true);
+                  if (session) setIsProfileDropdownOpen(true);
                 }}
                 onMouseLeave={() => {
                   profileDropdownTimeoutRef.current = setTimeout(() => {
@@ -335,19 +306,31 @@ const Navbar: React.FC = () => {
                   }, 150);
                 }}
               >
-                <button
-                  className={`${getLinkItemClasses(
-                    isEffectivelyTransparent
-                  )} hover:opacity-75 transition-opacity`}
-                  data-underline-button-effect
-                >
-                  <UserIcon />
-                </button>
-                {isProfileDropdownOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-48 bg-[#F8F4EC] border border-gray-200 shadow-lg z-50">
-                    <div className="py-1">
-                      {isSignedIn ? (
-                        <>
+                {status === "loading" ? (
+                  <span
+                    className={`${navLinkBaseClasses} ${getLinkItemClasses(
+                      isEffectivelyTransparent
+                    )}`}
+                  >
+                    ...
+                  </span>
+                ) : session ? (
+                  <>
+                    <button
+                      className={`${getLinkItemClasses(
+                        isEffectivelyTransparent
+                      )} hover:opacity-75 transition-opacity`}
+                      data-underline-button-effect
+                      aria-label="User profile"
+                    >
+                      <UserIcon />
+                    </button>
+                    {isProfileDropdownOpen && (
+                      <div className="absolute right-0 top-full mt-2 w-48 bg-[#F8F4EC] border border-gray-200 shadow-lg z-50">
+                        <div className="py-1">
+                          <p className="px-4 py-2 text-sm text-gray-600 lowercase tracking-wider truncate">
+                            hi, {session.user?.name || session.user?.email}
+                          </p>
                           <Link
                             href="/dashboard"
                             className="block px-4 py-2 text-lg lowercase tracking-wider hover:opacity-75 hover:bg-gray-100 transition-colors text-center"
@@ -355,22 +338,25 @@ const Navbar: React.FC = () => {
                             dashboard
                           </Link>
                           <button
-                            onClick={handleSignOut}
-                            className="block w-full px-4 py-2 text-lg lowercase tracking-wider hover:opacity-75 hover:bg-gray-100 transition-colors text-center"
+                            onClick={() => signOut()}
+                            className="w-full text-left block px-4 py-2 text-lg lowercase tracking-wider hover:opacity-75 hover:bg-gray-100 transition-colors text-center"
                           >
                             sign out
                           </button>
-                        </>
-                      ) : (
-                        <Link
-                          href="/signin"
-                          className="block px-4 py-2 text-lg lowercase tracking-wider hover:opacity-75 hover:bg-gray-100 transition-colors text-center"
-                        >
-                          sign in
-                        </Link>
-                      )}
-                    </div>
-                  </div>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <button
+                    onClick={() => signIn("shopify")}
+                    className={`${navLinkBaseClasses} ${getLinkItemClasses(
+                      isEffectivelyTransparent
+                    )}`}
+                    data-underline-button-effect
+                  >
+                    sign in
+                  </button>
                 )}
               </div>
               <Link

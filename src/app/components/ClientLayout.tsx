@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect } from "react";
+import { SessionProvider } from "next-auth/react"; // Import SessionProvider
 import SplashScreen from "./SplashScreen";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import CustomCursor from "./CustomCursor";
 import { useSplash } from "@/context/SplashContext";
-import { SessionProvider } from "next-auth/react";
 import { AddressProvider } from "@/context/AddressContext";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -45,6 +45,7 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
   }, [showSplash]);
 
   return (
+    // Wrap with SessionProvider
     <SessionProvider>
       <AddressProvider>
         <CustomCursor />

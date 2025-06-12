@@ -1,13 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import gsap from "gsap";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import { useCart } from "@/context/CartContext";
 import { useAddress } from "@/context/AddressContext";
-import { useSession } from "next-auth/react";
 import AddressSelectionOverlay from "./AddressSelectionOverlay";
 import { ShoppingBagIcon, XMarkIcon } from "@heroicons/react/24/outline";
 
@@ -32,7 +30,6 @@ export default function CartOverlay({ isOpen, onClose }: CartOverlayProps) {
   const tl = useRef<gsap.core.Timeline | null>(null);
   const [isMounted, setIsMounted] = useState(false);
   const [isAddressSelectionOpen, setIsAddressSelectionOpen] = useState(false);
-  const router = useRouter();
 
   // Use cart from context
   const {
@@ -45,10 +42,6 @@ export default function CartOverlay({ isOpen, onClose }: CartOverlayProps) {
 
   // Use address from context
   const { addresses, selectedAddressId } = useAddress();
-
-  // Use auth from NextAuth
-  const { status } = useSession();
-  const isSignedIn = status === "authenticated";
 
   const [isCheckingOut, setIsCheckingOut] = useState(false);
 
@@ -269,21 +262,7 @@ export default function CartOverlay({ isOpen, onClose }: CartOverlayProps) {
           <div className="p-6 border-t border-gray-300 space-y-4">
             {/* Address Selection */}
             <div>
-              {!isSignedIn ? (
-                <button
-                  onClick={() => {
-                    router.push("/signin");
-                    handleCloseStart();
-                  }}
-                  className="w-full bg-[#F8F4EC] border border-gray-300 p-3 text-xs hover:border-gray-400 transition-colors no-underline-effect"
-                >
-                  <div className="flex justify-center">
-                    <span className="text-gray-600 lowercase tracking-wider italic">
-                      sign in to view addresses
-                    </span>
-                  </div>
-                </button>
-              ) : selectedAddress ? (
+              {selectedAddress ? (
                 <div className="bg-[#F8F4EC] border border-gray-300 p-3 text-xs">
                   <div className="space-y-3">
                     <div>
@@ -326,36 +305,22 @@ export default function CartOverlay({ isOpen, onClose }: CartOverlayProps) {
               <p className="text-lg font-serif lowercase">Subtotal</p>
               <p className="text-lg font-medium">{formatPrice(subtotal)}</p>
             </div>
-            {!isSignedIn ? (
-              <button
-                onClick={() => {
-                  router.push("/signin");
-                  handleCloseStart();
-                }}
-                className="w-full bg-[#171717] text-[#F8F4EC] hover:bg-black py-3 text-base lowercase tracking-wider transition-colors no-underline-effect"
-              >
-                sign in to checkout
-              </button>
-            ) : (
-              <button
-                onClick={handleCheckout}
-                disabled={isCheckingOut}
-                className="w-full bg-[#171717] text-[#F8F4EC] hover:bg-black py-3 text-base lowercase tracking-wider transition-colors disabled:opacity-50 checkout-btn no-underline-effect"
-              >
-                {isCheckingOut ? "Processing..." : "checkout"}
-              </button>
-            )}
+            <button
+              onClick={handleCheckout}
+              disabled={isCheckingOut}
+              className="w-full bg-[#171717] text-[#F8F4EC] hover:bg-black py-3 text-base lowercase tracking-wider transition-colors disabled:opacity-50 checkout-btn no-underline-effect"
+            >
+              {isCheckingOut ? "Processing..." : "checkout"}
+            </button>
           </div>
         )}
       </div>
 
-      {/* Address Selection Overlay - only show if signed in */}
-      {isSignedIn && (
-        <AddressSelectionOverlay
-          isOpen={isAddressSelectionOpen}
-          onClose={() => setIsAddressSelectionOpen(false)}
-        />
-      )}
+      {/* Address Selection Overlay */}
+      <AddressSelectionOverlay
+        isOpen={isAddressSelectionOpen}
+        onClose={() => setIsAddressSelectionOpen(false)}
+      />
     </div>,
     document.body
   );
