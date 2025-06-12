@@ -4,7 +4,6 @@ import type { Metadata } from "next";
 import { CartProvider } from "@/context/CartContext";
 import { SplashProvider } from "@/context/SplashContext";
 import ClientLayout from "@/app/components/ClientLayout";
-import AuthProvider from "@/app/components/AuthProvider";
 
 const oldStandardTT = Old_Standard_TT({
   weight: ["400", "700"],
@@ -25,13 +24,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${oldStandardTT.className} flex flex-col min-h-screen`}>
-        <AuthProvider>
-          <SplashProvider>
-            <CartProvider>
-              <ClientLayout>{children}</ClientLayout>
-            </CartProvider>
-          </SplashProvider>
-        </AuthProvider>
+        <SplashProvider>
+          <CartProvider>
+            <ClientLayout>{children}</ClientLayout>
+          </CartProvider>
+        </SplashProvider>
       </body>
     </html>
   );
