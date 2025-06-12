@@ -30,6 +30,18 @@ export default function Home() {
         >
           SHOPIFY TEST
         </Link>
+        <Link
+          href="/auth-test"
+          className="border border-gray-900 px-8 py-4 text-xl tracking-widest hover:bg-gray-100 transition-colors"
+        >
+          AUTH TEST
+        </Link>
+        <Link
+          href="/signin"
+          className="border border-gray-900 px-8 py-4 text-xl tracking-widest hover:bg-gray-100 transition-colors"
+        >
+          SIGN IN
+        </Link>
       </main>
     </>
   );

@@ -5,7 +5,6 @@ import Link from "next/link";
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import CartOverlay from "./CartOverlay";
 import { useCart } from "@/context/CartContext";
-import { useSession, signIn, signOut } from "next-auth/react"; // Import NextAuth hooks
 
 // Placeholder SVGs - Replace with actual SVGs
 const InstagramIcon = () => (
@@ -56,7 +55,6 @@ const Navbar: React.FC = () => {
   const HOVER_DELAY_MS = 300;
 
   const { cartItems } = useCart();
-  const { data: session, status } = useSession(); // Get session data and status
 
   const totalCartItems = cartItems.reduce(
     (sum, item) => sum + item.quantity,
@@ -291,14 +289,14 @@ const Navbar: React.FC = () => {
                   </span>
                 )}
               </div>
-              {/* Auth Dropdown / Button */}
+              {/* Profile Dropdown */}
               <div
                 className="relative"
                 onMouseEnter={() => {
                   if (profileDropdownTimeoutRef.current) {
                     clearTimeout(profileDropdownTimeoutRef.current);
                   }
-                  if (session) setIsProfileDropdownOpen(true);
+                  setIsProfileDropdownOpen(true);
                 }}
                 onMouseLeave={() => {
                   profileDropdownTimeoutRef.current = setTimeout(() => {
@@ -306,57 +304,25 @@ const Navbar: React.FC = () => {
                   }, 150);
                 }}
               >
-                {status === "loading" ? (
-                  <span
-                    className={`${navLinkBaseClasses} ${getLinkItemClasses(
-                      isEffectivelyTransparent
-                    )}`}
-                  >
-                    ...
-                  </span>
-                ) : session ? (
-                  <>
-                    <button
-                      className={`${getLinkItemClasses(
-                        isEffectivelyTransparent
-                      )} hover:opacity-75 transition-opacity`}
-                      data-underline-button-effect
-                      aria-label="User profile"
-                    >
-                      <UserIcon />
-                    </button>
-                    {isProfileDropdownOpen && (
-                      <div className="absolute right-0 top-full mt-2 w-48 bg-[#F8F4EC] border border-gray-200 shadow-lg z-50">
-                        <div className="py-1">
-                          <p className="px-4 py-2 text-sm text-gray-600 lowercase tracking-wider truncate">
-                            hi, {session.user?.name || session.user?.email}
-                          </p>
-                          <Link
-                            href="/dashboard"
-                            className="block px-4 py-2 text-lg lowercase tracking-wider hover:opacity-75 hover:bg-gray-100 transition-colors text-center"
-                          >
-                            dashboard
-                          </Link>
-                          <button
-                            onClick={() => signOut()}
-                            className="w-full text-left block px-4 py-2 text-lg lowercase tracking-wider hover:opacity-75 hover:bg-gray-100 transition-colors text-center"
-                          >
-                            sign out
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <button
-                    onClick={() => signIn("shopify")}
-                    className={`${navLinkBaseClasses} ${getLinkItemClasses(
-                      isEffectivelyTransparent
-                    )}`}
-                    data-underline-button-effect
-                  >
-                    sign in
-                  </button>
+                <button
+                  className={`${getLinkItemClasses(
+                    isEffectivelyTransparent
+                  )} hover:opacity-75 transition-opacity`}
+                  data-underline-button-effect
+                >
+                  <UserIcon />
+                </button>
+                {isProfileDropdownOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-48 bg-[#F8F4EC] border border-gray-200 shadow-lg z-50">
+                    <div className="py-1">
+                      <Link
+                        href="/dashboard"
+                        className="block px-4 py-2 text-lg lowercase tracking-wider hover:opacity-75 hover:bg-gray-100 transition-colors text-center"
+                      >
+                        dashboard
+                      </Link>
+                    </div>
+                  </div>
                 )}
               </div>
               <Link

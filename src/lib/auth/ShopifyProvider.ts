@@ -1,9 +1,8 @@
-import type { OAuthConfig, OAuthUserConfig } from "next-auth/providers/oauth";
+import { OAuthConfig, OAuthUserConfig } from "next-auth/providers/oauth";
 import { cookies } from "next/headers";
 
-// Use your main app's environment variable for the Shop ID
-const CUSTOMER_SHOP_ID = process.env.SHOPIFY_CUSTOMER_ACCOUNT_API_SHOP_ID;
-const CUSTOMER_API_VERSION = "2024-07"; // Or your desired API version
+const CUSTOMER_SHOP_ID = process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_SHOP_ID;
+const CUSTOMER_API_VERSION = "2024-07";
 
 // cookies name to store access token
 const CUSTOMER_ACCOUNT_ACCESS_TOKEN_COOKIE = "customer-access-token";
@@ -31,18 +30,6 @@ const getCustomerGql = `#graphql
 const ShopifyProvider = (
   options: OAuthUserConfig<ShopifyCustomer>
 ): OAuthConfig<ShopifyCustomer> => {
-  if (!CUSTOMER_SHOP_ID) {
-    throw new Error(
-      "SHOPIFY_CUSTOMER_ACCOUNT_API_SHOP_ID is not defined in environment variables."
-    );
-  }
-  if (!options.clientId) {
-    throw new Error("ShopifyProvider: clientId is missing in options.");
-  }
-  if (!options.clientSecret) {
-    throw new Error("ShopifyProvider: clientSecret is missing in options.");
-  }
-
   return {
     id: "shopify",
     name: "Shopify",
@@ -51,19 +38,19 @@ const ShopifyProvider = (
     authorization: {
       url: `https://shopify.com/authentication/${CUSTOMER_SHOP_ID}/oauth/authorize`,
       params: {
-        scope: "openid email https://api.shopify.com/auth/customer.readonly", // Updated scope for Customer Account API
-        client_id: options.clientId, // Will be process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_CLIENT_ID
+        scope: "openid email customer-account-api:full",
+        client_id: options.clientId,
         response_type: "code",
       },
     },
     token: {
-      request: async ({ params, checks, provider }: any) => {
+      request: async ({ params, checks, provider }) => {
         if (!params.code) {
-          throw new Error("Authorization code is missing");
+          throw new Error("code search params is missing");
         }
 
         if (!checks.code_verifier) {
-          throw new Error("Code verifier is missing");
+          throw new Error("code_verifier is missing");
         }
 
         const credentials = btoa(
@@ -89,17 +76,10 @@ const ShopifyProvider = (
         );
 
         if (!tokenResponse.ok) {
-          const errorText = await tokenResponse.text();
-          console.error(
-            "Shopify Token Error:",
-            errorText,
-            "Request ID:",
-            tokenResponse.headers.get("x-request-id")
-          );
           throw new Error(
             `${tokenResponse.status} (RequestID ${tokenResponse.headers.get(
               "x-request-id"
-            )}): ${errorText}`
+            )}): ${await tokenResponse.text()}`
           );
         }
 
@@ -108,19 +88,16 @@ const ShopifyProvider = (
           expires_in: number; // in seconds
           id_token: string;
           refresh_token: string;
-          scope: string; // Shopify also returns scope
         }
         const data = (await tokenResponse.json()) as AccessTokenResponse;
 
-        (await cookies()).set(
+        // store access token into cookies so we can retrieve it when calling customer account api in server and client
+        const cookieStore = await cookies();
+        cookieStore.set(
           CUSTOMER_ACCOUNT_ACCESS_TOKEN_COOKIE,
           data.access_token,
           {
             expires: Date.now() + data.expires_in * 1000,
-            path: "/",
-            secure: process.env.NODE_ENV === "production",
-            httpOnly: true, // Recommended for security
-            sameSite: "lax",
           }
         );
 
@@ -129,17 +106,15 @@ const ShopifyProvider = (
             access_token: data.access_token,
             id_token: data.id_token,
             refresh_token: data.refresh_token,
-            expires_at: Math.floor(Date.now() / 1000) + data.expires_in, // Add expires_at for NextAuth JWT
-            scope: data.scope,
+            expires_in: data.expires_in,
           },
         };
       },
     },
     userinfo: {
-      // @ts-expect-error - NextAuth v4 type compatibility issue
-      request: async ({ tokens }: any) => {
+      request: async ({ tokens }) => {
         if (!tokens.access_token) {
-          throw new Error("Access token is missing for userinfo request");
+          throw new Error("access token is missing");
         }
 
         const response = await fetch(
@@ -159,41 +134,33 @@ const ShopifyProvider = (
         );
 
         if (!response.ok) {
-          const errorText = await response.text();
-          console.error(
-            "Shopify UserInfo Error:",
-            errorText,
-            "Request ID:",
-            response.headers.get("x-request-id")
-          );
           throw new Error(
             `${response.status} (RequestID ${response.headers.get(
               "x-request-id"
-            )}): ${errorText}`
+            )}): ${await response.text()}`
           );
         }
 
         interface GraphQLResponse {
-          data?: { customer: ShopifyCustomer };
-          errors?: Array<{ message: string; [key: string]: unknown }>;
+          data: { customer: ShopifyCustomer };
         }
-        const { data, errors } = (await response.json()) as GraphQLResponse;
+        const { data } = (await response.json()) as GraphQLResponse;
 
-        if (errors || !data || !data.customer) {
-          console.error("Shopify UserInfo GraphQL Error:", errors);
-          throw new Error(
-            `Failed to fetch customer data: ${JSON.stringify(errors)}`
-          );
-        }
-        return data.customer;
+        // Transform to Profile format expected by NextAuth
+        return {
+          id: data.customer.id,
+          name: data.customer.displayName,
+          email: data.customer.emailAddress.emailAddress,
+          image: undefined,
+        };
       },
     },
-    profile: async (profile: ShopifyCustomer) => {
+    profile: async (profile) => {
       return {
-        id: profile.id, // Shopify Customer ID like "gid://shopify/Customer/12345"
+        id: profile.id,
         name: profile.displayName,
-        email: profile.emailAddress?.emailAddress,
-        image: null, // Shopify Customer API doesn't provide an image URL by default
+        email: profile.emailAddress.emailAddress,
+        image: null,
       };
     },
     options,

@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import {
   storefrontApiRequest,
   GET_PRODUCT_BY_HANDLE_QUERY,
@@ -53,6 +54,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
     notFound();
   }
 
-  // Pass the product data to the client component
-  return <ProductPageClient product={product} />;
+  // Pass the product data to the client component wrapped in Suspense
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ProductPageClient product={product} />
+    </Suspense>
+  );
 }

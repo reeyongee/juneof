@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react"; // Added useEffect
+import { useState } from "react";
 import Image from "next/image";
 import { useAddress } from "@/context/AddressContext";
 import AddAddressOverlay from "@/app/components/AddAddressOverlay";
@@ -13,7 +13,6 @@ import {
   X,
   RotateCcw,
   FileText,
-  LogIn, // Import LogIn icon
 } from "lucide-react";
 import {
   Card,
@@ -24,8 +23,6 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { useSession, signIn } from "next-auth/react"; // Import NextAuth hooks
-import { useRouter } from "next/navigation"; // Import useRouter for redirection
 
 // Dummy data for orders
 const currentOrders = [
@@ -138,48 +135,8 @@ export default function DashboardPage() {
     deleteAddress,
   } = useAddress();
 
-  const { data: session, status } = useSession();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      // Optionally, redirect to sign-in or home page if not authenticated
-      // For now, we'll just show a message within the dashboard layout.
-      // router.push('/'); // Or router.push('/api/auth/signin');
-    }
-  }, [status, router]);
-
-  if (status === "loading") {
-    return (
-      <div className="min-h-screen bg-[#F8F4EC] pt-32 pb-8 px-4 flex items-center justify-center">
-        <p className="text-lg lowercase tracking-wider">loading dashboard...</p>
-      </div>
-    );
-  }
-
-  if (!session) {
-    return (
-      <div className="min-h-screen bg-[#F8F4EC] pt-32 pb-8 px-4 flex flex-col items-center justify-center text-center">
-        <User className="w-16 h-16 mb-4 text-gray-600" />
-        <h1 className="text-2xl font-serif lowercase tracking-widest text-black mb-4">
-          please sign in
-        </h1>
-        <p className="text-gray-700 mb-6 lowercase tracking-wider">
-          you need to be signed in to view your dashboard.
-        </p>
-        <Button
-          onClick={() => signIn("shopify")}
-          variant="outline"
-          className="lowercase tracking-widest border-black text-black hover:bg-black hover:text-white h-12 text-sm transition-all duration-300 no-underline-effect px-8"
-        >
-          <LogIn className="w-4 h-4 mr-2" />
-          sign in with shopify
-        </Button>
-      </div>
-    );
-  }
-
-  const userName = session.user?.name || session.user?.email || "customer";
+  // Use a default username since we removed authentication
+  const userName = "user";
 
   const renderOrders = () => (
     <div className="space-y-8">

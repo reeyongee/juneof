@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect } from "react";
-import { SessionProvider } from "next-auth/react"; // Import SessionProvider
 import SplashScreen from "./SplashScreen";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
@@ -45,25 +44,22 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
   }, [showSplash]);
 
   return (
-    // Wrap with SessionProvider
-    <SessionProvider>
-      <AddressProvider>
-        <CustomCursor />
-        {showSplash && <SplashScreen onLoadComplete={handleLoadComplete} />}
+    <AddressProvider>
+      <CustomCursor />
+      {showSplash && <SplashScreen onLoadComplete={handleLoadComplete} />}
 
-        <div
-          className={`transition-opacity duration-500 ${
-            !showSplash ? "opacity-100" : "opacity-0"
-          }`}
-        >
-          <Navbar />
-          <main className="flex-grow bg-[#F8F4EC] relative z-[1]">
-            {children}
-          </main>
-          <Footer />
-        </div>
-        <Toaster position="bottom-left" />
-      </AddressProvider>
-    </SessionProvider>
+      <div
+        className={`transition-opacity duration-500 ${
+          !showSplash ? "opacity-100" : "opacity-0"
+        }`}
+      >
+        <Navbar />
+        <main className="flex-grow bg-[#F8F4EC] relative z-[1]">
+          {children}
+        </main>
+        <Footer />
+      </div>
+      <Toaster position="bottom-left" />
+    </AddressProvider>
   );
 }
