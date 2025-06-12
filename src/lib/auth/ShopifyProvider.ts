@@ -1,8 +1,6 @@
 import type { OAuthConfig, OAuthUserConfig } from "next-auth/providers/oauth";
 import { cookies } from "next/headers";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-
 // Use your main app's environment variable for the Shop ID
 const CUSTOMER_SHOP_ID = process.env.SHOPIFY_CUSTOMER_ACCOUNT_API_SHOP_ID;
 const CUSTOMER_API_VERSION = "2024-07"; // Or your desired API version
@@ -59,7 +57,7 @@ const ShopifyProvider = (
       },
     },
     token: {
-      request: async ({ params, checks, provider }: TokenRequestParams) => {
+      request: async ({ params, checks, provider }: any) => {
         if (!params.code) {
           throw new Error("Authorization code is missing");
         }
@@ -138,7 +136,8 @@ const ShopifyProvider = (
       },
     },
     userinfo: {
-      request: async ({ tokens }: UserinfoRequestParams) => {
+      // @ts-expect-error - NextAuth v4 type compatibility issue
+      request: async ({ tokens }: any) => {
         if (!tokens.access_token) {
           throw new Error("Access token is missing for userinfo request");
         }

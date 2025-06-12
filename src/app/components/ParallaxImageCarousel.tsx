@@ -163,13 +163,15 @@ const ParallaxImageCarousel: React.FC = () => {
       });
       // Kill all ScrollTriggers created by this component instance if any were missed
       // This is a bit broad, better to kill specific instances if possible
+      const currentSection = section;
+      const currentPinSpacer = pinSpacer;
       ScrollTrigger.getAll().forEach((st) => {
         // A bit hacky: check if the trigger is part of this component
         // This assumes itemRefs are direct children or identifiable
         if (
           itemRefs.current.includes(st.trigger as HTMLDivElement) ||
-          st.trigger === sectionRef.current ||
-          st.pin === pinSpacerRef.current
+          st.trigger === currentSection ||
+          st.pin === currentPinSpacer
         ) {
           st.kill();
         }

@@ -60,7 +60,7 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
     if (sizeFromUrl) {
       setSelectedSize(sizeFromUrl);
     }
-  }, []); // Empty dependency array - only run on mount
+  }, [searchParams]); // Include searchParams in dependency array
 
   // Handler to update size selection without URL changes
   const handleSizeSelect = useCallback((newSize: string) => {

@@ -10,9 +10,9 @@ import {
 import ProductPageClient from "./ProductPageClient";
 
 interface ProductPageProps {
-  params: {
+  params: Promise<{
     handle: string;
-  };
+  }>;
 }
 
 // Generate static params for all products
@@ -34,12 +34,13 @@ export async function generateStaticParams() {
 
 // Server component to fetch product data
 export default async function ProductPage({ params }: ProductPageProps) {
+  const { handle } = await params;
   let product: ShopifyProductDetails | null = null;
 
   try {
     const data = await storefrontApiRequest<ShopifyProductByHandleData>(
       GET_PRODUCT_BY_HANDLE_QUERY,
-      { handle: params.handle }
+      { handle }
     );
 
     if (!data.productByHandle) {
