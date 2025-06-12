@@ -110,11 +110,6 @@ export async function exchangeCodeForTokens(
   body.append("redirect_uri", config.redirectUri);
   body.append("code", code);
 
-  // For public clients, use PKCE
-  if (!clientSecret) {
-    body.append("code_verifier", codeVerifier);
-  }
-
   const headers: Record<string, string> = {
     "content-type": "application/x-www-form-urlencoded",
     "User-Agent": "Mozilla/5.0 (compatible; Shopify-Customer-Account-API)",
@@ -125,10 +120,13 @@ export async function exchangeCodeForTokens(
     headers["Origin"] = window.location.origin;
   }
 
-  // For confidential clients, use client secret in Authorization header
+  // For confidential clients, try putting credentials in body instead of header
+  // This approach has been reported to fix 401 errors in community forums
   if (clientSecret) {
-    const credentials = btoa(`${config.clientId}:${clientSecret}`);
-    headers["Authorization"] = `Basic ${credentials}`;
+    body.append("client_secret", clientSecret);
+  } else {
+    // For public clients, use PKCE
+    body.append("code_verifier", codeVerifier);
   }
 
   const response = await fetch(
@@ -161,6 +159,7 @@ export async function exchangeCodeForTokens(
         shopId: config.shopId,
         redirectUri: config.redirectUri,
         hasClientSecret: !!clientSecret,
+        authMethod: clientSecret ? "client_secret_in_body" : "pkce",
       });
     }
 
@@ -191,10 +190,10 @@ export async function refreshAccessToken(
     headers["Origin"] = window.location.origin;
   }
 
-  // For confidential clients, use client secret in Authorization header
+  // For confidential clients, put client_secret in body instead of Authorization header
+  // This approach has been reported to fix 401 errors in community forums
   if (clientSecret) {
-    const credentials = btoa(`${config.clientId}:${clientSecret}`);
-    headers["Authorization"] = `Basic ${credentials}`;
+    body.append("client_secret", clientSecret);
   }
 
   const response = await fetch(
@@ -226,6 +225,7 @@ export async function refreshAccessToken(
         clientId: config.clientId,
         shopId: config.shopId,
         hasClientSecret: !!clientSecret,
+        authMethod: clientSecret ? "client_secret_in_body" : "no_auth",
       });
     }
 

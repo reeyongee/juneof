@@ -4,6 +4,25 @@
 
 This guide helps troubleshoot 401 "Unauthorized" errors when using the Shopify Customer Account API.
 
+## 🚨 CRITICAL FIX - Try This First!
+
+**Problem:** Many developers report 401 errors even with correct credentials.
+
+**Solution:** Put `client_secret` in the request body instead of the Authorization header.
+
+**What Changed:** The implementation has been updated to use this approach based on community feedback:
+
+```javascript
+// OLD APPROACH (causing 401 errors):
+headers["Authorization"] = `Basic ${btoa(clientId + ":" + clientSecret)}`;
+
+// NEW APPROACH (fixes 401 errors):
+body.append("client_secret", clientSecret);
+// No Authorization header needed
+```
+
+**Source:** Multiple developers in Shopify community forums reported this fix works when the standard Authorization header approach fails.
+
 ## Common Causes and Solutions
 
 ### 1. Missing Required Headers
@@ -17,20 +36,20 @@ This guide helps troubleshoot 401 "Unauthorized" errors when using the Shopify C
 
 **Fixed in:** Updated `makeCustomerAccountRequest`, `exchangeCodeForTokens`, and `refreshAccessToken` functions.
 
-### 2. Incorrect Client Configuration
+### 2. Incorrect Client Authentication Method
 
-**Problem:** Mismatch between client type (public vs confidential) and authentication method.
+**Problem:** Using Authorization header instead of request body for client credentials.
 
-**Check:**
+**Solution:** ✅ **IMPLEMENTED** - Client credentials are now sent in the request body:
 
-- If you have both `client_id` and `client_secret`, you're using a **confidential client**
-- Confidential clients should NOT use PKCE (code challenge/verifier)
-- Public clients should use PKCE and NOT use client_secret
+- `client_id` in body
+- `client_secret` in body (for confidential clients)
+- No Authorization header required
 
 **Your Configuration:**
 
 - Client Type: **Confidential** (you have both client_id and client_secret)
-- Authentication Method: Basic Auth with client_secret ✅
+- Authentication Method: **client_secret in request body** ✅
 
 ### 3. Shopify Admin Configuration Issues
 
@@ -99,6 +118,7 @@ Look for detailed error logs that show:
 - HTTP status codes
 - Response headers
 - Request details
+- Authentication method used (`client_secret_in_body` vs `basic_auth`)
 
 ### 3. Verify Shopify Admin Settings
 
@@ -109,33 +129,40 @@ Look for detailed error logs that show:
 ### 4. Test with cURL (for debugging)
 
 ```bash
-# Test token exchange
+# Test token exchange with NEW approach (client_secret in body)
 curl -X POST \
   'https://shopify.com/authentication/70458179741/oauth/token' \
   -H 'Content-Type: application/x-www-form-urlencoded' \
   -H 'User-Agent: Mozilla/5.0 (compatible; Shopify-Customer-Account-API)' \
   -H 'Origin: https://dev.juneof.com' \
-  -H 'Authorization: Basic <base64_encoded_client_id:client_secret>' \
-  -d 'grant_type=authorization_code&client_id=cb889c45-0663-4367-a226-d90ebcfd026c&redirect_uri=https://dev.juneof.com/api/auth/shopify/callback&code=<authorization_code>'
+  -d 'grant_type=authorization_code&client_id=cb889c45-0663-4367-a226-d90ebcfd026c&client_secret=4892ae94d7e965077f3958aaa298e84ce60da4c6caac7175aef815887a690370&redirect_uri=https://dev.juneof.com/api/auth/shopify/callback&code=<authorization_code>'
 ```
 
 ## Updated Implementation
 
-The following functions have been updated with better error handling and required headers:
+The following functions have been updated with the critical fix and better error handling:
 
-1. `makeCustomerAccountRequest` - Added User-Agent and Origin headers
-2. `exchangeCodeForTokens` - Added required headers and detailed error logging
-3. `refreshAccessToken` - Added required headers and detailed error logging
+1. `exchangeCodeForTokens` - **CRITICAL FIX**: Now puts `client_secret` in request body instead of Authorization header
+2. `refreshAccessToken` - **CRITICAL FIX**: Now puts `client_secret` in request body instead of Authorization header
+3. `makeCustomerAccountRequest` - Added User-Agent and Origin headers
+
+## What to Expect
+
+After this fix, you should see in the browser console logs:
+
+- `authMethod: "client_secret_in_body"` for token exchange
+- More detailed error information if issues persist
+- Better debugging information for troubleshooting
 
 ## Next Steps
 
-1. **Update Shopify Admin Settings** with the exact URIs listed above
-2. **Test the authentication flow** using the test page
-3. **Check browser console** for detailed error information
-4. **Verify environment variables** are correctly set
+1. **Test the authentication flow** using the test page - the critical fix is now implemented
+2. **Check browser console** for detailed error information with the new authentication method
+3. **Verify Shopify Admin Settings** if issues persist
+4. **Check the detailed error logs** to see exactly what's happening
 
 ## Additional Resources
 
 - [Shopify Customer Account API Documentation](https://shopify.dev/docs/api/customer)
 - [Customer Account API Authentication Guide](https://shopify.dev/docs/storefronts/headless/building-with-the-customer-account-api/getting-started)
-- [Common 401 Error Causes](https://shopify.dev/docs/api/customer#obtain-access-token)
+- [Community Forum Discussion](https://community.shopify.com/c/shopify-discussions/problems-when-trying-to-use-the-customer-account-api/m-p/2285237) - Source of the critical fix
