@@ -62,10 +62,17 @@ export async function GET(request: NextRequest) {
       request.headers.get("x-code-verifier");
 
     if (!codeVerifier) {
-      console.error("Missing code verifier");
-      return NextResponse.redirect(
-        new URL("/auth/error?error=missing_code_verifier", request.url)
+      console.error(
+        "Missing code verifier - redirecting to client-side handler"
       );
+
+      // Instead of showing an error, redirect to a client-side handler
+      // that can access localStorage and handle the token exchange
+      const clientHandlerUrl = new URL("/auth/callback-handler", request.url);
+      clientHandlerUrl.searchParams.set("code", code);
+      clientHandlerUrl.searchParams.set("state", state);
+
+      return NextResponse.redirect(clientHandlerUrl);
     }
 
     // Create config object for token exchange

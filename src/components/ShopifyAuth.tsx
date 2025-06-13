@@ -528,33 +528,34 @@ export function ShopifyAuthExample() {
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-semibold mb-2">
-          Mode 1: Manual Token Exchange
+          Mode 1: Automatic Token Exchange (Recommended)
         </h3>
         <p className="text-sm text-gray-600 mb-4">
-          Receives authorization code only. You handle token exchange manually
-          (recommended for production).
-        </p>
-        <ShopifyAuth
-          config={authConfig}
-          onAuthSuccess={handleAuthSuccess}
-          onAuthError={handleAuthError}
-          autoExchangeTokens={false}
-        />
-      </div>
-
-      <div>
-        <h3 className="text-lg font-semibold mb-2">
-          Mode 2: Automatic Token Exchange
-        </h3>
-        <p className="text-sm text-gray-600 mb-4">
-          Automatically exchanges authorization code for tokens client-side (for
-          testing/demo purposes).
+          Automatically exchanges authorization code for tokens client-side.
+          This handles PKCE code verifier properly and is recommended for
+          testing.
         </p>
         <ShopifyAuth
           config={authConfig}
           onAuthSuccess={handleAuthSuccess}
           onAuthError={handleAuthError}
           autoExchangeTokens={true}
+        />
+      </div>
+
+      <div>
+        <h3 className="text-lg font-semibold mb-2">
+          Mode 2: Manual Token Exchange (Advanced)
+        </h3>
+        <p className="text-sm text-gray-600 mb-4">
+          Receives authorization code only. Requires server-side token exchange
+          implementation for production use.
+        </p>
+        <ShopifyAuth
+          config={authConfig}
+          onAuthSuccess={handleAuthSuccess}
+          onAuthError={handleAuthError}
+          autoExchangeTokens={false}
         />
       </div>
     </div>
