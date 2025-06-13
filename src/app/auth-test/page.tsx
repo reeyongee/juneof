@@ -10,7 +10,7 @@ export default function AuthTestPage() {
             Shopify Customer Account API Authentication Test
           </h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            This page demonstrates the implementation of Shopify's Customer
+            This page demonstrates the implementation of Shopify&apos;s Customer
             Account API authentication using OAuth 2.0 with PKCE (Proof Key for
             Code Exchange) for public clients.
           </p>
@@ -53,8 +53,8 @@ export default function AuthTestPage() {
               <h3 className="text-lg font-semibold mb-3">OAuth Flow Steps</h3>
               <ol className="list-decimal list-inside space-y-2 text-sm">
                 <li>
-                  Generate PKCE code verifier and challenge (using Shopify's
-                  method)
+                  Generate PKCE code verifier and challenge (using
+                  Shopify&apos;s method)
                 </li>
                 <li>Generate state and nonce for security</li>
                 <li>
@@ -81,7 +81,7 @@ export default function AuthTestPage() {
                   PKCE (Shopify Method)
                 </h4>
                 <p className="text-sm text-blue-700">
-                  Proof Key for Code Exchange using Shopify's recommended
+                  Proof Key for Code Exchange using Shopify&apos;s recommended
                   implementation prevents authorization code interception
                   attacks
                 </p>

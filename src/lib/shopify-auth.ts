@@ -94,16 +94,6 @@ function convertBufferToString(hash: ArrayBuffer): string {
 }
 
 /**
- * Legacy Base64URL encode function for backward compatibility
- * @param buffer - Uint8Array to encode
- * @returns string - Base64URL encoded string
- */
-function base64URLEncode(buffer: Uint8Array): string {
-  const base64 = btoa(String.fromCharCode(...buffer));
-  return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
-}
-
-/**
  * Configuration for Shopify Customer Account API authentication
  */
 export interface ShopifyAuthConfig {
@@ -717,7 +707,7 @@ export interface JwtPayload {
   iss?: string;
   exp?: number;
   iat?: number;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
@@ -726,7 +716,7 @@ export interface JwtPayload {
 export interface JwtHeader {
   alg?: string;
   typ?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
@@ -1006,7 +996,7 @@ export async function ensureAuthentication(
       if (refreshedTokens) {
         return true;
       }
-    } catch (error) {
+    } catch {
       // Refresh failed, continue to silent auth
     }
   }
@@ -1030,19 +1020,19 @@ export interface CustomerAccountApiConfig {
 export interface GraphQLOperation {
   operationName?: string;
   query: string;
-  variables?: Record<string, any>;
+  variables?: Record<string, unknown>;
 }
 
 /**
  * GraphQL response interface
  */
-export interface GraphQLResponse<T = any> {
+export interface GraphQLResponse<T = unknown> {
   data?: T;
   errors?: Array<{
     message: string;
     locations?: Array<{ line: number; column: number }>;
     path?: Array<string | number>;
-    extensions?: Record<string, any>;
+    extensions?: Record<string, unknown>;
   }>;
   extensions?: {
     context?: {
@@ -1053,6 +1043,7 @@ export interface GraphQLResponse<T = any> {
       requestedQueryCost: number;
       actualQueryCost: number;
     };
+    [key: string]: unknown;
   };
 }
 
@@ -1082,7 +1073,7 @@ export class CustomerAccountApiError extends Error {
  * @param operation - GraphQL operation to execute
  * @returns Promise<GraphQLResponse<T>> - GraphQL response
  */
-export async function executeCustomerAccountQuery<T = any>(
+export async function executeCustomerAccountQuery<T = unknown>(
   config: CustomerAccountApiConfig,
   operation: GraphQLOperation
 ): Promise<GraphQLResponse<T>> {
@@ -1326,7 +1317,7 @@ export class CustomerAccountApiClient {
    * @param operation - GraphQL operation to execute
    * @returns Promise<GraphQLResponse<T>> - GraphQL response
    */
-  async query<T = any>(
+  async query<T = unknown>(
     operation: GraphQLOperation
   ): Promise<GraphQLResponse<T>> {
     return executeCustomerAccountQuery<T>(this.config, operation);
@@ -1338,7 +1329,7 @@ export class CustomerAccountApiClient {
    * @param language - Language code for localization
    * @returns Promise<GraphQLResponse<T>> - GraphQL response
    */
-  async localizedQuery<T = any>(
+  async localizedQuery<T = unknown>(
     operation: GraphQLOperation,
     language: SupportedLanguage
   ): Promise<GraphQLResponse<T>> {

@@ -1,9 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  refreshAccessToken,
-  type ShopifyAuthConfig,
-  type RefreshTokenResponse,
-} from "@/lib/shopify-auth";
+import { refreshAccessToken, type ShopifyAuthConfig } from "@/lib/shopify-auth";
 
 /**
  * Handles refresh token requests

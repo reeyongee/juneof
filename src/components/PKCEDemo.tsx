@@ -41,9 +41,9 @@ export default function PKCEDemo() {
 
       <div className="mb-6">
         <p className="text-sm text-gray-600 mb-4">
-          This demonstrates Shopify's recommended implementation for generating
-          PKCE (Proof Key for Code Exchange) parameters used in OAuth 2.0 for
-          public clients.
+          This demonstrates Shopify&apos;s recommended implementation for
+          generating PKCE (Proof Key for Code Exchange) parameters used in OAuth
+          2.0 for public clients.
         </p>
 
         <div className="bg-blue-50 p-4 rounded-lg mb-4">

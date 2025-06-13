@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   exchangeCodeForTokens,
   type ShopifyAuthConfig,
-  type AccessTokenResponse,
-  type TokenErrorResponse,
 } from "@/lib/shopify-auth";
 
 /**

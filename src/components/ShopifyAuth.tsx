@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   initiateShopifyAuth,
   validateCallback,
@@ -14,7 +14,6 @@ import {
   autoRefreshTokens,
   type ShopifyAuthConfig,
   type AccessTokenResponse,
-  type RefreshTokenResponse,
   type TokenStorage,
 } from "@/lib/shopify-auth";
 
@@ -53,75 +52,77 @@ export default function ShopifyAuth({
   }, []);
 
   // Check for callback parameters on component mount
-  useEffect(() => {
-    const checkCallback = () => {
-      const currentUrl = window.location.href;
-      const urlParams = new URLSearchParams(window.location.search);
+  const checkCallback = useCallback(() => {
+    const currentUrl = window.location.href;
+    const urlParams = new URLSearchParams(window.location.search);
 
-      // Check if this is a callback from Shopify
-      if (urlParams.has("code") || urlParams.has("error")) {
-        const validation = validateCallback(currentUrl);
+    // Check if this is a callback from Shopify
+    if (urlParams.has("code") || urlParams.has("error")) {
+      const validation = validateCallback(currentUrl);
 
-        if (validation.isValid && validation.code) {
-          if (autoExchangeTokens) {
-            // Automatically exchange code for tokens
-            setAuthStatus("exchanging_tokens");
+      if (validation.isValid && validation.code) {
+        const authCode = validation.code; // Extract to ensure type safety
 
-                         completeAuthentication(config, validation.code)
-               .then((tokenResponse) => {
-                 setAuthStatus("success");
-                 setTokens(tokenResponse);
-                 
-                 // Store tokens for future use
-                 storeTokens(tokenResponse);
-                 setStoredTokens(getStoredTokens());
-                 
-                 onAuthSuccess?.({
-                   code: validation.code,
-                   tokens: tokenResponse,
-                 });
-               })
-              .catch((tokenError) => {
-                setAuthStatus("error");
-                setError(tokenError.message);
-                onAuthError?.({
-                  error: "token_exchange_failed",
-                  errorDescription: tokenError.message,
-                });
+        if (autoExchangeTokens) {
+          // Automatically exchange code for tokens
+          setAuthStatus("exchanging_tokens");
+
+          completeAuthentication(config, authCode)
+            .then((tokenResponse) => {
+              setAuthStatus("success");
+              setTokens(tokenResponse);
+
+              // Store tokens for future use
+              storeTokens(tokenResponse);
+              setStoredTokens(getStoredTokens());
+
+              onAuthSuccess?.({
+                code: authCode,
+                tokens: tokenResponse,
               });
-          } else {
-            // Just return the code without exchanging
-            setAuthStatus("success");
-            onAuthSuccess?.({ code: validation.code });
-          }
-
-          // Clean up URL parameters
-          const cleanUrl = new URL(window.location.href);
-          cleanUrl.searchParams.delete("code");
-          cleanUrl.searchParams.delete("state");
-          window.history.replaceState({}, document.title, cleanUrl.toString());
-
-          // Clear stored auth parameters (only if not auto-exchanging, as completeAuthentication handles this)
-          if (!autoExchangeTokens) {
-            clearAuthStorage();
-          }
+            })
+            .catch((tokenError) => {
+              setAuthStatus("error");
+              setError(tokenError.message);
+              onAuthError?.({
+                error: "token_exchange_failed",
+                errorDescription: tokenError.message,
+              });
+            });
         } else {
-          setAuthStatus("error");
-          setError(
-            validation.errorDescription ||
-              validation.error ||
-              "Authentication failed"
-          );
-          onAuthError?.({
-            error: validation.error || "unknown_error",
-            errorDescription: validation.errorDescription,
-          });
+          // Just return the code without exchanging
+          setAuthStatus("success");
+          onAuthSuccess?.({ code: authCode });
         }
-      }
-    };
 
+        // Clean up URL parameters
+        const cleanUrl = new URL(window.location.href);
+        cleanUrl.searchParams.delete("code");
+        cleanUrl.searchParams.delete("state");
+        window.history.replaceState({}, document.title, cleanUrl.toString());
+
+        // Clear stored auth parameters (only if not auto-exchanging, as completeAuthentication handles this)
+        if (!autoExchangeTokens) {
+          clearAuthStorage();
+        }
+      } else {
+        setAuthStatus("error");
+        setError(
+          validation.errorDescription ||
+            validation.error ||
+            "Authentication failed"
+        );
+        onAuthError?.({
+          error: validation.error || "unknown_error",
+          errorDescription: validation.errorDescription,
+        });
+      }
+    }
+  }, [config, autoExchangeTokens, onAuthSuccess, onAuthError]);
+
+  useEffect(() => {
     checkCallback();
-  }, [onAuthSuccess, onAuthError]);
+  }, [checkCallback]);
 
   const handleLogin = async (options?: {
     prompt?: "none";
@@ -170,16 +171,20 @@ export default function ShopifyAuth({
     setError(null);
 
     try {
-      const refreshedTokens = await refreshAccessToken(config, storedTokens.refreshToken);
-      
+      const refreshedTokens = await refreshAccessToken(
+        config,
+        storedTokens.refreshToken
+      );
+
       // Store the new tokens
       storeTokens(refreshedTokens);
       const newStoredTokens = getStoredTokens();
       setStoredTokens(newStoredTokens);
-      
+
       console.log("Tokens refreshed successfully");
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Token refresh failed";
+      const errorMessage =
+        err instanceof Error ? err.message : "Token refresh failed";
       setError(errorMessage);
       console.error("Token refresh failed:", err);
     } finally {
@@ -205,7 +210,8 @@ export default function ShopifyAuth({
         setError("Auto refresh failed - no refresh token available");
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Auto refresh failed";
+      const errorMessage =
+        err instanceof Error ? err.message : "Auto refresh failed";
       setError(errorMessage);
       console.error("Auto refresh failed:", err);
     } finally {
@@ -310,7 +316,7 @@ export default function ShopifyAuth({
                 >
                   {isRefreshing ? "Refreshing..." : "Refresh Token"}
                 </button>
-                
+
                 <button
                   onClick={handleAutoRefresh}
                   disabled={isRefreshing}
@@ -320,7 +326,7 @@ export default function ShopifyAuth({
                 </button>
               </>
             )}
-            
+
             <button
               onClick={handleLogout}
               className="w-full bg-red-600 text-white py-2 px-4 rounded hover:bg-red-700"
@@ -347,11 +353,13 @@ export default function ShopifyAuth({
               <strong>Scope:</strong> {tokens.scope}
             </div>
             <div>
-              <strong>Access Token:</strong> {tokens.access_token.substring(0, 20)}...
+              <strong>Access Token:</strong>{" "}
+              {tokens.access_token.substring(0, 20)}...
             </div>
             {tokens.refresh_token && (
               <div>
-                <strong>Refresh Token:</strong> {tokens.refresh_token.substring(0, 20)}...
+                <strong>Refresh Token:</strong>{" "}
+                {tokens.refresh_token.substring(0, 20)}...
               </div>
             )}
             {tokens.id_token && (
@@ -376,46 +384,52 @@ export default function ShopifyAuth({
               <strong>Expires In:</strong> {storedTokens.expiresIn} seconds
             </div>
             <div>
-              <strong>Issued At:</strong> {new Date(storedTokens.issuedAt).toLocaleString()}
+              <strong>Issued At:</strong>{" "}
+              {new Date(storedTokens.issuedAt).toLocaleString()}
             </div>
             <div>
-              <strong>Expires At:</strong> {new Date(storedTokens.issuedAt + (storedTokens.expiresIn * 1000)).toLocaleString()}
+              <strong>Expires At:</strong>{" "}
+              {new Date(
+                storedTokens.issuedAt + storedTokens.expiresIn * 1000
+              ).toLocaleString()}
             </div>
             <div>
-              <strong>Is Expired:</strong> {
-                isTokenExpired(storedTokens.expiresIn, storedTokens.issuedAt) 
-                  ? "🔴 Yes (or expires soon)" 
-                  : "🟢 No"
-              }
+              <strong>Is Expired:</strong>{" "}
+              {isTokenExpired(storedTokens.expiresIn, storedTokens.issuedAt)
+                ? "🔴 Yes (or expires soon)"
+                : "🟢 No"}
             </div>
             <div>
               <strong>Scope:</strong> {storedTokens.scope}
             </div>
             <div>
-              <strong>Access Token:</strong> {storedTokens.accessToken.substring(0, 20)}...
+              <strong>Access Token:</strong>{" "}
+              {storedTokens.accessToken.substring(0, 20)}...
             </div>
             {storedTokens.refreshToken && (
               <div>
-                <strong>Refresh Token:</strong> {storedTokens.refreshToken.substring(0, 20)}...
+                <strong>Refresh Token:</strong>{" "}
+                {storedTokens.refreshToken.substring(0, 20)}...
               </div>
             )}
             {storedTokens.idToken && (
               <div>
-                <strong>ID Token:</strong> {storedTokens.idToken.substring(0, 20)}...
+                <strong>ID Token:</strong>{" "}
+                {storedTokens.idToken.substring(0, 20)}...
               </div>
             )}
           </div>
         </div>
       )}
-      </div>
 
       <div className="mt-6 text-xs text-gray-500">
         <div className="font-medium mb-2">How it works:</div>
         <ol className="list-decimal list-inside space-y-1">
-          <li>Click "Login with Shopify" to start OAuth flow</li>
-          <li>You'll be redirected to Shopify's login page</li>
+          <li>Click &quot;Login with Shopify&quot; to start OAuth flow</li>
+          <li>You&apos;ll be redirected to Shopify&apos;s login page</li>
           <li>
-            After login, you'll be redirected back with an authorization code
+            After login, you&apos;ll be redirected back with an authorization
+            code
           </li>
           <li>The code can be exchanged for access tokens</li>
         </ol>
@@ -448,12 +462,12 @@ export function ShopifyAuthExample() {
     locale: "en",
   };
 
-  const handleAuthSuccess = (data: { 
-    code: string; 
-    tokens?: AccessTokenResponse 
+  const handleAuthSuccess = (data: {
+    code: string;
+    tokens?: AccessTokenResponse;
   }) => {
     console.log("Authentication successful! Authorization code:", data.code);
-    
+
     if (data.tokens) {
       console.log("Tokens received:", {
         tokenType: data.tokens.token_type,
@@ -462,7 +476,7 @@ export function ShopifyAuthExample() {
         hasRefreshToken: !!data.tokens.refresh_token,
         hasIdToken: !!data.tokens.id_token,
       });
-      
+
       // In a real app, you would now:
       // 1. Store tokens securely (encrypted, HTTP-only cookies)
       // 2. Set up automatic token refresh
@@ -504,9 +518,12 @@ export function ShopifyAuthExample() {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold mb-2">Mode 1: Manual Token Exchange</h3>
+        <h3 className="text-lg font-semibold mb-2">
+          Mode 1: Manual Token Exchange
+        </h3>
         <p className="text-sm text-gray-600 mb-4">
-          Receives authorization code only. You handle token exchange manually (recommended for production).
+          Receives authorization code only. You handle token exchange manually
+          (recommended for production).
         </p>
         <ShopifyAuth
           config={authConfig}
@@ -517,9 +534,12 @@ export function ShopifyAuthExample() {
       </div>
 
       <div>
-        <h3 className="text-lg font-semibold mb-2">Mode 2: Automatic Token Exchange</h3>
+        <h3 className="text-lg font-semibold mb-2">
+          Mode 2: Automatic Token Exchange
+        </h3>
         <p className="text-sm text-gray-600 mb-4">
-          Automatically exchanges authorization code for tokens client-side (for testing/demo purposes).
+          Automatically exchanges authorization code for tokens client-side (for
+          testing/demo purposes).
         </p>
         <ShopifyAuth
           config={authConfig}

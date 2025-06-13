@@ -185,11 +185,13 @@ function AuthErrorContent({
   );
 }
 
-export default function AuthErrorPage({
+export default async function AuthErrorPage({
   searchParams,
 }: {
-  searchParams: { error?: string; description?: string };
+  searchParams: Promise<{ error?: string; description?: string }>;
 }) {
+  const params = await searchParams;
+
   return (
     <Suspense
       fallback={
@@ -201,7 +203,7 @@ export default function AuthErrorPage({
         </div>
       }
     >
-      <AuthErrorContent searchParams={searchParams} />
+      <AuthErrorContent searchParams={params} />
     </Suspense>
   );
 }
