@@ -93,8 +93,18 @@ export default function CustomerDataDemo({ config }: CustomerDataDemoProps) {
 
   // Load stored tokens on component mount
   useEffect(() => {
+    console.log("🔍 CustomerDataDemo: Checking for stored tokens...");
     const storedTokens = getStoredTokens();
+
     if (storedTokens) {
+      console.log("✅ Found stored tokens:", {
+        tokenType: storedTokens.tokenType,
+        expiresIn: storedTokens.expiresIn,
+        scope: storedTokens.scope,
+        issuedAt: new Date(storedTokens.issuedAt).toISOString(),
+        hasRefreshToken: !!storedTokens.refreshToken,
+      });
+
       setTokens(storedTokens);
 
       // Create API client with the access token
@@ -106,8 +116,11 @@ export default function CustomerDataDemo({ config }: CustomerDataDemoProps) {
 
       // Automatically fetch customer profile if we have tokens
       setTimeout(() => {
+        console.log("🚀 Auto-fetching customer profile...");
         fetchCustomerProfileInternal(client, storedTokens);
       }, 1000);
+    } else {
+      console.log("❌ No stored tokens found");
     }
   }, [config.shopId, fetchCustomerProfileInternal]);
 
@@ -203,30 +216,77 @@ export default function CustomerDataDemo({ config }: CustomerDataDemoProps) {
 
   if (!tokens) {
     return (
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-        <div className="flex items-center">
-          <div className="flex-shrink-0">
-            <svg
-              className="h-5 w-5 text-yellow-400"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path
-                fillRule="evenodd"
-                d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                clipRule="evenodd"
-              />
-            </svg>
+      <div className="space-y-4">
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <svg
+                className="h-5 w-5 text-yellow-400"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-yellow-800">
+                No Authentication Tokens Found
+              </h3>
+              <p className="mt-1 text-sm text-yellow-700">
+                Please complete the authentication process first to access
+                customer data.
+              </p>
+            </div>
           </div>
-          <div className="ml-3">
-            <h3 className="text-sm font-medium text-yellow-800">
-              No Authentication Tokens Found
-            </h3>
-            <p className="mt-1 text-sm text-yellow-700">
-              Please complete the authentication process first to access
-              customer data.
-            </p>
+        </div>
+
+        {/* Debug Section */}
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+          <h4 className="text-sm font-medium text-gray-900 mb-2">
+            🔍 Debug Info
+          </h4>
+          <div className="text-xs text-gray-600 space-y-1">
+            <div>
+              localStorage tokens:{" "}
+              {typeof window !== "undefined" &&
+              localStorage.getItem("shopify-tokens")
+                ? "Found"
+                : "Not found"}
+            </div>
+            <div>
+              localStorage auth state:{" "}
+              {typeof window !== "undefined" &&
+              localStorage.getItem("shopify-auth-state")
+                ? "Found"
+                : "Not found"}
+            </div>
+            <div>
+              localStorage code verifier:{" "}
+              {typeof window !== "undefined" &&
+              localStorage.getItem("shopify-auth-code-verifier")
+                ? "Found"
+                : "Not found"}
+            </div>
+            <div>
+              Current URL:{" "}
+              {typeof window !== "undefined" ? window.location.href : "N/A"}
+            </div>
           </div>
+          <button
+            onClick={() => {
+              if (typeof window !== "undefined") {
+                localStorage.clear();
+                window.location.reload();
+              }
+            }}
+            className="mt-2 text-xs bg-red-100 text-red-700 px-2 py-1 rounded hover:bg-red-200"
+          >
+            Clear All Storage & Reload
+          </button>
         </div>
       </div>
     );

@@ -6,7 +6,14 @@ import {
 
 /**
  * Handles the OAuth callback from Shopify Customer Account API
- * Exchanges authorization code for access token
+ *
+ * FLOW EXPLANATION:
+ * 1. Shopify redirects here with authorization code
+ * 2. Server checks for code verifier (stored in client localStorage)
+ * 3. Since server can't access localStorage, redirects to client-side handler
+ * 4. Client-side handler completes token exchange with stored code verifier
+ *
+ * This is the expected flow for client-side PKCE authentication.
  */
 export async function GET(request: NextRequest) {
   try {
@@ -62,16 +69,21 @@ export async function GET(request: NextRequest) {
       request.headers.get("x-code-verifier");
 
     if (!codeVerifier) {
-      console.error(
-        "Missing code verifier - redirecting to client-side handler"
+      console.log(
+        "✅ Code verifier not available server-side (expected) - redirecting to client-side handler for token exchange"
       );
 
-      // Instead of showing an error, redirect to a client-side handler
-      // that can access localStorage and handle the token exchange
+      // This is the normal flow for client-side PKCE authentication
+      // The code verifier is stored in localStorage and can only be accessed client-side
+      // Redirect to client-side handler that can access localStorage and complete token exchange
       const clientHandlerUrl = new URL("/auth/callback-handler", request.url);
       clientHandlerUrl.searchParams.set("code", code);
       clientHandlerUrl.searchParams.set("state", state);
 
+      console.log(
+        "🔄 Redirecting to client-side handler:",
+        clientHandlerUrl.toString()
+      );
       return NextResponse.redirect(clientHandlerUrl);
     }
 

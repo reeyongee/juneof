@@ -6,6 +6,7 @@ import Link from "next/link";
 import {
   validateCallback,
   completeAuthentication,
+  storeTokens,
   type ShopifyAuthConfig,
 } from "@/lib/shopify-auth";
 
@@ -57,8 +58,18 @@ function CallbackHandler() {
           redirectUri: window.location.origin + "/api/auth/shopify/callback",
         };
 
-        // Complete authentication
-        await completeAuthentication(config, validation.code);
+        // Complete authentication and get tokens
+        const tokens = await completeAuthentication(config, validation.code);
+
+        // Store tokens in localStorage for persistence
+        storeTokens(tokens);
+
+        console.log("✅ Authentication successful! Tokens stored:", {
+          tokenType: tokens.token_type,
+          expiresIn: tokens.expires_in,
+          scope: tokens.scope,
+          hasRefreshToken: !!tokens.refresh_token,
+        });
 
         setStatus("success");
 
