@@ -62,9 +62,9 @@ function CallbackHandler() {
 
         setStatus("success");
 
-        // Redirect to success page after a short delay
+        // Redirect back to auth-test page to see the customer data
         setTimeout(() => {
-          window.location.href = "/auth/success";
+          window.location.href = "/auth-test";
         }, 2000);
       } catch (err) {
         console.error("Callback handler error:", err);
@@ -147,7 +147,9 @@ function CallbackHandler() {
         <h2 className="text-xl font-semibold text-gray-900 mb-2">
           Authentication Successful!
         </h2>
-        <p className="text-gray-600 mb-4">Redirecting to success page...</p>
+        <p className="text-gray-600 mb-4">
+          Redirecting back to test page to view customer data...
+        </p>
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   getStoredTokens,
   autoRefreshTokens,
@@ -48,6 +48,49 @@ export default function CustomerDataDemo({ config }: CustomerDataDemoProps) {
     null
   );
 
+  // Internal function to fetch customer profile
+  const fetchCustomerProfileInternal = useCallback(
+    async (client: CustomerAccountApiClient, tokenData: TokenStorage) => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // First, ensure tokens are fresh
+        const refreshedTokens = await autoRefreshTokens(config);
+        if (
+          refreshedTokens &&
+          refreshedTokens.accessToken !== tokenData.accessToken
+        ) {
+          setTokens(refreshedTokens);
+          client.updateAccessToken(refreshedTokens.accessToken);
+        }
+
+        // Fetch customer profile using the built-in method
+        const response =
+          (await client.getCustomerProfile()) as GraphQLResponse<CustomerProfile>;
+
+        if (response.errors && response.errors.length > 0) {
+          throw new Error(`GraphQL Error: ${response.errors[0].message}`);
+        }
+
+        if (response.data) {
+          setCustomerData(response.data);
+          console.log("✅ Customer data loaded successfully:", response.data);
+        } else {
+          throw new Error("No customer data returned");
+        }
+      } catch (err) {
+        console.error("Error fetching customer data:", err);
+        setError(
+          err instanceof Error ? err.message : "Failed to fetch customer data"
+        );
+      } finally {
+        setLoading(false);
+      }
+    },
+    [config]
+  );
+
   // Load stored tokens on component mount
   useEffect(() => {
     const storedTokens = getStoredTokens();
@@ -60,8 +103,13 @@ export default function CustomerDataDemo({ config }: CustomerDataDemoProps) {
         accessToken: storedTokens.accessToken,
       });
       setApiClient(client);
+
+      // Automatically fetch customer profile if we have tokens
+      setTimeout(() => {
+        fetchCustomerProfileInternal(client, storedTokens);
+      }, 1000);
     }
-  }, [config.shopId]);
+  }, [config.shopId, fetchCustomerProfileInternal]);
 
   // Function to refresh tokens if needed
   const handleRefreshTokens = async () => {
@@ -92,41 +140,7 @@ export default function CustomerDataDemo({ config }: CustomerDataDemoProps) {
       return;
     }
 
-    setLoading(true);
-    setError(null);
-
-    try {
-      // First, ensure tokens are fresh
-      const refreshedTokens = await autoRefreshTokens(config);
-      if (
-        refreshedTokens &&
-        refreshedTokens.accessToken !== tokens.accessToken
-      ) {
-        setTokens(refreshedTokens);
-        apiClient.updateAccessToken(refreshedTokens.accessToken);
-      }
-
-      // Fetch customer profile using the built-in method
-      const response =
-        (await apiClient.getCustomerProfile()) as GraphQLResponse<CustomerProfile>;
-
-      if (response.errors && response.errors.length > 0) {
-        throw new Error(`GraphQL Error: ${response.errors[0].message}`);
-      }
-
-      if (response.data) {
-        setCustomerData(response.data);
-      } else {
-        throw new Error("No customer data returned");
-      }
-    } catch (err) {
-      console.error("Error fetching customer data:", err);
-      setError(
-        err instanceof Error ? err.message : "Failed to fetch customer data"
-      );
-    } finally {
-      setLoading(false);
-    }
+    await fetchCustomerProfileInternal(apiClient, tokens);
   };
 
   // Function to execute custom GraphQL queries
@@ -286,6 +300,9 @@ export default function CustomerDataDemo({ config }: CustomerDataDemoProps) {
       <div className="bg-white border border-gray-200 rounded-lg p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">
           👤 Customer Profile Data
+          {loading && (
+            <span className="ml-2 text-sm text-blue-600">(Loading...)</span>
+          )}
         </h3>
 
         {error && (
