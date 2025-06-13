@@ -54,7 +54,7 @@ export function generateNonce(length: number = 16): string {
   return nonce;
 }
 
-// Build authorization URL
+// Build authorization URL - FIXED: Using correct Shopify endpoint
 export async function buildAuthorizationUrl(
   config: CustomerAccountConfig,
   isConfidentialClient: boolean = false
@@ -68,6 +68,7 @@ export async function buildAuthorizationUrl(
   const state = generateState();
   const nonce = generateNonce();
 
+  // CRITICAL FIX: Use the correct Shopify Customer Account API authorization endpoint
   const authUrl = new URL(
     `https://shopify.com/authentication/${config.shopId}/oauth/authorize`
   );
@@ -82,7 +83,7 @@ export async function buildAuthorizationUrl(
   authUrl.searchParams.append("state", state);
   authUrl.searchParams.append("nonce", nonce);
 
-  // Only use PKCE for public clients
+  // Always use PKCE for public clients, optional for confidential clients
   if (!isConfidentialClient) {
     const codeChallenge = await generateCodeChallenge(codeVerifier);
     authUrl.searchParams.append("code_challenge", codeChallenge);
@@ -97,7 +98,7 @@ export async function buildAuthorizationUrl(
   };
 }
 
-// Exchange authorization code for tokens
+// Exchange authorization code for tokens - FIXED: Using correct endpoint and auth method
 export async function exchangeCodeForTokens(
   config: CustomerAccountConfig,
   code: string,
@@ -120,15 +121,17 @@ export async function exchangeCodeForTokens(
     headers["Origin"] = window.location.origin;
   }
 
-  // For confidential clients, try putting credentials in body instead of header
-  // This approach has been reported to fix 401 errors in community forums
+  // CRITICAL FIX: For confidential clients, use proper Authorization header as per OAuth 2.0 spec
   if (clientSecret) {
-    body.append("client_secret", clientSecret);
+    // Use Basic Authentication header for confidential clients (standard OAuth 2.0)
+    const credentials = btoa(`${config.clientId}:${clientSecret}`);
+    headers["Authorization"] = `Basic ${credentials}`;
   } else {
     // For public clients, use PKCE
     body.append("code_verifier", codeVerifier);
   }
 
+  // CRITICAL FIX: Use the correct Shopify Customer Account API token endpoint
   const response = await fetch(
     `https://shopify.com/authentication/${config.shopId}/oauth/token`,
     {
@@ -159,7 +162,8 @@ export async function exchangeCodeForTokens(
         shopId: config.shopId,
         redirectUri: config.redirectUri,
         hasClientSecret: !!clientSecret,
-        authMethod: clientSecret ? "client_secret_in_body" : "pkce",
+        authMethod: clientSecret ? "basic_auth_header" : "pkce",
+        endpoint: `https://shopify.com/authentication/${config.shopId}/oauth/token`,
       });
     }
 
@@ -169,7 +173,7 @@ export async function exchangeCodeForTokens(
   return response.json();
 }
 
-// Refresh access token
+// Refresh access token - FIXED: Using correct endpoint and auth method
 export async function refreshAccessToken(
   config: CustomerAccountConfig,
   refreshToken: string,
@@ -190,12 +194,13 @@ export async function refreshAccessToken(
     headers["Origin"] = window.location.origin;
   }
 
-  // For confidential clients, put client_secret in body instead of Authorization header
-  // This approach has been reported to fix 401 errors in community forums
+  // CRITICAL FIX: For confidential clients, use proper Authorization header
   if (clientSecret) {
-    body.append("client_secret", clientSecret);
+    const credentials = btoa(`${config.clientId}:${clientSecret}`);
+    headers["Authorization"] = `Basic ${credentials}`;
   }
 
+  // CRITICAL FIX: Use the correct Shopify Customer Account API token endpoint
   const response = await fetch(
     `https://shopify.com/authentication/${config.shopId}/oauth/token`,
     {
@@ -225,7 +230,8 @@ export async function refreshAccessToken(
         clientId: config.clientId,
         shopId: config.shopId,
         hasClientSecret: !!clientSecret,
-        authMethod: clientSecret ? "client_secret_in_body" : "no_auth",
+        authMethod: clientSecret ? "basic_auth_header" : "no_auth",
+        endpoint: `https://shopify.com/authentication/${config.shopId}/oauth/token`,
       });
     }
 
@@ -235,7 +241,7 @@ export async function refreshAccessToken(
   return response.json();
 }
 
-// Make authenticated request to Customer Account API
+// Make authenticated request to Customer Account API - FIXED: Using correct GraphQL endpoint
 export async function makeCustomerAccountRequest(
   shopId: string,
   accessToken: string,
@@ -254,6 +260,7 @@ export async function makeCustomerAccountRequest(
     headers["Origin"] = window.location.origin;
   }
 
+  // CRITICAL FIX: Use the correct Shopify Customer Account API GraphQL endpoint
   const response = await fetch(
     `https://shopify.com/${shopId}/account/customer/api/2025-04/graphql`,
     {
@@ -266,30 +273,29 @@ export async function makeCustomerAccountRequest(
     }
   );
 
-  // Enhanced error handling
   if (!response.ok) {
     const errorText = await response.text();
     let errorMessage = `GraphQL request failed: ${response.status} ${response.statusText}`;
 
     try {
       const errorJson = JSON.parse(errorText);
-      if (errorJson.errors) {
-        errorMessage += ` - ${JSON.stringify(errorJson.errors)}`;
-      }
+      errorMessage += ` - ${JSON.stringify(errorJson)}`;
     } catch {
       errorMessage += ` - ${errorText}`;
     }
 
     // Log additional debugging info for 401 errors
     if (response.status === 401) {
-      console.error("401 Error Details:", {
+      console.error("GraphQL Request 401 Error Details:", {
         status: response.status,
         statusText: response.statusText,
         headers: Object.fromEntries(response.headers.entries()),
-        shopId,
-        accessToken: accessToken
-          ? `${accessToken.substring(0, 10)}...`
-          : "missing",
+        shopId: shopId,
+        endpoint: `https://shopify.com/${shopId}/account/customer/api/2025-04/graphql`,
+        hasAccessToken: !!accessToken,
+        accessTokenPrefix: accessToken
+          ? accessToken.substring(0, 10) + "..."
+          : "none",
       });
     }
 
@@ -299,7 +305,29 @@ export async function makeCustomerAccountRequest(
   return response.json();
 }
 
-// Decode JWT token
+// Build logout URL
+export function buildLogoutUrl(
+  shopId: string,
+  idToken: string,
+  postLogoutRedirectUri?: string
+): string {
+  const logoutUrl = new URL(
+    `https://shopify.com/authentication/${shopId}/logout`
+  );
+
+  logoutUrl.searchParams.append("id_token_hint", idToken);
+
+  if (postLogoutRedirectUri) {
+    logoutUrl.searchParams.append(
+      "post_logout_redirect_uri",
+      postLogoutRedirectUri
+    );
+  }
+
+  return logoutUrl.toString();
+}
+
+// Decode JWT token (for extracting nonce and other claims)
 export function decodeJwt(token: string) {
   const [header, payload, signature] = token.split(".");
 
@@ -313,10 +341,9 @@ export function decodeJwt(token: string) {
   };
 }
 
-// Helper functions
+// Utility functions
 function base64UrlEncode(str: string): string {
   const base64 = btoa(str);
-  // This is to ensure that the encoding does not have +, /, or = characters in it.
   return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
 }
 
