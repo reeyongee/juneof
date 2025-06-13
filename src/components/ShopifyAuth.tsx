@@ -452,14 +452,21 @@ export default function ShopifyAuth({
  * Example usage component
  */
 export function ShopifyAuthExample() {
+  // Construct redirect URI - use window.location.origin in browser, fallback for SSR
+  const getRedirectUri = () => {
+    if (typeof window !== "undefined") {
+      return window.location.origin + "/api/auth/shopify/callback";
+    }
+    // Fallback for server-side rendering
+    return "https://dev.juneof.com/api/auth/shopify/callback";
+  };
+
   const authConfig: ShopifyAuthConfig = {
     shopId: process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_SHOP_ID || "your-shop-id",
     clientId:
       process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID ||
       "shp_your-client-id",
-    redirectUri:
-      process.env.NEXTAUTH_URL + "/api/auth/shopify/callback" ||
-      "http://localhost:3000/api/auth/shopify/callback",
+    redirectUri: getRedirectUri(),
     scope: "openid email customer-account-api:full",
     locale: "en",
   };

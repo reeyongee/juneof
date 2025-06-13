@@ -23,7 +23,9 @@ export async function POST(request: NextRequest) {
     // Get environment variables
     const shopId = process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_SHOP_ID;
     const clientId = process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID;
-    const redirectUri = process.env.NEXTAUTH_URL + "/api/auth/shopify/callback";
+    const redirectUri =
+      (process.env.NEXTAUTH_URL || "http://localhost:3000") +
+      "/api/auth/shopify/callback";
 
     if (!shopId || !clientId || !redirectUri) {
       return NextResponse.json(
