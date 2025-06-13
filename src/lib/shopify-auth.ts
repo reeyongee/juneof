@@ -1085,7 +1085,7 @@ export async function executeCustomerAccountQuery<T = unknown>(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${config.accessToken}`,
+        Authorization: config.accessToken,
       },
       body: JSON.stringify({
         operationName: operation.operationName,
