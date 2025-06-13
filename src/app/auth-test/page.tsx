@@ -1,4 +1,5 @@
 import { ShopifyAuthExample } from "@/components/ShopifyAuth";
+import CustomerDataDemo from "@/components/CustomerDataDemo";
 import PKCEDemo from "@/components/PKCEDemo";
 
 export default function AuthTestPage() {
@@ -22,6 +23,20 @@ export default function AuthTestPage() {
 
         <div className="mb-8">
           <PKCEDemo />
+        </div>
+
+        <div className="mb-8">
+          <CustomerDataDemo
+            config={{
+              shopId: process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_SHOP_ID || "",
+              clientId:
+                process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID ||
+                "",
+              redirectUri:
+                (process.env.NEXTAUTH_URL || "http://localhost:3000") +
+                "/api/auth/shopify/callback",
+            }}
+          />
         </div>
 
         <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-md p-6">
