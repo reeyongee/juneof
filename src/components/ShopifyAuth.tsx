@@ -453,10 +453,12 @@ export default function ShopifyAuth({
  */
 export function ShopifyAuthExample() {
   const authConfig: ShopifyAuthConfig = {
-    shopId: process.env.NEXT_PUBLIC_SHOPIFY_SHOP_ID || "your-shop-id",
-    clientId: process.env.NEXT_PUBLIC_SHOPIFY_CLIENT_ID || "shp_your-client-id",
+    shopId: process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_SHOP_ID || "your-shop-id",
+    clientId:
+      process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID ||
+      "shp_your-client-id",
     redirectUri:
-      process.env.NEXT_PUBLIC_SHOPIFY_REDIRECT_URI ||
+      process.env.NEXTAUTH_URL + "/api/auth/shopify/callback" ||
       "http://localhost:3000/api/auth/shopify/callback",
     scope: "openid email customer-account-api:full",
     locale: "en",

@@ -33,18 +33,20 @@ export default function AuthTestPage() {
                 Environment Variables Required
               </h3>
               <div className="bg-gray-50 p-4 rounded text-sm font-mono">
-                <div>SHOPIFY_SHOP_ID=your-shop-id</div>
-                <div>SHOPIFY_CLIENT_ID=shp_your-client-id</div>
+                <div>NEXTAUTH_URL=https://dev.juneof.com</div>
+                <div>NEXT_PUBLIC_SHOPIFY_CUSTOMER_SHOP_ID=70458179741</div>
                 <div>
-                  SHOPIFY_REDIRECT_URI=http://localhost:3000/api/auth/shopify/callback
+                  NEXT_PUBLIC_SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID=13297620-a9c9-4e6d-ba0c-ca6c2e00750d
+                </div>
+                <div>
+                  NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN=df3sub-yw.myshopify.com
                 </div>
                 <div className="mt-2 text-gray-600">
-                  # Public versions for client-side:
+                  # Redirect URI will be: NEXTAUTH_URL +
+                  /api/auth/shopify/callback
                 </div>
-                <div>NEXT_PUBLIC_SHOPIFY_SHOP_ID=your-shop-id</div>
-                <div>NEXT_PUBLIC_SHOPIFY_CLIENT_ID=shp_your-client-id</div>
-                <div>
-                  NEXT_PUBLIC_SHOPIFY_REDIRECT_URI=http://localhost:3000/api/auth/shopify/callback
+                <div className="text-xs text-gray-500">
+                  # https://dev.juneof.com/api/auth/shopify/callback
                 </div>
               </div>
             </div>
