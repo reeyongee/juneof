@@ -31,13 +31,12 @@ interface OrderNode {
     edges: Array<{
       node: {
         id: string;
-        presentmentTitle: string;
+        name: string;
         quantity: number;
-        merchandise: {
-          image?: {
-            url: string;
-            altText: string;
-          };
+        variantTitle: string;
+        image: {
+          url: string;
+          altText: string;
         };
       };
     }>;
@@ -103,15 +102,12 @@ export default function CustomerOrders({ config }: CustomerOrdersProps) {
                         edges {
                           node {
                             id
-                            presentmentTitle
+                            name
                             quantity
-                            merchandise {
-                              ... on ProductVariant {
-                                image {
-                                  url
-                                  altText
-                                }
-                              }
+                            variantTitle
+                            image {
+                              url
+                              altText
                             }
                           }
                         }
@@ -323,15 +319,12 @@ export default function CustomerOrders({ config }: CustomerOrdersProps) {
                         key={item.id}
                         className="flex items-center space-x-4"
                       >
-                        <div className="w-16 h-16 bg-gray-100 rounded-md flex items-center justify-center">
-                          {item.merchandise.image ? (
+                        <div className="w-16 h-16 bg-gray-100 rounded-md flex items-center justify-center overflow-hidden">
+                          {item.image ? (
                             <img
-                              src={item.merchandise.image.url}
-                              alt={
-                                item.merchandise.image.altText ||
-                                item.presentmentTitle
-                              }
-                              className="w-full h-full object-cover rounded-md"
+                              src={item.image.url}
+                              alt={item.image.altText || item.name}
+                              className="w-full h-full object-cover"
                             />
                           ) : (
                             <div className="text-gray-400 text-xs">
@@ -341,8 +334,13 @@ export default function CustomerOrders({ config }: CustomerOrdersProps) {
                         </div>
                         <div className="flex-1">
                           <h4 className="font-medium lowercase tracking-wider text-black">
-                            {item.presentmentTitle}
+                            {item.name}
                           </h4>
+                          {item.variantTitle && (
+                            <p className="text-sm text-gray-500 lowercase tracking-wider">
+                              {item.variantTitle}
+                            </p>
+                          )}
                           <p className="text-sm text-gray-600 lowercase tracking-wider">
                             qty: {item.quantity}
                           </p>
@@ -399,15 +397,12 @@ export default function CustomerOrders({ config }: CustomerOrdersProps) {
                         key={item.id}
                         className="flex items-center space-x-4"
                       >
-                        <div className="w-16 h-16 bg-gray-100 rounded-md flex items-center justify-center">
-                          {item.merchandise.image ? (
+                        <div className="w-16 h-16 bg-gray-100 rounded-md flex items-center justify-center overflow-hidden">
+                          {item.image ? (
                             <img
-                              src={item.merchandise.image.url}
-                              alt={
-                                item.merchandise.image.altText ||
-                                item.presentmentTitle
-                              }
-                              className="w-full h-full object-cover rounded-md"
+                              src={item.image.url}
+                              alt={item.image.altText || item.name}
+                              className="w-full h-full object-cover"
                             />
                           ) : (
                             <div className="text-gray-400 text-xs">
@@ -417,8 +412,13 @@ export default function CustomerOrders({ config }: CustomerOrdersProps) {
                         </div>
                         <div className="flex-1">
                           <h4 className="font-medium lowercase tracking-wider text-black">
-                            {item.presentmentTitle}
+                            {item.name}
                           </h4>
+                          {item.variantTitle && (
+                            <p className="text-sm text-gray-500 lowercase tracking-wider">
+                              {item.variantTitle}
+                            </p>
+                          )}
                           <p className="text-sm text-gray-600 lowercase tracking-wider">
                             qty: {item.quantity}
                           </p>
