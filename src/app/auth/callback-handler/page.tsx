@@ -55,15 +55,32 @@ function CallbackHandlerContent() {
 
       // --- Configuration Check ---
       setMessage("Configuration check...");
-      const appBaseUrl = process.env.NEXTAUTH_URL;
+      // On Vercel, NEXTAUTH_URL might not be available on client side since it's not NEXT_PUBLIC_
+      // Use window.location.origin as fallback for client-side operations
+      const appBaseUrl =
+        process.env.NEXTAUTH_URL ||
+        (typeof window !== "undefined"
+          ? window.location.origin
+          : "https://dev.juneof.com");
       const shopId = process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_SHOP_ID;
       const clientId =
         process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID;
 
+      console.log("CallbackHandler: Environment check", {
+        appBaseUrl: appBaseUrl ? "✓" : "✗",
+        shopId: shopId ? "✓" : "✗",
+        clientId: clientId ? "✓" : "✗",
+        isClient: typeof window !== "undefined",
+      });
+
       if (!appBaseUrl || !shopId || !clientId) {
         const errorMsg =
           "Client-side application configuration error: NEXTAUTH_URL, Shopify Shop ID, or Client ID is missing.";
-        console.error("ClientCallbackHandler:", errorMsg);
+        console.error("ClientCallbackHandler:", errorMsg, {
+          appBaseUrl: appBaseUrl ? "✓" : "✗",
+          shopId: shopId ? "✓" : "✗",
+          clientId: clientId ? "✓" : "✗",
+        });
         router.push(
           `/auth/error?error=server_configuration&description=${encodeURIComponent(
             errorMsg
