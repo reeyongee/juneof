@@ -81,13 +81,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   );
 
   const shopifyAuthConfig: ShopifyAuthConfig = useMemo(() => {
-    const appBaseUrl = process.env.NEXTAUTH_URL;
+    // On Vercel, NEXTAUTH_URL might not be available on client side since it's not NEXT_PUBLIC_
+    // Use window.location.origin as fallback for client-side operations
+    const appBaseUrl =
+      process.env.NEXTAUTH_URL ||
+      (typeof window !== "undefined"
+        ? window.location.origin
+        : "https://dev.juneof.com");
     const shopId = process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_SHOP_ID;
     const clientId = process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID;
 
+    console.log("AuthContext: Environment check", {
+      appBaseUrl: appBaseUrl ? "✓" : "✗",
+      shopId: shopId ? "✓" : "✗",
+      clientId: clientId ? "✓" : "✗",
+      isClient: typeof window !== "undefined",
+    });
+
     if (!appBaseUrl || !shopId || !clientId) {
       console.error(
-        "AuthContext FATAL: Critical environment variables (NEXTAUTH_URL, Shopify IDs) are missing. Authentication will fail."
+        "AuthContext FATAL: Critical environment variables (NEXTAUTH_URL, Shopify IDs) are missing. Authentication will fail.",
+        {
+          appBaseUrl: appBaseUrl ? "✓" : "✗",
+          shopId: shopId ? "✓" : "✗",
+          clientId: clientId ? "✓" : "✗",
+        }
       );
     }
 
@@ -97,10 +115,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return window.location.origin + "/api/auth/shopify/callback";
       }
       // Fallback for server-side rendering
-      return (
-        appBaseUrl + "/api/auth/shopify/callback" ||
-        "https://dev.juneof.com/api/auth/shopify/callback"
-      );
+      return appBaseUrl + "/api/auth/shopify/callback";
     };
 
     return {
@@ -110,6 +125,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       scope: "openid email customer-account-api:full", // Define required scopes
     };
   }, []);
+
+  // Store appBaseUrl separately for validation - use same logic as above
+  const appBaseUrl =
+    process.env.NEXTAUTH_URL ||
+    (typeof window !== "undefined"
+      ? window.location.origin
+      : "https://dev.juneof.com");
 
   // Internal function to fetch data and handle token refresh
   const _internalFetchAndSetCustomerData = useCallback(
@@ -220,12 +242,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       shopifyAuthConfig.shopId.startsWith("error-") ||
       !shopifyAuthConfig.clientId ||
       shopifyAuthConfig.clientId.startsWith("error-") ||
-      !process.env.NEXTAUTH_URL
+      !appBaseUrl
     ) {
       const errorMsg =
         "Critical Shopify authentication configuration is missing in environment variables (Shop ID, Client ID, or NEXTAUTH_URL).";
       setError(errorMsg);
-      console.error("AuthContext: " + errorMsg);
+      console.error("AuthContext: " + errorMsg, {
+        shopId: shopifyAuthConfig.shopId,
+        clientId: shopifyAuthConfig.clientId ? "✓" : "✗",
+        appBaseUrl: appBaseUrl ? "✓" : "✗",
+      });
       alert(
         "Application Error: Shopify authentication is not configured correctly. Please contact support."
       );
