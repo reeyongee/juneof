@@ -33,9 +33,9 @@ export default function AuthTestPage() {
                 process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID ||
                 "",
               redirectUri:
-                (process.env.NEXTAUTH_URL ||
-                  process.env.NEXT_PUBLIC_NEXTAUTH_URL ||
-                  "https://dev.juneof.com") + "/api/auth/shopify/callback",
+                typeof window !== "undefined"
+                  ? window.location.origin + "/api/auth/shopify/callback"
+                  : "https://dev.juneof.com/api/auth/shopify/callback",
             }}
           />
         </div>
