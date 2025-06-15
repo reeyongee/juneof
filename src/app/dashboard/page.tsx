@@ -1,19 +1,24 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { useAddress } from "@/context/AddressContext";
 import { useAuth } from "@/context/AuthContext";
 import AddAddressOverlay from "@/app/components/AddAddressOverlay";
 import CustomerOrders from "@/components/CustomerOrders";
 import { toast } from "sonner";
 import { Package, MapPin, User } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 
 export default function DashboardPage() {
-  const router = useRouter();
-  const { isAuthenticated, customerData, loading } = useAuth();
   const [activeSection, setActiveSection] = useState("orders");
   const [isAddAddressOpen, setIsAddAddressOpen] = useState(false);
   const {
@@ -23,64 +28,77 @@ export default function DashboardPage() {
     setAsDefault,
     deleteAddress,
   } = useAddress();
+  const { isAuthenticated, customerData, login, isLoading } = useAuth();
 
   // Redirect to login if not authenticated
   useEffect(() => {
-    if (!loading && !isAuthenticated) {
-      router.push("/login");
+    if (!isAuthenticated && !isLoading) {
+      login();
     }
-  }, [isAuthenticated, loading, router]);
+  }, [isAuthenticated, isLoading, login]);
 
   // Get user name from customer data
   const userName =
-    customerData?.customer?.displayName ||
-    customerData?.customer?.firstName ||
+    customerData?.customer.firstName ||
+    customerData?.customer.displayName ||
     "user";
 
-  // Shopify auth config for CustomerOrders component
-  const authConfig = {
-    shopId: process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_SHOP_ID || "",
-    clientId: process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID || "",
-    redirectUri:
-      (process.env.NEXTAUTH_URL || "http://localhost:3000") +
-      "/api/auth/shopify/callback",
-  };
-
   // Show loading state while checking authentication
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-[#F8F4EC] flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">
-            Loading your dashboard...
-          </h1>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
+          <p className="text-lg lowercase tracking-wider">loading...</p>
         </div>
       </div>
     );
   }
 
-  // Show loading state while redirecting
+  // Show login prompt if not authenticated
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-[#F8F4EC] flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">
-            Redirecting to login...
+          <h1 className="text-2xl font-serif lowercase tracking-widest mb-4">
+            please log in
           </h1>
+          <p className="text-lg lowercase tracking-wider mb-6">
+            you need to be logged in to view your dashboard
+          </p>
+          <button
+            onClick={login}
+            className="bg-black text-white px-6 py-3 lowercase tracking-wider hover:opacity-75 transition-opacity"
+          >
+            login with shopify
+          </button>
         </div>
       </div>
     );
   }
 
-  const renderOrders = () => <CustomerOrders config={authConfig} />;
+  const renderOrders = () => {
+    // Shopify auth configuration
+    const config = {
+      shopId: process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_SHOP_ID || "",
+      clientId:
+        process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID || "",
+      redirectUri:
+        (process.env.NEXTAUTH_URL || "http://localhost:3000") +
+        "/api/auth/shopify/callback",
+    };
+
+    return <CustomerOrders config={config} />;
+  };
 
   const renderAddresses = () => (
     <div className="space-y-6">
-      <h3 className="text-xl font-serif lowercase tracking-widest text-black mb-4">
+      <h3 className="text-xl font-serif lowercase tracking-widest text-black mb-6">
         saved addresses
       </h3>
 
-      <div className="grid gap-4">
+      {/* Address Cards */}
+      <div className="space-y-4">
         {addresses.map((address) => (
           <Card
             key={address.id}
@@ -195,83 +213,6 @@ export default function DashboardPage() {
     </div>
   );
 
-  const renderProfile = () => (
-    <div className="space-y-6">
-      <h3 className="text-xl font-serif lowercase tracking-widest text-black mb-4">
-        profile information
-      </h3>
-
-      {customerData ? (
-        <Card className="bg-white border-gray-300">
-          <CardContent className="p-6">
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-gray-700 lowercase tracking-wider">
-                  display name
-                </label>
-                <p className="text-lg text-black lowercase tracking-wider">
-                  {customerData.customer.displayName || "not set"}
-                </p>
-              </div>
-
-              {customerData.customer.firstName && (
-                <div>
-                  <label className="text-sm font-medium text-gray-700 lowercase tracking-wider">
-                    first name
-                  </label>
-                  <p className="text-lg text-black lowercase tracking-wider">
-                    {customerData.customer.firstName}
-                  </p>
-                </div>
-              )}
-
-              {customerData.customer.lastName && (
-                <div>
-                  <label className="text-sm font-medium text-gray-700 lowercase tracking-wider">
-                    last name
-                  </label>
-                  <p className="text-lg text-black lowercase tracking-wider">
-                    {customerData.customer.lastName}
-                  </p>
-                </div>
-              )}
-
-              {customerData.customer.emailAddress && (
-                <div>
-                  <label className="text-sm font-medium text-gray-700 lowercase tracking-wider">
-                    email
-                  </label>
-                  <p className="text-lg text-black lowercase tracking-wider">
-                    {customerData.customer.emailAddress.emailAddress}
-                  </p>
-                </div>
-              )}
-
-              {customerData.customer.phoneNumber && (
-                <div>
-                  <label className="text-sm font-medium text-gray-700 lowercase tracking-wider">
-                    phone
-                  </label>
-                  <p className="text-lg text-black lowercase tracking-wider">
-                    {customerData.customer.phoneNumber.phoneNumber}
-                  </p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card className="bg-white border-gray-300">
-          <CardContent className="p-6">
-            <p className="text-gray-600 lowercase tracking-wider text-center">
-              loading profile information...
-            </p>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
-
   const renderContent = () => {
     switch (activeSection) {
       case "orders":
@@ -279,7 +220,13 @@ export default function DashboardPage() {
       case "addresses":
         return renderAddresses();
       case "profile":
-        return renderProfile();
+        return (
+          <div className="text-center py-12">
+            <p className="text-gray-600 lowercase tracking-wider">
+              edit profile section coming soon
+            </p>
+          </div>
+        );
       default:
         return renderOrders();
     }
@@ -332,7 +279,7 @@ export default function DashboardPage() {
                     }`}
                   >
                     <User className="w-4 h-4 inline mr-3" />
-                    profile
+                    edit profile
                   </button>
                 </nav>
               </CardContent>
