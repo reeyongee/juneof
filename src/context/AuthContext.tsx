@@ -86,9 +86,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       shopId: process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_SHOP_ID || "",
       clientId:
         process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID || "",
-      redirectUri:
-        (process.env.NEXTAUTH_URL || "http://localhost:3000") +
-        "/api/auth/shopify/callback",
+      redirectUri: process.env.NEXTAUTH_URL + "/api/auth/shopify/callback",
     }),
     []
   );

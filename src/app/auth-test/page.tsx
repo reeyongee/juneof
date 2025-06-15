@@ -33,8 +33,7 @@ export default function AuthTestPage() {
                 process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID ||
                 "",
               redirectUri:
-                (process.env.NEXTAUTH_URL || "http://localhost:3000") +
-                "/api/auth/shopify/callback",
+                process.env.NEXTAUTH_URL + "/api/auth/shopify/callback",
             }}
           />
         </div>
