@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAddress } from "@/context/AddressContext";
 import { useAuth } from "@/context/AuthContext";
 import AddAddressOverlay from "@/app/components/AddAddressOverlay";
@@ -20,10 +20,14 @@ export default function DashboardPage() {
     setAsDefault,
     deleteAddress,
   } = useAddress();
-  const { isAuthenticated, customerData, login, isLoading } = useAuth();
-
-  // Note: Removed automatic login redirect to prevent authentication loops
-  // Users can manually click the login button if not authenticated
+  const {
+    isAuthenticated,
+    customerData,
+    login,
+    isLoading,
+    error,
+    fetchCustomerData,
+  } = useAuth();
 
   // Get user name from customer data
   const userName =
@@ -31,13 +35,55 @@ export default function DashboardPage() {
     customerData?.customer.displayName ||
     "user";
 
+  // Effect to handle post-authentication data fetching
+  useEffect(() => {
+    // If user lands here and is authenticated but data isn't loaded yet
+    // (e.g., after redirect from callback-handler), trigger a fetch.
+    if (isAuthenticated && !customerData && !isLoading && !error) {
+      console.log("Dashboard: Authenticated, no customer data. Fetching...");
+      fetchCustomerData();
+    }
+  }, [isAuthenticated, customerData, isLoading, error, fetchCustomerData]);
+
   // Show loading state while checking authentication
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#F8F4EC] flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
-          <p className="text-lg lowercase tracking-wider">loading...</p>
+          <p className="text-lg lowercase tracking-wider">
+            loading dashboard...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if there's an authentication error
+  if (error) {
+    return (
+      <div className="min-h-screen bg-[#F8F4EC] flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <h2 className="text-2xl font-serif lowercase tracking-widest text-black mb-4">
+            error loading dashboard
+          </h2>
+          <p className="text-lg lowercase tracking-wider text-gray-600 mb-6">
+            {error}
+          </p>
+          <div className="space-y-3">
+            <button
+              onClick={() => window.location.reload()}
+              className="block w-full bg-black text-white py-3 px-6 lowercase tracking-wider hover:opacity-75 transition-opacity"
+            >
+              refresh page
+            </button>
+            <button
+              onClick={login}
+              className="block w-full bg-gray-600 text-white py-3 px-6 lowercase tracking-wider hover:opacity-75 transition-opacity"
+            >
+              try login again
+            </button>
+          </div>
         </div>
       </div>
     );

@@ -15,92 +15,92 @@ function AuthErrorContent({
     switch (errorCode) {
       case "access_denied":
         return {
-          title: "Access Denied",
-          message: "You denied access to your Shopify account.",
+          title: "access denied",
+          message: "you denied access to your shopify account.",
           suggestion:
-            "To use this application, you need to grant access to your Shopify customer account.",
+            "to use this application, you need to grant access to your shopify customer account.",
         };
       case "invalid_request":
         return {
-          title: "Invalid Request",
-          message: "The authentication request was malformed or invalid.",
+          title: "invalid request",
+          message: "the authentication request was malformed or invalid.",
           suggestion:
-            "Please try again. If the problem persists, contact support.",
+            "please try again. if the problem persists, contact support.",
         };
       case "invalid_client":
         return {
-          title: "Invalid Client",
-          message: "The application is not properly configured.",
-          suggestion: "Please contact the application administrator.",
+          title: "invalid client",
+          message: "the application is not properly configured.",
+          suggestion: "please contact the application administrator.",
         };
       case "invalid_grant":
         return {
-          title: "Invalid Grant",
-          message: "The authorization code is invalid or has expired.",
-          suggestion: "Please try the authentication process again.",
+          title: "invalid grant",
+          message: "the authorization code is invalid or has expired.",
+          suggestion: "please try the authentication process again.",
         };
       case "unsupported_response_type":
         return {
-          title: "Unsupported Response Type",
-          message: "The requested response type is not supported.",
-          suggestion: "Please contact the application administrator.",
+          title: "unsupported response type",
+          message: "the requested response type is not supported.",
+          suggestion: "please contact the application administrator.",
         };
       case "invalid_scope":
         return {
-          title: "Invalid Scope",
-          message: "The requested permissions are invalid.",
-          suggestion: "Please contact the application administrator.",
+          title: "invalid scope",
+          message: "the requested permissions are invalid.",
+          suggestion: "please contact the application administrator.",
         };
       case "server_error":
         return {
-          title: "Server Error",
-          message: "Shopify encountered an internal error.",
+          title: "server error",
+          message: "shopify encountered an internal error.",
           suggestion:
-            "Please try again later. If the problem persists, contact Shopify support.",
+            "please try again later. if the problem persists, contact shopify support.",
         };
       case "temporarily_unavailable":
         return {
-          title: "Service Temporarily Unavailable",
-          message: "The authentication service is temporarily unavailable.",
-          suggestion: "Please try again in a few minutes.",
+          title: "service temporarily unavailable",
+          message: "the authentication service is temporarily unavailable.",
+          suggestion: "please try again in a few minutes.",
         };
       case "login_required":
         return {
-          title: "Login Required",
-          message: "You need to log in to your Shopify account.",
-          suggestion: "Please try again and complete the login process.",
+          title: "login required",
+          message: "you need to log in to your shopify account.",
+          suggestion: "please try again and complete the login process.",
         };
       case "missing_parameters":
         return {
-          title: "Missing Parameters",
-          message: "Required authentication parameters are missing.",
-          suggestion: "Please try the authentication process again.",
+          title: "missing parameters",
+          message: "required authentication parameters are missing.",
+          suggestion: "please try the authentication process again.",
         };
       case "invalid_state":
         return {
-          title: "Invalid State",
+          title: "invalid state",
           message:
-            "The authentication state is invalid or has been tampered with.",
-          suggestion: "This could indicate a security issue. Please try again.",
+            "the authentication state is invalid or has been tampered with.",
+          suggestion: "this could indicate a security issue. please try again.",
         };
       case "missing_code_verifier":
         return {
-          title: "Missing Code Verifier",
-          message: "The PKCE code verifier is missing.",
-          suggestion: "Please try the authentication process again.",
+          title: "missing code verifier",
+          message: "the pkce code verifier is missing.",
+          suggestion: "please try the authentication process again.",
         };
       case "server_configuration":
         return {
-          title: "Server Configuration Error",
-          message: "The server is not properly configured.",
-          suggestion: "Please contact the application administrator.",
+          title: "server configuration error",
+          message: "the server is not properly configured.",
+          suggestion: "please contact the application administrator.",
         };
       default:
         return {
-          title: "Authentication Error",
-          message: "An error occurred during authentication.",
+          title: "authentication error",
+          message: "an error occurred during authentication.",
           suggestion:
-            "Please try again. If the problem persists, contact support.",
+            "please try again. if the problem persists, contact support.",
         };
     }
   };
@@ -108,7 +108,7 @@ function AuthErrorContent({
   const errorDetails = getErrorDetails(error);
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#F8F4EC] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
           <div className="mx-auto h-12 w-12 text-red-600">
@@ -126,16 +126,20 @@ function AuthErrorContent({
               />
             </svg>
           </div>
-          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
+          <h2 className="mt-6 text-2xl font-serif lowercase tracking-widest text-black">
             {errorDetails.title}
           </h2>
-          <p className="mt-2 text-sm text-gray-600">{errorDetails.message}</p>
+          <p className="mt-2 text-lg lowercase tracking-wider text-gray-600">
+            {errorDetails.message}
+          </p>
         </div>
 
         <div className="bg-white shadow rounded-lg p-6">
           <div className="space-y-4">
             <div>
-              <h3 className="text-sm font-medium text-gray-900">Error Code</h3>
+              <h3 className="text-sm font-medium lowercase tracking-wider text-black">
+                error code
+              </h3>
               <p className="mt-1 text-sm text-gray-600 font-mono bg-gray-50 px-2 py-1 rounded">
                 {error}
               </p>
@@ -143,16 +147,20 @@ function AuthErrorContent({
 
             {description && description !== errorDetails.message && (
               <div>
-                <h3 className="text-sm font-medium text-gray-900">
-                  Error Description
+                <h3 className="text-sm font-medium lowercase tracking-wider text-black">
+                  error description
                 </h3>
-                <p className="mt-1 text-sm text-gray-600">{description}</p>
+                <p className="mt-1 text-sm lowercase tracking-wider text-gray-600">
+                  {description}
+                </p>
               </div>
             )}
 
             <div>
-              <h3 className="text-sm font-medium text-gray-900">Suggestion</h3>
-              <p className="mt-1 text-sm text-gray-600">
+              <h3 className="text-sm font-medium lowercase tracking-wider text-black">
+                suggestion
+              </h3>
+              <p className="mt-1 text-sm lowercase tracking-wider text-gray-600">
                 {errorDetails.suggestion}
               </p>
             </div>
@@ -161,23 +169,23 @@ function AuthErrorContent({
 
         <div className="flex space-x-4">
           <Link
-            href="/auth-test"
-            className="flex-1 bg-blue-600 text-white py-2 px-4 rounded text-center hover:bg-blue-700 transition-colors"
+            href="/dashboard"
+            className="flex-1 bg-black text-white py-3 px-4 rounded text-center lowercase tracking-wider hover:opacity-75 transition-opacity"
           >
-            Try Again
+            try again
           </Link>
           <Link
             href="/"
-            className="flex-1 bg-gray-600 text-white py-2 px-4 rounded text-center hover:bg-gray-700 transition-colors"
+            className="flex-1 bg-gray-600 text-white py-3 px-4 rounded text-center lowercase tracking-wider hover:opacity-75 transition-opacity"
           >
-            Go Home
+            go home
           </Link>
         </div>
 
-        <div className="text-xs text-gray-500 text-center">
-          <p>If you continue to experience issues, please contact support.</p>
+        <div className="text-xs lowercase tracking-wider text-gray-500 text-center">
+          <p>if you continue to experience issues, please contact support.</p>
           <p className="mt-1">
-            Error occurred during Shopify Customer Account API authentication.
+            error occurred during shopify customer account api authentication.
           </p>
         </div>
       </div>
@@ -195,10 +203,12 @@ export default async function AuthErrorPage({
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="min-h-screen bg-[#F8F4EC] flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto"></div>
-            <p className="mt-2 text-gray-600">Loading...</p>
+            <p className="mt-2 text-lg lowercase tracking-wider text-gray-600">
+              loading error details...
+            </p>
           </div>
         </div>
       }

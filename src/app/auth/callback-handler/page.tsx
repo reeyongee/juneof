@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
-import Link from "next/link";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
   validateCallback,
   completeAuthentication,
@@ -10,156 +9,130 @@ import {
   type ShopifyAuthConfig,
 } from "@/lib/shopify-auth";
 
-function CallbackHandler() {
+function CallbackHandlerContent() {
   const searchParams = useSearchParams();
-  const [status, setStatus] = useState<"loading" | "success" | "error">(
-    "loading"
-  );
-  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+  const [message, setMessage] = useState(
+    "Processing Shopify authentication..."
+  ); // User-facing message
 
   useEffect(() => {
-    const handleCallback = async () => {
+    const processCallback = async () => {
+      const code = searchParams.get("code");
+      const state = searchParams.get("state");
+
+      // --- Parameter Validation ---
+      if (!code || !state) {
+        const errorMsg =
+          "Essential authentication parameters (code or state) are missing from Shopify's callback.";
+        console.error("ClientCallbackHandler:", errorMsg);
+        router.push(
+          `/auth/error?error=missing_parameters&description=${encodeURIComponent(
+            errorMsg
+          )}`
+        );
+        return;
+      }
+
+      // --- State Validation ---
+      setMessage("Validating authentication state...");
+      const validation = validateCallback(window.location.href);
+      if (!validation.isValid || !validation.code) {
+        const errorMsg =
+          validation.errorDescription ||
+          "Invalid authentication state or callback parameters.";
+        console.error(
+          "ClientCallbackHandler: State validation failed -",
+          errorMsg
+        );
+        router.push(
+          `/auth/error?error=${
+            validation.error || "invalid_state"
+          }&description=${encodeURIComponent(errorMsg)}`
+        );
+        return;
+      }
+
+      // --- Configuration Check ---
+      setMessage("Configuration check...");
+      const appBaseUrl = process.env.NEXTAUTH_URL;
+      const shopId = process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_SHOP_ID;
+      const clientId =
+        process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID;
+
+      if (!appBaseUrl || !shopId || !clientId) {
+        const errorMsg =
+          "Client-side application configuration error: NEXTAUTH_URL, Shopify Shop ID, or Client ID is missing.";
+        console.error("ClientCallbackHandler:", errorMsg);
+        router.push(
+          `/auth/error?error=server_configuration&description=${encodeURIComponent(
+            errorMsg
+          )}`
+        );
+        return;
+      }
+
+      const authConfig: ShopifyAuthConfig = {
+        shopId,
+        clientId,
+        redirectUri: `${appBaseUrl}/api/auth/shopify/callback`, // This MUST match exactly what's in Shopify app config
+      };
+
+      // --- Token Exchange ---
       try {
-        // Get parameters from URL
-        const code = searchParams.get("code");
-        const state = searchParams.get("state");
+        setMessage("Exchanging authorization code for tokens...");
+        // `completeAuthentication` internally retrieves 'shopify-auth-code-verifier' from localStorage
+        const tokens = await completeAuthentication(
+          authConfig,
+          validation.code
+        );
+        storeTokens(tokens); // Securely store tokens
 
-        if (!code || !state) {
-          setError("Missing authorization code or state parameter");
-          setStatus("error");
-          return;
-        }
+        console.log(
+          "✅ ClientCallbackHandler: Token exchange successful. Tokens stored."
+        );
+        setMessage(
+          "Authentication successful! Redirecting to your dashboard..."
+        );
 
-        // Validate the callback
-        const validation = validateCallback(window.location.href);
-
-        if (!validation.isValid || !validation.code) {
-          setError(validation.error || "Invalid callback");
-          setStatus("error");
-          return;
-        }
-
-        // Get stored code verifier from localStorage
-        const codeVerifier = localStorage.getItem("shopify-auth-code-verifier");
-
-        if (!codeVerifier) {
-          setError(
-            "Code verifier not found. Please try the authentication process again."
-          );
-          setStatus("error");
-          return;
-        }
-
-        // Create config
-        const config: ShopifyAuthConfig = {
-          shopId: process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_SHOP_ID || "",
-          clientId:
-            process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID || "",
-          redirectUri: window.location.origin + "/api/auth/shopify/callback",
-        };
-
-        // Complete authentication and get tokens
-        const tokens = await completeAuthentication(config, validation.code);
-
-        // Store tokens in localStorage for persistence
-        storeTokens(tokens);
-
-        console.log("✅ Authentication successful! Tokens stored:", {
-          tokenType: tokens.token_type,
-          expiresIn: tokens.expires_in,
-          scope: tokens.scope,
-          hasRefreshToken: !!tokens.refresh_token,
-        });
-
-        setStatus("success");
-
-        // Redirect to dashboard to see the customer data
-        setTimeout(() => {
-          window.location.href = "/dashboard";
-        }, 2000);
+        // Redirect to the dashboard. The AuthProvider there will pick up the new tokens.
+        // Clean the URL of auth parameters before redirecting.
+        const dashboardUrl = new URL("/dashboard", window.location.origin);
+        window.history.replaceState(
+          {},
+          document.title,
+          dashboardUrl.toString()
+        ); // Clean current URL
+        router.push("/dashboard"); // Navigate
       } catch (err) {
-        console.error("Callback handler error:", err);
-        setError(err instanceof Error ? err.message : "Authentication failed");
-        setStatus("error");
+        const errorMessage =
+          err instanceof Error
+            ? err.message
+            : "An unexpected error occurred during token exchange.";
+        console.error(
+          "ClientCallbackHandler: Token exchange failed -",
+          errorMessage
+        );
+        router.push(
+          `/auth/error?error=invalid_grant&description=${encodeURIComponent(
+            errorMessage
+          )}`
+        );
       }
     };
 
-    handleCallback();
-  }, [searchParams]);
-
-  if (status === "loading") {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">
-            Completing Authentication
-          </h2>
-          <p className="text-gray-600">
-            Exchanging authorization code for access tokens...
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  if (status === "error") {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="max-w-md w-full bg-white rounded-lg shadow-md p-6">
-          <div className="text-center">
-            <div className="mx-auto h-12 w-12 text-red-600 mb-4">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
-                />
-              </svg>
-            </div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">
-              Authentication Failed
-            </h2>
-            <p className="text-gray-600 mb-4">{error}</p>
-            <div className="space-y-2">
-              <Link
-                href="/dashboard"
-                className="block w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition-colors"
-              >
-                Try Again
-              </Link>
-              <Link
-                href="/"
-                className="block w-full bg-gray-600 text-white py-2 px-4 rounded hover:bg-gray-700 transition-colors"
-              >
-                Go Home
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+    processCallback();
+  }, [searchParams, router]);
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+    <div className="min-h-screen bg-[#F8F4EC] flex items-center justify-center">
       <div className="text-center">
-        <div className="mx-auto h-12 w-12 text-green-600 mb-4">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-        </div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">
-          Authentication Successful!
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
+        <h2 className="text-xl font-serif lowercase tracking-widest text-black mb-2">
+          completing authentication
         </h2>
-        <p className="text-gray-600 mb-4">
-          Redirecting to dashboard to view customer data...
+        <p className="text-lg lowercase tracking-wider text-gray-600">
+          {message}
         </p>
       </div>
     </div>
@@ -170,17 +143,17 @@ export default function CallbackHandlerPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="min-h-screen bg-[#F8F4EC] flex items-center justify-center">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">
-              Loading...
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
+            <h2 className="text-xl font-serif lowercase tracking-widest text-black mb-2">
+              loading authentication callback...
             </h2>
           </div>
         </div>
       }
     >
-      <CallbackHandler />
+      <CallbackHandlerContent />
     </Suspense>
   );
 }

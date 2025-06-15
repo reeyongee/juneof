@@ -20,15 +20,14 @@ import {
   type GraphQLResponse,
 } from "@/lib/shopify-auth";
 
-interface CustomerProfile {
+// Define a clear structure for the customer profile data
+interface CustomerProfileData {
   customer: {
     id: string;
     displayName: string;
     firstName?: string;
     lastName?: string;
-    emailAddress?: {
-      emailAddress: string;
-    };
+    emailAddress?: { emailAddress: string };
     phoneNumber?: {
       phoneNumber: string;
     };
@@ -45,13 +44,14 @@ interface CustomerProfile {
 
 interface AuthContextType {
   isAuthenticated: boolean;
-  isLoading: boolean;
-  customerData: CustomerProfile | null;
+  isLoading: boolean; // True during initial auth check, login, or data fetch
+  customerData: CustomerProfileData | null;
   tokens: TokenStorage | null;
   error: string | null;
   login: () => Promise<void>;
   logout: () => void;
-  refreshCustomerData: () => Promise<void>;
+  fetchCustomerData: () => Promise<void>; // Allows manual refresh/fetch
+  refreshCustomerData: () => Promise<void>; // Alias for backward compatibility
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -70,8 +70,8 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [customerData, setCustomerData] = useState<CustomerProfile | null>(
+  const [isLoading, setIsLoading] = useState(true); // Start true for initial auth state check
+  const [customerData, setCustomerData] = useState<CustomerProfileData | null>(
     null
   );
   const [tokens, setTokens] = useState<TokenStorage | null>(null);
@@ -80,132 +80,210 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     null
   );
 
-  // Shopify auth configuration
-  const config: ShopifyAuthConfig = useMemo(() => {
+  const shopifyAuthConfig: ShopifyAuthConfig = useMemo(() => {
+    const appBaseUrl = process.env.NEXTAUTH_URL;
+    const shopId = process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_SHOP_ID;
+    const clientId = process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID;
+
+    if (!appBaseUrl || !shopId || !clientId) {
+      console.error(
+        "AuthContext FATAL: Critical environment variables (NEXTAUTH_URL, Shopify IDs) are missing. Authentication will fail."
+      );
+    }
+
     // Use window.location.origin when available (client-side), fallback for SSR
     const getRedirectUri = () => {
       if (typeof window !== "undefined") {
         return window.location.origin + "/api/auth/shopify/callback";
       }
       // Fallback for server-side rendering
-      return "https://dev.juneof.com/api/auth/shopify/callback";
+      return (
+        appBaseUrl + "/api/auth/shopify/callback" ||
+        "https://dev.juneof.com/api/auth/shopify/callback"
+      );
     };
 
     return {
-      shopId: process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_SHOP_ID || "",
-      clientId:
-        process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID || "",
+      shopId: shopId || "error-shop-id-not-set",
+      clientId: clientId || "error-client-id-not-set",
       redirectUri: getRedirectUri(),
+      scope: "openid email customer-account-api:full", // Define required scopes
     };
   }, []);
 
-  // Function to fetch customer profile
-  const fetchCustomerProfile = useCallback(
-    async (client: CustomerAccountApiClient, tokenData: TokenStorage) => {
+  // Internal function to fetch data and handle token refresh
+  const _internalFetchAndSetCustomerData = useCallback(
+    async (currentClient: CustomerAccountApiClient) => {
+      setIsLoading(true);
+      setError(null);
       try {
-        setIsLoading(true);
-        setError(null);
+        console.log(
+          "AuthContext: Attempting to refresh tokens before data fetch..."
+        );
+        const refreshedTokens = await autoRefreshTokens(shopifyAuthConfig);
 
-        // First, ensure tokens are fresh
-        const refreshedTokens = await autoRefreshTokens(config);
-        if (
-          refreshedTokens &&
-          refreshedTokens.accessToken !== tokenData.accessToken
-        ) {
+        if (refreshedTokens) {
+          console.log("AuthContext: Tokens refreshed successfully");
           setTokens(refreshedTokens);
-          client.updateAccessToken(refreshedTokens.accessToken);
+          currentClient.updateAccessToken(refreshedTokens.accessToken);
         }
 
-        // Fetch customer profile using the built-in method
+        console.log("AuthContext: Fetching customer profile...");
         const response =
-          (await client.getCustomerProfile()) as GraphQLResponse<CustomerProfile>;
+          (await currentClient.getCustomerProfile()) as GraphQLResponse<CustomerProfileData>;
 
         if (response.errors && response.errors.length > 0) {
           throw new Error(`GraphQL Error: ${response.errors[0].message}`);
         }
-
         if (response.data) {
           setCustomerData(response.data);
-          console.log("✅ Customer data loaded successfully:", response.data);
+          console.log(
+            "AuthContext: Customer data successfully fetched/refreshed."
+          );
         } else {
-          throw new Error("No customer data returned");
+          setCustomerData(null);
+          console.warn(
+            "AuthContext: No customer data returned from API, though query was successful."
+          );
         }
       } catch (err) {
-        console.error("Error fetching customer data:", err);
-        setError(
-          err instanceof Error ? err.message : "Failed to fetch customer data"
+        console.error(
+          "AuthContext: Error fetching/refreshing customer data:",
+          err
         );
+        const errorMessage =
+          err instanceof Error ? err.message : "Failed to fetch customer data.";
+        setError(errorMessage);
+
+        // If token is invalid (common error messages), log out the user
+        if (
+          errorMessage.includes("invalid_grant") ||
+          errorMessage.includes("invalid_token") ||
+          errorMessage.includes("expired")
+        ) {
+          console.warn(
+            "AuthContext: Invalid or expired token detected. Logging out."
+          );
+          logout();
+        }
       } finally {
         setIsLoading(false);
       }
     },
-    [config]
+    [shopifyAuthConfig]
   );
 
-  // Load stored tokens on component mount
-  useEffect(() => {
-    console.log("🔍 AuthContext: Checking for stored tokens...");
+  const initializeAuth = useCallback(async () => {
+    setIsLoading(true);
+    console.log("AuthContext: Initializing auth state...");
     const storedTokens = getStoredTokens();
 
     if (storedTokens) {
-      console.log("✅ Found stored tokens:", {
-        tokenType: storedTokens.tokenType,
-        expiresIn: storedTokens.expiresIn,
-        scope: storedTokens.scope,
-        issuedAt: new Date(storedTokens.issuedAt).toISOString(),
-        hasRefreshToken: !!storedTokens.refreshToken,
-      });
+      console.log(
+        "AuthContext: Stored tokens found. Validating and fetching user data...",
+        {
+          tokenType: storedTokens.tokenType,
+          expiresIn: storedTokens.expiresIn,
+          scope: storedTokens.scope,
+          issuedAt: new Date(storedTokens.issuedAt).toISOString(),
+          hasRefreshToken: !!storedTokens.refreshToken,
+        }
+      );
 
       setTokens(storedTokens);
-      setIsAuthenticated(true);
-
-      // Create API client with the access token
       const client = new CustomerAccountApiClient({
-        shopId: config.shopId,
+        shopId: shopifyAuthConfig.shopId,
         accessToken: storedTokens.accessToken,
       });
       setApiClient(client);
-
-      // Automatically fetch customer profile if we have tokens
-      setTimeout(() => {
-        console.log("🚀 Auto-fetching customer profile...");
-        fetchCustomerProfile(client, storedTokens);
-      }, 1000);
+      setIsAuthenticated(true); // Tentatively set, will be confirmed by data fetch
+      await _internalFetchAndSetCustomerData(client);
     } else {
-      console.log("❌ No stored tokens found");
+      console.log(
+        "AuthContext: No stored tokens found. User is not authenticated."
+      );
+      setIsAuthenticated(false);
+      setCustomerData(null);
+      setTokens(null);
+      setApiClient(null);
+      setIsLoading(false);
     }
-  }, [fetchCustomerProfile, config.shopId]);
+  }, [shopifyAuthConfig, _internalFetchAndSetCustomerData]);
+
+  useEffect(() => {
+    initializeAuth();
+  }, [initializeAuth]);
 
   const login = async () => {
+    if (
+      !shopifyAuthConfig.shopId ||
+      shopifyAuthConfig.shopId.startsWith("error-") ||
+      !shopifyAuthConfig.clientId ||
+      shopifyAuthConfig.clientId.startsWith("error-") ||
+      !process.env.NEXTAUTH_URL
+    ) {
+      const errorMsg =
+        "Critical Shopify authentication configuration is missing in environment variables (Shop ID, Client ID, or NEXTAUTH_URL).";
+      setError(errorMsg);
+      console.error("AuthContext: " + errorMsg);
+      alert(
+        "Application Error: Shopify authentication is not configured correctly. Please contact support."
+      );
+      return;
+    }
+    setIsLoading(true);
+    setError(null);
     try {
-      setIsLoading(true);
-      setError(null);
-      await initiateShopifyAuth(config);
+      console.log("AuthContext: Initiating Shopify login...");
+      await initiateShopifyAuth(shopifyAuthConfig);
+      // Browser will redirect; isLoading will remain true until the callback completes or an error occurs.
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Authentication failed");
+      console.error("AuthContext: Error initiating login flow:", err);
+      setError(
+        err instanceof Error ? err.message : "Failed to start login process."
+      );
       setIsLoading(false);
     }
   };
 
   const logout = () => {
-    clearAuthStorage();
-    clearStoredTokens();
+    console.log("AuthContext: Logging out...");
+    clearAuthStorage(); // Clears PKCE-related items from localStorage
+    clearStoredTokens(); // Clears 'shopify-tokens' from localStorage
     setIsAuthenticated(false);
     setCustomerData(null);
     setTokens(null);
     setApiClient(null);
     setError(null);
+    setIsLoading(false); // Ensure loading is false after logout
+    // Consider redirecting to home or login page:
+    // if (typeof window !== 'undefined') window.location.href = '/';
   };
 
-  const refreshCustomerData = async () => {
+  // Public function to allow components to trigger a data refresh
+  const fetchCustomerData = useCallback(async () => {
     if (!apiClient || !tokens) {
-      setError("No API client or tokens available");
+      console.warn(
+        "AuthContext: fetchCustomerData called but not authenticated or client/tokens not ready."
+      );
+      // If not authenticated, try to re-initialize auth, which might pick up fresh tokens from callback
+      if (!isAuthenticated && !isLoading) await initializeAuth();
       return;
     }
-    await fetchCustomerProfile(apiClient, tokens);
-  };
+    await _internalFetchAndSetCustomerData(apiClient);
+  }, [
+    apiClient,
+    tokens,
+    _internalFetchAndSetCustomerData,
+    isAuthenticated,
+    isLoading,
+    initializeAuth,
+  ]);
 
-  const value: AuthContextType = {
+  // Alias for backward compatibility
+  const refreshCustomerData = fetchCustomerData;
+
+  const value = {
     isAuthenticated,
     isLoading,
     customerData,
@@ -213,6 +291,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     error,
     login,
     logout,
+    fetchCustomerData,
     refreshCustomerData,
   };
 
