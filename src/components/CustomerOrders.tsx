@@ -1,15 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
-import Image from "next/image";
-import {
-  getStoredTokens,
-  autoRefreshTokens,
-  CustomerAccountApiClient,
-  type ShopifyAuthConfig,
-  type TokenStorage,
-  type GraphQLResponse,
-} from "@/lib/shopify-auth";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Card,
   CardContent,
@@ -17,7 +8,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import {
+  ShopifyAuthConfig,
+  getStoredTokens,
+  CustomerAccountApiClient,
+  autoRefreshTokens,
+  type TokenStorage,
+  type GraphQLResponse,
+} from "@/lib/shopify-auth";
 
 interface OrderNode {
   id: string;
@@ -30,27 +28,6 @@ interface OrderNode {
   };
   fulfillmentStatus: string;
   financialStatus: string;
-  lineItems: {
-    edges: Array<{
-      node: {
-        id: string;
-        title: string;
-        quantity: number;
-        variant: {
-          id: string;
-          title: string;
-          price: {
-            amount: string;
-            currencyCode: string;
-          };
-          image?: {
-            url: string;
-            altText?: string;
-          };
-        };
-      };
-    }>;
-  };
 }
 
 interface CustomerOrdersResponse {
@@ -109,27 +86,6 @@ export default function CustomerOrders({ config }: CustomerOrdersProps) {
                       }
                       fulfillmentStatus
                       financialStatus
-                      lineItems(first: 10) {
-                        edges {
-                          node {
-                            id
-                            title
-                            quantity
-                            variant {
-                              id
-                              title
-                              price {
-                                amount
-                                currencyCode
-                              }
-                              image {
-                                url
-                                altText
-                              }
-                            }
-                          }
-                        }
-                      }
                     }
                   }
                 }
@@ -145,7 +101,10 @@ export default function CustomerOrders({ config }: CustomerOrdersProps) {
           ordersQuery
         )) as GraphQLResponse<CustomerOrdersResponse>;
 
+        console.log("📊 Full GraphQL response:", response);
+
         if (response.errors && response.errors.length > 0) {
+          console.error("❌ GraphQL Errors:", response.errors);
           throw new Error(`GraphQL Error: ${response.errors[0].message}`);
         }
 
@@ -324,55 +283,7 @@ export default function CustomerOrders({ config }: CustomerOrdersProps) {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {/* Order Items */}
-                    {order.lineItems.edges.map((lineItem) => (
-                      <div
-                        key={lineItem.node.id}
-                        className="flex items-center space-x-4"
-                      >
-                        <div className="w-16 h-16 relative bg-gray-100">
-                          {lineItem.node.variant.image ? (
-                            <Image
-                              src={lineItem.node.variant.image.url}
-                              alt={
-                                lineItem.node.variant.image.altText ||
-                                lineItem.node.title
-                              }
-                              fill
-                              style={{ objectFit: "cover" }}
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                              <span className="text-gray-400 text-xs">
-                                No Image
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex-grow">
-                          <h4 className="font-medium lowercase tracking-wider text-black">
-                            {lineItem.node.title}
-                          </h4>
-                          <p className="text-sm text-gray-600 lowercase tracking-wider">
-                            {lineItem.node.variant.title} • qty:{" "}
-                            {lineItem.node.quantity}
-                          </p>
-                        </div>
-                        <p className="font-medium text-black">
-                          {formatPrice(
-                            (
-                              parseFloat(lineItem.node.variant.price.amount) *
-                              lineItem.node.quantity
-                            ).toString(),
-                            lineItem.node.variant.price.currencyCode
-                          )}
-                        </p>
-                      </div>
-                    ))}
-
-                    <Separator />
-
-                    {/* Order Total */}
+                    {/* Order Summary */}
                     <div className="flex justify-between items-center">
                       <span className="font-medium lowercase tracking-wider text-black">
                         total
@@ -415,55 +326,7 @@ export default function CustomerOrders({ config }: CustomerOrdersProps) {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {/* Order Items */}
-                    {order.lineItems.edges.map((lineItem) => (
-                      <div
-                        key={lineItem.node.id}
-                        className="flex items-center space-x-4"
-                      >
-                        <div className="w-16 h-16 relative bg-gray-100">
-                          {lineItem.node.variant.image ? (
-                            <Image
-                              src={lineItem.node.variant.image.url}
-                              alt={
-                                lineItem.node.variant.image.altText ||
-                                lineItem.node.title
-                              }
-                              fill
-                              style={{ objectFit: "cover" }}
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                              <span className="text-gray-400 text-xs">
-                                No Image
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex-grow">
-                          <h4 className="font-medium lowercase tracking-wider text-black">
-                            {lineItem.node.title}
-                          </h4>
-                          <p className="text-sm text-gray-600 lowercase tracking-wider">
-                            {lineItem.node.variant.title} • qty:{" "}
-                            {lineItem.node.quantity}
-                          </p>
-                        </div>
-                        <p className="font-medium text-black">
-                          {formatPrice(
-                            (
-                              parseFloat(lineItem.node.variant.price.amount) *
-                              lineItem.node.quantity
-                            ).toString(),
-                            lineItem.node.variant.price.currencyCode
-                          )}
-                        </p>
-                      </div>
-                    ))}
-
-                    <Separator />
-
-                    {/* Order Total */}
+                    {/* Order Summary */}
                     <div className="flex justify-between items-center">
                       <span className="font-medium lowercase tracking-wider text-black">
                         total
