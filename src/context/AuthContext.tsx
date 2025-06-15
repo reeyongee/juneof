@@ -5,37 +5,49 @@ import React, {
   useContext,
   useState,
   useEffect,
+  useCallback,
   ReactNode,
 } from "react";
 import {
   getStoredTokens,
   clearStoredTokens,
   autoRefreshTokens,
-  isTokenExpired,
-  initiateShopifyAuth,
-  logoutCustomer,
-  executeCustomerAccountQuery,
-  type ShopifyAuthConfig,
+  CustomerAccountApiClient,
   type TokenStorage,
+  type ShopifyAuthConfig,
   type GraphQLResponse,
 } from "@/lib/shopify-auth";
 
-interface CustomerData {
-  id: string;
-  displayName: string;
-  firstName?: string;
-  lastName?: string;
-  emailAddress?: {
-    emailAddress: string;
+interface CustomerProfile {
+  customer: {
+    id: string;
+    displayName: string;
+    firstName?: string;
+    lastName?: string;
+    emailAddress?: {
+      emailAddress: string;
+    };
+    phoneNumber?: {
+      phoneNumber: string;
+    };
+    defaultAddress?: {
+      address1?: string;
+      address2?: string;
+      city?: string;
+      province?: string;
+      country?: string;
+      zip?: string;
+    };
   };
 }
 
 interface AuthContextType {
   isAuthenticated: boolean;
-  isLoading: boolean;
-  customerData: CustomerData | null;
   tokens: TokenStorage | null;
-  login: () => Promise<void>;
+  customerData: CustomerProfile | null;
+  loading: boolean;
+  error: string | null;
+  login: () => void;
   logout: () => void;
   refreshTokens: () => Promise<void>;
   fetchCustomerData: () => Promise<void>;
@@ -43,180 +55,153 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Shopify auth configuration
-const getAuthConfig = (): ShopifyAuthConfig => {
-  const getRedirectUri = () => {
-    if (typeof window !== "undefined") {
-      return window.location.origin + "/api/auth/shopify/callback";
-    }
-    return "https://dev.juneof.com/api/auth/shopify/callback";
-  };
-
-  return {
-    shopId: process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_SHOP_ID || "your-shop-id",
-    clientId:
-      process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID ||
-      "shp_your-client-id",
-    redirectUri: getRedirectUri(),
-    scope: "openid email customer-account-api:full",
-    locale: "en",
-  };
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
 };
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+interface AuthProviderProps {
+  children: ReactNode;
+}
+
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(
-    typeof window === "undefined" ? false : true
-  );
-  const [customerData, setCustomerData] = useState<CustomerData | null>(null);
   const [tokens, setTokens] = useState<TokenStorage | null>(null);
+  const [customerData, setCustomerData] = useState<CustomerProfile | null>(
+    null
+  );
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [apiClient, setApiClient] = useState<CustomerAccountApiClient | null>(
+    null
+  );
 
-  // Check for existing authentication on mount
-  useEffect(() => {
-    const checkAuth = async () => {
-      // Only run on client side
-      if (typeof window === "undefined") {
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        const storedTokens = getStoredTokens();
-
-        if (storedTokens) {
-          // Check if tokens are expired
-          if (isTokenExpired(storedTokens.expiresIn, storedTokens.issuedAt)) {
-            // Try to refresh tokens
-            try {
-              const refreshedTokens = await autoRefreshTokens(getAuthConfig());
-              if (refreshedTokens) {
-                setTokens(refreshedTokens);
-                setIsAuthenticated(true);
-                // Fetch customer data with refreshed tokens
-                await fetchCustomerDataInternal(refreshedTokens.accessToken);
-              } else {
-                // Refresh failed, clear tokens
-                clearStoredTokens();
-                setIsAuthenticated(false);
-              }
-            } catch (error) {
-              console.error("Token refresh failed:", error);
-              clearStoredTokens();
-              setIsAuthenticated(false);
-            }
-          } else {
-            // Tokens are valid
-            setTokens(storedTokens);
-            setIsAuthenticated(true);
-            // Fetch customer data
-            await fetchCustomerDataInternal(storedTokens.accessToken);
-          }
-        }
-      } catch (error) {
-        console.error("Auth check failed:", error);
-        setIsAuthenticated(false);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkAuth();
-  }, []);
-
-  const fetchCustomerDataInternal = async (accessToken: string) => {
-    try {
-      const config = {
-        shopId: getAuthConfig().shopId,
-        accessToken,
-      };
-
-      const query = {
-        query: `
-          query GetCustomer {
-            customer {
-              id
-              displayName
-              firstName
-              lastName
-              emailAddress {
-                emailAddress
-              }
-            }
-          }
-        `,
-      };
-
-      const response: GraphQLResponse<{ customer: CustomerData }> =
-        await executeCustomerAccountQuery(config, query);
-
-      if (response.data?.customer) {
-        setCustomerData(response.data.customer);
-      }
-    } catch (error) {
-      console.error("Failed to fetch customer data:", error);
-    }
+  // Shopify auth config
+  const config: ShopifyAuthConfig = {
+    shopId: process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_SHOP_ID || "",
+    clientId: process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID || "",
+    redirectUri:
+      (process.env.NEXTAUTH_URL || "http://localhost:3000") +
+      "/api/auth/shopify/callback",
   };
 
-  const login = async () => {
-    try {
-      setIsLoading(true);
-      await initiateShopifyAuth(getAuthConfig());
-    } catch (error) {
-      console.error("Login failed:", error);
-      setIsLoading(false);
+  const fetchCustomerDataInternal = useCallback(
+    async (client: CustomerAccountApiClient, tokenData: TokenStorage) => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Ensure tokens are fresh
+        const refreshedTokens = await autoRefreshTokens(config);
+        if (
+          refreshedTokens &&
+          refreshedTokens.accessToken !== tokenData.accessToken
+        ) {
+          setTokens(refreshedTokens);
+          client.updateAccessToken(refreshedTokens.accessToken);
+        }
+
+        // Fetch customer profile
+        const response =
+          (await client.getCustomerProfile()) as GraphQLResponse<CustomerProfile>;
+
+        if (response.errors && response.errors.length > 0) {
+          throw new Error(`GraphQL Error: ${response.errors[0].message}`);
+        }
+
+        if (response.data) {
+          setCustomerData(response.data);
+        } else {
+          throw new Error("No customer data returned");
+        }
+      } catch (err) {
+        console.error("Error fetching customer data:", err);
+        setError(
+          err instanceof Error ? err.message : "Failed to fetch customer data"
+        );
+      } finally {
+        setLoading(false);
+      }
+    },
+    [config]
+  );
+
+  // Check for stored tokens on mount
+  useEffect(() => {
+    const storedTokens = getStoredTokens();
+    if (storedTokens) {
+      setTokens(storedTokens);
+      setIsAuthenticated(true);
+
+      // Create API client
+      const client = new CustomerAccountApiClient({
+        shopId: config.shopId,
+        accessToken: storedTokens.accessToken,
+      });
+      setApiClient(client);
+
+      // Auto-fetch customer data
+      fetchCustomerDataInternal(client, storedTokens);
     }
+  }, [config.shopId, fetchCustomerDataInternal]);
+
+  const login = () => {
+    // Redirect to login page
+    window.location.href = `/login`;
   };
 
   const logout = () => {
-    try {
-      // If we have tokens with id_token, use proper logout
-      if (tokens?.idToken && typeof window !== "undefined") {
-        logoutCustomer({
-          shopId: getAuthConfig().shopId,
-          idToken: tokens.idToken,
-          postLogoutRedirectUri: window.location.origin,
-        });
-      }
-
-      // Clear local state
-      clearStoredTokens();
-      setIsAuthenticated(false);
-      setCustomerData(null);
-      setTokens(null);
-    } catch (error) {
-      console.error("Logout failed:", error);
-      // Still clear local state even if logout call fails
-      clearStoredTokens();
-      setIsAuthenticated(false);
-      setCustomerData(null);
-      setTokens(null);
-    }
+    clearStoredTokens();
+    setIsAuthenticated(false);
+    setTokens(null);
+    setCustomerData(null);
+    setApiClient(null);
+    setError(null);
   };
 
   const refreshTokens = async () => {
+    if (!tokens?.refreshToken) {
+      setError("No refresh token available");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
     try {
-      const refreshedTokens = await autoRefreshTokens(getAuthConfig());
+      const refreshedTokens = await autoRefreshTokens(config, true);
       if (refreshedTokens) {
         setTokens(refreshedTokens);
-        setIsAuthenticated(true);
+
+        if (apiClient) {
+          apiClient.updateAccessToken(refreshedTokens.accessToken);
+        }
       }
-    } catch (error) {
-      console.error("Token refresh failed:", error);
-      logout();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to refresh tokens");
+    } finally {
+      setLoading(false);
     }
   };
 
   const fetchCustomerData = async () => {
-    if (tokens?.accessToken) {
-      await fetchCustomerDataInternal(tokens.accessToken);
+    if (!apiClient || !tokens) {
+      setError("No API client or tokens available");
+      return;
     }
+
+    await fetchCustomerDataInternal(apiClient, tokens);
   };
 
   const value: AuthContextType = {
     isAuthenticated,
-    isLoading,
-    customerData,
     tokens,
+    customerData,
+    loading,
+    error,
     login,
     logout,
     refreshTokens,
@@ -224,12 +209,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
-}
+};

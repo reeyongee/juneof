@@ -56,7 +56,7 @@ const Navbar: React.FC = () => {
   const HOVER_DELAY_MS = 300;
 
   const { cartItems } = useCart();
-  const { isAuthenticated, isLoading, login, logout } = useAuth();
+  const { isAuthenticated, login, logout, customerData } = useAuth();
 
   const totalCartItems = cartItems.reduce(
     (sum, item) => sum + item.quantity,
@@ -319,6 +319,11 @@ const Navbar: React.FC = () => {
                     <div className="py-1">
                       {isAuthenticated ? (
                         <>
+                          <div className="px-4 py-2 text-sm text-gray-600 border-b border-gray-200">
+                            {customerData?.customer?.displayName ||
+                              customerData?.customer?.firstName ||
+                              "User"}
+                          </div>
                           <Link
                             href="/dashboard"
                             className="block px-4 py-2 text-lg lowercase tracking-wider hover:opacity-75 hover:bg-gray-100 transition-colors text-center"
@@ -327,7 +332,7 @@ const Navbar: React.FC = () => {
                           </Link>
                           <button
                             onClick={logout}
-                            className="w-full px-4 py-2 text-lg lowercase tracking-wider hover:opacity-75 hover:bg-gray-100 transition-colors text-center"
+                            className="block w-full px-4 py-2 text-lg lowercase tracking-wider hover:opacity-75 hover:bg-gray-100 transition-colors text-center"
                           >
                             logout
                           </button>
@@ -335,10 +340,9 @@ const Navbar: React.FC = () => {
                       ) : (
                         <button
                           onClick={login}
-                          disabled={isLoading}
-                          className="w-full px-4 py-2 text-lg lowercase tracking-wider hover:opacity-75 hover:bg-gray-100 transition-colors text-center disabled:opacity-50"
+                          className="block w-full px-4 py-2 text-lg lowercase tracking-wider hover:opacity-75 hover:bg-gray-100 transition-colors text-center"
                         >
-                          {isLoading ? "loading..." : "login"}
+                          login
                         </button>
                       )}
                     </div>

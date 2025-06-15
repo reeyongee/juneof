@@ -3,6 +3,7 @@ import "./globals.css";
 import type { Metadata } from "next";
 import { CartProvider } from "@/context/CartContext";
 import { SplashProvider } from "@/context/SplashContext";
+import { AuthProvider } from "@/context/AuthContext";
 import ClientLayout from "@/app/components/ClientLayout";
 
 const oldStandardTT = Old_Standard_TT({
@@ -25,9 +26,11 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${oldStandardTT.className} flex flex-col min-h-screen`}>
         <SplashProvider>
-          <CartProvider>
-            <ClientLayout>{children}</ClientLayout>
-          </CartProvider>
+          <AuthProvider>
+            <CartProvider>
+              <ClientLayout>{children}</ClientLayout>
+            </CartProvider>
+          </AuthProvider>
         </SplashProvider>
       </body>
     </html>

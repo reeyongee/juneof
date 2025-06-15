@@ -40,10 +40,7 @@ function CallbackHandler() {
         }
 
         // Get stored code verifier from localStorage
-        const codeVerifier =
-          typeof window !== "undefined"
-            ? localStorage.getItem("shopify-auth-code-verifier")
-            : null;
+        const codeVerifier = localStorage.getItem("shopify-auth-code-verifier");
 
         if (!codeVerifier) {
           setError(
@@ -76,9 +73,9 @@ function CallbackHandler() {
 
         setStatus("success");
 
-        // Redirect to dashboard to see the customer data
+        // Redirect back to auth-test page to see the customer data
         setTimeout(() => {
-          window.location.href = "/dashboard";
+          window.location.href = "/auth-test";
         }, 2000);
       } catch (err) {
         console.error("Callback handler error:", err);

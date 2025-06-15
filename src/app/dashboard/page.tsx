@@ -1,52 +1,19 @@
 "use client";
 
-import { useState } from "react";
-import Image from "next/image";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useAddress } from "@/context/AddressContext";
 import { useAuth } from "@/context/AuthContext";
-import { useCustomerData } from "@/hooks/useCustomerData";
 import AddAddressOverlay from "@/app/components/AddAddressOverlay";
+import CustomerOrders from "@/components/CustomerOrders";
 import { toast } from "sonner";
-import {
-  Package,
-  MapPin,
-  User,
-  Truck,
-  X,
-  RotateCcw,
-  FileText,
-  AlertCircle,
-  Loader2,
-} from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Package, MapPin, User } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-
-// Format price function
-const formatPrice = (price: number, currencyCode: string = "INR"): string => {
-  const currencySymbol = currencyCode === "INR" ? "₹" : currencyCode;
-  return `${currencySymbol} ${price.toLocaleString("en-IN", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
-};
-
-// Format date function
-const formatDate = (dateString: string): string => {
-  return new Date(dateString).toLocaleDateString("en-IN", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-};
 
 export default function DashboardPage() {
+  const router = useRouter();
+  const { isAuthenticated, customerData, loading } = useAuth();
   const [activeSection, setActiveSection] = useState("orders");
   const [isAddAddressOpen, setIsAddAddressOpen] = useState(false);
   const {
@@ -57,345 +24,63 @@ export default function DashboardPage() {
     deleteAddress,
   } = useAddress();
 
-  const { isAuthenticated, customerData } = useAuth();
-  const { profile, orders, isLoading, error } = useCustomerData();
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      router.push("/login");
+    }
+  }, [isAuthenticated, loading, router]);
 
-  // Get user name from customer data or fallback
+  // Get user name from customer data
   const userName =
-    profile?.displayName ||
-    profile?.firstName ||
-    customerData?.displayName ||
+    customerData?.customer?.displayName ||
+    customerData?.customer?.firstName ||
     "user";
 
-  // If not authenticated, show login prompt
-  if (!isAuthenticated) {
+  // Shopify auth config for CustomerOrders component
+  const authConfig = {
+    shopId: process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_SHOP_ID || "",
+    clientId: process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID || "",
+    redirectUri:
+      (process.env.NEXTAUTH_URL || "http://localhost:3000") +
+      "/api/auth/shopify/callback",
+  };
+
+  // Show loading state while checking authentication
+  if (loading) {
     return (
-      <div className="min-h-screen bg-[#F8F4EC] pt-32 pb-8 px-4">
-        <div className="container mx-auto text-center">
-          <div className="max-w-md mx-auto">
-            <AlertCircle className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-            <h1 className="text-2xl font-serif lowercase tracking-widest text-black mb-4">
-              please log in
-            </h1>
-            <p className="text-gray-600 lowercase tracking-wider mb-6">
-              you need to be logged in to view your dashboard
-            </p>
-            <p className="text-sm text-gray-500 lowercase tracking-wider">
-              hover over the user icon in the navbar to log in
-            </p>
-          </div>
+      <div className="min-h-screen bg-[#F8F4EC] flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">
+            Loading your dashboard...
+          </h1>
         </div>
       </div>
     );
   }
 
-  const renderOrders = () => {
-    if (isLoading) {
-      return (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
-          <span className="ml-2 text-gray-600 lowercase tracking-wider">
-            loading orders...
-          </span>
-        </div>
-      );
-    }
-
-    if (error) {
-      return (
-        <div className="text-center py-12">
-          <AlertCircle className="w-12 h-12 mx-auto text-red-400 mb-4" />
-          <p className="text-red-600 lowercase tracking-wider mb-4">{error}</p>
-          <Button
-            onClick={() => window.location.reload()}
-            variant="outline"
-            className="lowercase tracking-wider border-red-400 text-red-600 hover:bg-red-50"
-          >
-            try again
-          </Button>
-        </div>
-      );
-    }
-
-    if (!orders || orders.length === 0) {
-      return (
-        <div className="text-center py-12">
-          <Package className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-          <h3 className="text-xl font-serif lowercase tracking-widest text-black mb-2">
-            no orders yet
-          </h3>
-          <p className="text-gray-600 lowercase tracking-wider">
-            your order history will appear here once you make a purchase
-          </p>
-        </div>
-      );
-    }
-
-    // Separate current and past orders based on fulfillment status
-    const currentOrders = orders.filter(
-      (order) =>
-        order.fulfillmentStatus !== "FULFILLED" &&
-        order.financialStatus !== "REFUNDED"
-    );
-    const pastOrders = orders.filter(
-      (order) =>
-        order.fulfillmentStatus === "FULFILLED" ||
-        order.financialStatus === "REFUNDED"
-    );
-
+  // Show loading state while redirecting
+  if (!isAuthenticated) {
     return (
-      <div className="space-y-8">
-        {/* Current Orders */}
-        {currentOrders.length > 0 && (
-          <div>
-            <h3 className="text-xl font-serif lowercase tracking-widest text-black mb-4">
-              current orders
-            </h3>
-            <div className="space-y-4">
-              {currentOrders.map((order) => (
-                <Card key={order.id} className="bg-white border-gray-300">
-                  <CardHeader className="pb-4">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle className="text-lg lowercase tracking-wider text-black">
-                          order {order.name}
-                        </CardTitle>
-                        <CardDescription className="lowercase tracking-wider">
-                          placed on {formatDate(order.processedAt)}
-                        </CardDescription>
-                      </div>
-                      <div className="text-right">
-                        <span
-                          className={`text-xs lowercase tracking-wider px-2 py-1 rounded ${
-                            order.fulfillmentStatus === "FULFILLED"
-                              ? "bg-green-100 text-green-800"
-                              : order.fulfillmentStatus === "PARTIAL"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : "bg-blue-100 text-blue-800"
-                          }`}
-                        >
-                          {order.fulfillmentStatus.toLowerCase()}
-                        </span>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {/* Order Items */}
-                      {order.lineItems.edges.map((edge) => (
-                        <div
-                          key={edge.node.id}
-                          className="flex items-center space-x-4"
-                        >
-                          <div className="w-16 h-16 relative bg-gray-100">
-                            <Image
-                              src={
-                                edge.node.variant.image?.originalSrc ||
-                                "/api/placeholder/80/80"
-                              }
-                              alt={
-                                edge.node.variant.image?.altText ||
-                                edge.node.title
-                              }
-                              fill
-                              style={{ objectFit: "cover" }}
-                            />
-                          </div>
-                          <div className="flex-grow">
-                            <h4 className="font-medium lowercase tracking-wider text-black">
-                              {edge.node.title}
-                            </h4>
-                            <p className="text-sm text-gray-600 lowercase tracking-wider">
-                              {edge.node.variant.title} • qty:{" "}
-                              {edge.node.quantity}
-                            </p>
-                          </div>
-                          <p className="font-medium text-black">
-                            {formatPrice(
-                              parseFloat(edge.node.variant.price.amount) *
-                                edge.node.quantity,
-                              edge.node.variant.price.currencyCode
-                            )}
-                          </p>
-                        </div>
-                      ))}
-
-                      <Separator />
-
-                      {/* Order Total */}
-                      <div className="flex justify-between items-center">
-                        <span className="font-medium lowercase tracking-wider text-black">
-                          total
-                        </span>
-                        <span className="font-medium text-lg text-black">
-                          {formatPrice(
-                            parseFloat(order.totalPrice.amount),
-                            order.totalPrice.currencyCode
-                          )}
-                        </span>
-                      </div>
-
-                      {/* Action Buttons */}
-                      <div className="flex gap-3 pt-4">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="lowercase tracking-wider border-black text-black hover:bg-black hover:text-white no-underline-effect"
-                        >
-                          <Truck className="w-4 h-4 mr-2" />
-                          track order
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="lowercase tracking-wider border-black text-black hover:bg-black hover:text-white no-underline-effect"
-                        >
-                          <X className="w-4 h-4 mr-2" />
-                          cancel
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="lowercase tracking-wider border-black text-black hover:bg-black hover:text-white no-underline-effect"
-                        >
-                          <FileText className="w-4 h-4 mr-2" />
-                          return policy
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Past Orders */}
-        {pastOrders.length > 0 && (
-          <div>
-            <h3 className="text-xl font-serif lowercase tracking-widest text-black mb-4">
-              past orders
-            </h3>
-            <div className="space-y-4">
-              {pastOrders.map((order) => (
-                <Card key={order.id} className="bg-white border-gray-300">
-                  <CardHeader className="pb-4">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle className="text-lg lowercase tracking-wider text-black">
-                          order {order.name}
-                        </CardTitle>
-                        <CardDescription className="lowercase tracking-wider">
-                          placed on {formatDate(order.processedAt)}
-                        </CardDescription>
-                      </div>
-                      <div className="text-right">
-                        <span
-                          className={`text-xs lowercase tracking-wider px-2 py-1 rounded ${
-                            order.fulfillmentStatus === "FULFILLED"
-                              ? "bg-green-100 text-green-800"
-                              : "bg-gray-100 text-gray-800"
-                          }`}
-                        >
-                          {order.fulfillmentStatus.toLowerCase()}
-                        </span>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {/* Order Items */}
-                      {order.lineItems.edges.map((edge) => (
-                        <div
-                          key={edge.node.id}
-                          className="flex items-center space-x-4"
-                        >
-                          <div className="w-16 h-16 relative bg-gray-100">
-                            <Image
-                              src={
-                                edge.node.variant.image?.originalSrc ||
-                                "/api/placeholder/80/80"
-                              }
-                              alt={
-                                edge.node.variant.image?.altText ||
-                                edge.node.title
-                              }
-                              fill
-                              style={{ objectFit: "cover" }}
-                            />
-                          </div>
-                          <div className="flex-grow">
-                            <h4 className="font-medium lowercase tracking-wider text-black">
-                              {edge.node.title}
-                            </h4>
-                            <p className="text-sm text-gray-600 lowercase tracking-wider">
-                              {edge.node.variant.title} • qty:{" "}
-                              {edge.node.quantity}
-                            </p>
-                          </div>
-                          <p className="font-medium text-black">
-                            {formatPrice(
-                              parseFloat(edge.node.variant.price.amount) *
-                                edge.node.quantity,
-                              edge.node.variant.price.currencyCode
-                            )}
-                          </p>
-                        </div>
-                      ))}
-
-                      <Separator />
-
-                      {/* Order Total */}
-                      <div className="flex justify-between items-center">
-                        <span className="font-medium lowercase tracking-wider text-black">
-                          total
-                        </span>
-                        <span className="font-medium text-lg text-black">
-                          {formatPrice(
-                            parseFloat(order.totalPrice.amount),
-                            order.totalPrice.currencyCode
-                          )}
-                        </span>
-                      </div>
-
-                      {/* Action Buttons */}
-                      <div className="flex gap-3 pt-4">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="lowercase tracking-wider border-black text-black hover:bg-black hover:text-white no-underline-effect"
-                        >
-                          <RotateCcw className="w-4 h-4 mr-2" />
-                          return
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="lowercase tracking-wider border-black text-black hover:bg-black hover:text-white no-underline-effect"
-                        >
-                          <FileText className="w-4 h-4 mr-2" />
-                          return policy
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        )}
+      <div className="min-h-screen bg-[#F8F4EC] flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">
+            Redirecting to login...
+          </h1>
+        </div>
       </div>
     );
-  };
+  }
+
+  const renderOrders = () => <CustomerOrders config={authConfig} />;
 
   const renderAddresses = () => (
     <div className="space-y-6">
-      <h3 className="text-xl font-serif lowercase tracking-widest text-black mb-6">
+      <h3 className="text-xl font-serif lowercase tracking-widest text-black mb-4">
         saved addresses
       </h3>
 
-      {/* Address Cards */}
-      <div className="space-y-4">
+      <div className="grid gap-4">
         {addresses.map((address) => (
           <Card
             key={address.id}
@@ -510,6 +195,83 @@ export default function DashboardPage() {
     </div>
   );
 
+  const renderProfile = () => (
+    <div className="space-y-6">
+      <h3 className="text-xl font-serif lowercase tracking-widest text-black mb-4">
+        profile information
+      </h3>
+
+      {customerData ? (
+        <Card className="bg-white border-gray-300">
+          <CardContent className="p-6">
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-gray-700 lowercase tracking-wider">
+                  display name
+                </label>
+                <p className="text-lg text-black lowercase tracking-wider">
+                  {customerData.customer.displayName || "not set"}
+                </p>
+              </div>
+
+              {customerData.customer.firstName && (
+                <div>
+                  <label className="text-sm font-medium text-gray-700 lowercase tracking-wider">
+                    first name
+                  </label>
+                  <p className="text-lg text-black lowercase tracking-wider">
+                    {customerData.customer.firstName}
+                  </p>
+                </div>
+              )}
+
+              {customerData.customer.lastName && (
+                <div>
+                  <label className="text-sm font-medium text-gray-700 lowercase tracking-wider">
+                    last name
+                  </label>
+                  <p className="text-lg text-black lowercase tracking-wider">
+                    {customerData.customer.lastName}
+                  </p>
+                </div>
+              )}
+
+              {customerData.customer.emailAddress && (
+                <div>
+                  <label className="text-sm font-medium text-gray-700 lowercase tracking-wider">
+                    email
+                  </label>
+                  <p className="text-lg text-black lowercase tracking-wider">
+                    {customerData.customer.emailAddress.emailAddress}
+                  </p>
+                </div>
+              )}
+
+              {customerData.customer.phoneNumber && (
+                <div>
+                  <label className="text-sm font-medium text-gray-700 lowercase tracking-wider">
+                    phone
+                  </label>
+                  <p className="text-lg text-black lowercase tracking-wider">
+                    {customerData.customer.phoneNumber.phoneNumber}
+                  </p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="bg-white border-gray-300">
+          <CardContent className="p-6">
+            <p className="text-gray-600 lowercase tracking-wider text-center">
+              loading profile information...
+            </p>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+
   const renderContent = () => {
     switch (activeSection) {
       case "orders":
@@ -517,13 +279,7 @@ export default function DashboardPage() {
       case "addresses":
         return renderAddresses();
       case "profile":
-        return (
-          <div className="text-center py-12">
-            <p className="text-gray-600 lowercase tracking-wider">
-              edit profile section coming soon
-            </p>
-          </div>
-        );
+        return renderProfile();
       default:
         return renderOrders();
     }
@@ -576,7 +332,7 @@ export default function DashboardPage() {
                     }`}
                   >
                     <User className="w-4 h-4 inline mr-3" />
-                    edit profile
+                    profile
                   </button>
                 </nav>
               </CardContent>

@@ -466,10 +466,6 @@ export async function initiateShopifyAuth(
     locale?: string;
   } = {}
 ): Promise<void> {
-  if (typeof window === "undefined") {
-    throw new Error("initiateShopifyAuth can only be called in the browser");
-  }
-
   const { url, state, nonce, codeVerifier } = await createAuthorizationUrl(
     config,
     options
@@ -539,11 +535,9 @@ export function validateCallback(callbackUrl: string): {
  * Clears stored authentication parameters from localStorage
  */
 export function clearAuthStorage(): void {
-  if (typeof window !== "undefined") {
-    localStorage.removeItem("shopify-auth-state");
-    localStorage.removeItem("shopify-auth-nonce");
-    localStorage.removeItem("shopify-auth-code-verifier");
-  }
+  localStorage.removeItem("shopify-auth-state");
+  localStorage.removeItem("shopify-auth-nonce");
+  localStorage.removeItem("shopify-auth-code-verifier");
 }
 
 /**
@@ -551,10 +545,7 @@ export function clearAuthStorage(): void {
  * @returns string | null - The stored code verifier or null if not found
  */
 export function getStoredCodeVerifier(): string | null {
-  if (typeof window !== "undefined") {
-    return localStorage.getItem("shopify-auth-code-verifier");
-  }
-  return null;
+  return localStorage.getItem("shopify-auth-code-verifier");
 }
 
 /**
@@ -562,10 +553,7 @@ export function getStoredCodeVerifier(): string | null {
  * @returns string | null - The stored nonce or null if not found
  */
 export function getStoredNonce(): string | null {
-  if (typeof window !== "undefined") {
-    return localStorage.getItem("shopify-auth-nonce");
-  }
-  return null;
+  return localStorage.getItem("shopify-auth-nonce");
 }
 
 /**
@@ -623,19 +611,17 @@ export function storeTokens(
   tokens: AccessTokenResponse | RefreshTokenResponse,
   issuedAt: number = Date.now()
 ): void {
-  if (typeof window !== "undefined") {
-    const tokenStorage: TokenStorage = {
-      accessToken: tokens.access_token,
-      refreshToken: tokens.refresh_token,
-      tokenType: tokens.token_type,
-      expiresIn: tokens.expires_in,
-      issuedAt,
-      scope: tokens.scope,
-      idToken: "id_token" in tokens ? tokens.id_token : undefined,
-    };
+  const tokenStorage: TokenStorage = {
+    accessToken: tokens.access_token,
+    refreshToken: tokens.refresh_token,
+    tokenType: tokens.token_type,
+    expiresIn: tokens.expires_in,
+    issuedAt,
+    scope: tokens.scope,
+    idToken: "id_token" in tokens ? tokens.id_token : undefined,
+  };
 
-    localStorage.setItem("shopify-tokens", JSON.stringify(tokenStorage));
-  }
+  localStorage.setItem("shopify-tokens", JSON.stringify(tokenStorage));
 }
 
 /**
@@ -644,13 +630,10 @@ export function storeTokens(
  */
 export function getStoredTokens(): TokenStorage | null {
   try {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("shopify-tokens");
-      if (!stored) return null;
+    const stored = localStorage.getItem("shopify-tokens");
+    if (!stored) return null;
 
-      return JSON.parse(stored) as TokenStorage;
-    }
-    return null;
+    return JSON.parse(stored) as TokenStorage;
   } catch {
     return null;
   }
@@ -660,9 +643,7 @@ export function getStoredTokens(): TokenStorage | null {
  * Clears stored tokens from localStorage
  */
 export function clearStoredTokens(): void {
-  if (typeof window !== "undefined") {
-    localStorage.removeItem("shopify-tokens");
-  }
+  localStorage.removeItem("shopify-tokens");
 }
 
 /**
@@ -791,10 +772,6 @@ export interface LogoutConfig {
  * @param config - Logout configuration with shop ID, ID token, and optional redirect URI
  */
 export function logoutCustomer(config: LogoutConfig): void {
-  if (typeof window === "undefined") {
-    throw new Error("logoutCustomer can only be called in the browser");
-  }
-
   const logoutUrl = new URL(
     `https://shopify.com/authentication/${config.shopId}/logout`
   );
@@ -892,14 +869,6 @@ export interface SilentAuthConfig extends ShopifyAuthConfig {
 export async function performSilentAuth(
   config: SilentAuthConfig
 ): Promise<boolean> {
-  if (typeof window === "undefined") {
-    config.onError?.(
-      "Silent auth not available",
-      "Can only be called in the browser"
-    );
-    return false;
-  }
-
   try {
     // Create authorization URL with prompt=none for silent check
     const authData = await createAuthorizationUrl(config, { prompt: "none" });

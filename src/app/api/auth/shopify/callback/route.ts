@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
-  validateCallback,
-  completeAuthentication,
+  exchangeCodeForTokens,
   type ShopifyAuthConfig,
 } from "@/lib/shopify-auth";
 
@@ -16,39 +15,25 @@ import {
  *
  * This is the expected flow for client-side PKCE authentication.
  */
-
-// Shopify auth configuration
-const getAuthConfig = (): ShopifyAuthConfig => ({
-  shopId: process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_SHOP_ID || "your-shop-id",
-  clientId:
-    process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID ||
-    "shp_your-client-id",
-  redirectUri: process.env.NEXT_PUBLIC_SITE_URL
-    ? `${process.env.NEXT_PUBLIC_SITE_URL}/api/auth/shopify/callback`
-    : "https://dev.juneof.com/api/auth/shopify/callback",
-  scope: "openid email customer-account-api:full",
-  locale: "en",
-});
-
 export async function GET(request: NextRequest) {
   try {
-    const url = request.url;
-    const { searchParams } = new URL(url);
-
+    const { searchParams } = new URL(request.url);
     const code = searchParams.get("code");
     const state = searchParams.get("state");
     const error = searchParams.get("error");
     const errorDescription = searchParams.get("error_description");
 
-    // Handle OAuth errors
+    // Handle error responses from Shopify
     if (error) {
-      console.error("OAuth error:", error, errorDescription);
-      const errorUrl = new URL("/auth/error", request.url);
-      errorUrl.searchParams.set("error", error);
-      if (errorDescription) {
-        errorUrl.searchParams.set("description", errorDescription);
-      }
-      return NextResponse.redirect(errorUrl);
+      console.error("Shopify OAuth error:", error, errorDescription);
+      return NextResponse.redirect(
+        new URL(
+          `/auth/error?error=${error}&description=${encodeURIComponent(
+            errorDescription || ""
+          )}`,
+          request.url
+        )
+      );
     }
 
     // Validate required parameters
@@ -57,60 +42,89 @@ export async function GET(request: NextRequest) {
         code: !!code,
         state: !!state,
       });
-      const errorUrl = new URL("/auth/error", request.url);
-      errorUrl.searchParams.set("error", "missing_parameters");
-      errorUrl.searchParams.set(
-        "description",
-        "Missing authorization code or state parameter"
+      return NextResponse.redirect(
+        new URL("/auth/error?error=missing_parameters", request.url)
       );
-      return NextResponse.redirect(errorUrl);
     }
 
-    // Validate the callback
-    const validation = validateCallback(url);
-    if (!validation.isValid || !validation.code) {
-      console.error("Invalid callback:", validation);
-      const errorUrl = new URL("/auth/error", request.url);
-      errorUrl.searchParams.set(
-        "error",
-        validation.error || "invalid_callback"
+    // Get environment variables
+    const shopId = process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_SHOP_ID;
+    const clientId = process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID;
+    const redirectUri =
+      (process.env.NEXTAUTH_URL || "http://localhost:3000") +
+      "/api/auth/shopify/callback";
+
+    if (!shopId || !clientId || !redirectUri) {
+      console.error("Missing environment variables");
+      return NextResponse.redirect(
+        new URL("/auth/error?error=server_configuration", request.url)
       );
-      errorUrl.searchParams.set(
-        "description",
-        validation.errorDescription || "Invalid callback parameters"
-      );
-      return NextResponse.redirect(errorUrl);
     }
 
-    // Complete authentication (this will handle token exchange internally)
-    const config = getAuthConfig();
-    const tokens = await completeAuthentication(config, validation.code);
+    // Get code verifier from the request (this would typically come from a secure session store)
+    // For now, we'll expect it to be passed as a query parameter or header
+    // In production, you should store this securely server-side
+    const codeVerifier =
+      searchParams.get("code_verifier") ||
+      request.headers.get("x-code-verifier");
 
-    console.log("✅ Authentication successful! Tokens received:", {
-      tokenType: tokens.token_type,
-      expiresIn: tokens.expires_in,
-      scope: tokens.scope,
-      hasRefreshToken: !!tokens.refresh_token,
-      hasIdToken: !!tokens.id_token,
-    });
+    if (!codeVerifier) {
+      console.log(
+        "✅ Code verifier not available server-side (expected) - redirecting to client-side handler for token exchange"
+      );
 
-    // Store tokens in localStorage via a script that will run on the client
-    // We'll create a temporary page that handles this
-    const callbackHandlerUrl = new URL("/auth/callback-handler", request.url);
-    callbackHandlerUrl.searchParams.set("success", "true");
+      // This is the normal flow for client-side PKCE authentication
+      // The code verifier is stored in localStorage and can only be accessed client-side
+      // Redirect to client-side handler that can access localStorage and complete token exchange
+      const clientHandlerUrl = new URL("/auth/callback-handler", request.url);
+      clientHandlerUrl.searchParams.set("code", code);
+      clientHandlerUrl.searchParams.set("state", state);
 
-    return NextResponse.redirect(callbackHandlerUrl);
+      console.log(
+        "🔄 Redirecting to client-side handler:",
+        clientHandlerUrl.toString()
+      );
+      return NextResponse.redirect(clientHandlerUrl);
+    }
+
+    // Create config object for token exchange
+    const config: ShopifyAuthConfig = {
+      shopId,
+      clientId,
+      redirectUri,
+    };
+
+    // Exchange authorization code for tokens using the library function
+    const tokens = await exchangeCodeForTokens(config, code, codeVerifier);
+
+    // In a production app, you would:
+    // 1. Validate the ID token if present
+    // 2. Store tokens securely (encrypted session, secure database)
+    // 3. Set secure HTTP-only cookies
+    // 4. Implement proper session management
+
+    // For now, we'll redirect to a success page with basic token info
+    // WARNING: Never expose actual tokens in URLs in production
+    const successUrl = new URL("/auth/success", request.url);
+    successUrl.searchParams.set("token_type", tokens.token_type);
+    successUrl.searchParams.set("expires_in", tokens.expires_in.toString());
+    successUrl.searchParams.set("scope", tokens.scope);
+
+    return NextResponse.redirect(successUrl);
   } catch (error) {
     console.error("Callback handler error:", error);
 
-    const errorUrl = new URL("/auth/error", request.url);
-    errorUrl.searchParams.set("error", "server_error");
-    errorUrl.searchParams.set(
-      "description",
-      error instanceof Error ? error.message : "Authentication failed"
-    );
+    // Handle specific token exchange errors
+    const errorMessage =
+      error instanceof Error ? error.message : "Internal server error";
+    const errorParam = encodeURIComponent(errorMessage);
 
-    return NextResponse.redirect(errorUrl);
+    return NextResponse.redirect(
+      new URL(
+        `/auth/error?error=token_exchange_failed&description=${errorParam}`,
+        request.url
+      )
+    );
   }
 }
 
@@ -126,51 +140,56 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error: "missing_parameters",
-          error_description: "Missing required parameters",
+          message: "Code, state, and codeVerifier are required",
         },
         { status: 400 }
       );
     }
 
-    // Validate the callback
-    const validation = validateCallback(
-      `${request.url}?code=${code}&state=${state}`
-    );
-    if (!validation.isValid) {
+    // Get environment variables
+    const shopId = process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_SHOP_ID;
+    const clientId = process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID;
+    const redirectUri =
+      (process.env.NEXTAUTH_URL || "http://localhost:3000") +
+      "/api/auth/shopify/callback";
+
+    if (!shopId || !clientId || !redirectUri) {
       return NextResponse.json(
         {
-          error: validation.error || "invalid_request",
-          error_description:
-            validation.errorDescription || "Invalid callback parameters",
+          error: "server_configuration",
+          message: "Server configuration error",
         },
-        { status: 400 }
+        { status: 500 }
       );
     }
 
-    // Complete authentication
-    const config = getAuthConfig();
-    const tokens = await completeAuthentication(config, code);
+    // Create config object for token exchange
+    const config: ShopifyAuthConfig = {
+      shopId,
+      clientId,
+      redirectUri,
+    };
 
+    // Exchange authorization code for tokens using the library function
+    const tokens = await exchangeCodeForTokens(config, code, codeVerifier);
+
+    // Return success response (in production, handle tokens securely)
     return NextResponse.json({
       success: true,
-      tokens: {
-        access_token: tokens.access_token,
-        token_type: tokens.token_type,
-        expires_in: tokens.expires_in,
-        refresh_token: tokens.refresh_token,
-        scope: tokens.scope,
-        id_token: tokens.id_token,
-      },
+      tokenType: tokens.token_type,
+      expiresIn: tokens.expires_in,
+      scope: tokens.scope,
+      // Note: Never return actual tokens in production without proper security measures
     });
   } catch (error) {
     console.error("Token exchange error:", error);
 
+    // Handle specific token exchange errors
+    const errorMessage =
+      error instanceof Error ? error.message : "Internal server error";
+
     return NextResponse.json(
-      {
-        error: "server_error",
-        error_description:
-          error instanceof Error ? error.message : "Token exchange failed",
-      },
+      { error: "token_exchange_failed", message: errorMessage },
       { status: 500 }
     );
   }

@@ -84,20 +84,16 @@ export const AddressProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Load addresses from localStorage on mount
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const savedAddresses = localStorage.getItem("juneof_addresses");
-      if (savedAddresses) {
-        const parsedAddresses = JSON.parse(savedAddresses);
-        setAddresses(parsedAddresses);
-      }
+    const savedAddresses = localStorage.getItem("juneof_addresses");
+    if (savedAddresses) {
+      const parsedAddresses = JSON.parse(savedAddresses);
+      setAddresses(parsedAddresses);
     }
   }, []);
 
   // Save addresses to localStorage whenever they change
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("juneof_addresses", JSON.stringify(addresses));
-    }
+    localStorage.setItem("juneof_addresses", JSON.stringify(addresses));
   }, [addresses]);
 
   // Set initial selected address to the most recently used one
