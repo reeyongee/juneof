@@ -6,6 +6,7 @@ import React, {
   useState,
   useEffect,
   useCallback,
+  useMemo,
 } from "react";
 import {
   getStoredTokens,
@@ -80,13 +81,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   );
 
   // Shopify auth configuration
-  const config: ShopifyAuthConfig = {
-    shopId: process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_SHOP_ID || "",
-    clientId: process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID || "",
-    redirectUri:
-      (process.env.NEXTAUTH_URL || "http://localhost:3000") +
-      "/api/auth/shopify/callback",
-  };
+  const config: ShopifyAuthConfig = useMemo(
+    () => ({
+      shopId: process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_SHOP_ID || "",
+      clientId:
+        process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID || "",
+      redirectUri:
+        (process.env.NEXTAUTH_URL || "http://localhost:3000") +
+        "/api/auth/shopify/callback",
+    }),
+    []
+  );
 
   // Function to fetch customer profile
   const fetchCustomerProfile = useCallback(

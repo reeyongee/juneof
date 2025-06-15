@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import Image from "next/image";
 import {
   getStoredTokens,
@@ -68,13 +68,12 @@ interface CustomerOrdersProps {
 }
 
 export default function CustomerOrders({ config }: CustomerOrdersProps) {
-  const [tokens, setTokens] = useState<TokenStorage | null>(null);
   const [orders, setOrders] = useState<OrderNode[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [apiClient, setApiClient] = useState<CustomerAccountApiClient | null>(
-    null
-  );
+
+  // Memoize config to prevent unnecessary re-renders
+  const memoizedConfig = useMemo(() => config, [config]);
 
   // Internal function to fetch customer orders
   const fetchCustomerOrdersInternal = useCallback(
@@ -84,12 +83,11 @@ export default function CustomerOrders({ config }: CustomerOrdersProps) {
         setError(null);
 
         // First, ensure tokens are fresh
-        const refreshedTokens = await autoRefreshTokens(config);
+        const refreshedTokens = await autoRefreshTokens(memoizedConfig);
         if (
           refreshedTokens &&
           refreshedTokens.accessToken !== tokenData.accessToken
         ) {
-          setTokens(refreshedTokens);
           client.updateAccessToken(refreshedTokens.accessToken);
         }
 
@@ -169,7 +167,7 @@ export default function CustomerOrders({ config }: CustomerOrdersProps) {
         setLoading(false);
       }
     },
-    [config]
+    [memoizedConfig]
   );
 
   // Load stored tokens on component mount
@@ -178,14 +176,11 @@ export default function CustomerOrders({ config }: CustomerOrdersProps) {
     const storedTokens = getStoredTokens();
 
     if (storedTokens) {
-      setTokens(storedTokens);
-
       // Create API client with the access token
       const client = new CustomerAccountApiClient({
-        shopId: config.shopId,
+        shopId: memoizedConfig.shopId,
         accessToken: storedTokens.accessToken,
       });
-      setApiClient(client);
 
       // Automatically fetch customer orders if we have tokens
       setTimeout(() => {
@@ -195,7 +190,7 @@ export default function CustomerOrders({ config }: CustomerOrdersProps) {
     } else {
       console.log("❌ No stored tokens found");
     }
-  }, [config.shopId, fetchCustomerOrdersInternal]);
+  }, [memoizedConfig.shopId, fetchCustomerOrdersInternal]);
 
   // Format price function
   const formatPrice = (amount: string, currencyCode: string): string => {
