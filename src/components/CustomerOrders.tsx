@@ -28,6 +28,23 @@ interface OrderNode {
   };
   fulfillmentStatus: string;
   financialStatus: string;
+  lineItems: {
+    edges: Array<{
+      node: {
+        id: string;
+        title: string;
+        quantity: number;
+        variant: {
+          id: string;
+          title: string;
+          image: {
+            url: string;
+            altText: string;
+          };
+        };
+      };
+    }>;
+  };
 }
 
 interface CustomerOrdersResponse {
@@ -86,7 +103,28 @@ export default function CustomerOrders({ config }: CustomerOrdersProps) {
                       }
                       fulfillmentStatus
                       financialStatus
+                      lineItems(first: 10) {
+                        edges {
+                          node {
+                            id
+                            title
+                            quantity
+                            variant {
+                              id
+                              title
+                              image {
+                                url
+                                altText
+                              }
+                            }
+                          }
+                        }
+                      }
                     }
+                  }
+                  pageInfo {
+                    hasNextPage
+                    hasPreviousPage
                   }
                 }
               }
@@ -283,8 +321,41 @@ export default function CustomerOrders({ config }: CustomerOrdersProps) {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
+                    {/* Line Items */}
+                    {order.lineItems.edges.map(({ node: item }) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center space-x-4"
+                      >
+                        <div className="w-16 h-16 bg-gray-100 rounded-md flex items-center justify-center">
+                          {item.variant.image ? (
+                            <img
+                              src={item.variant.image.url}
+                              alt={item.variant.image.altText || item.title}
+                              className="w-full h-full object-cover rounded-md"
+                            />
+                          ) : (
+                            <div className="text-gray-400 text-xs">
+                              No Image
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-medium lowercase tracking-wider text-black">
+                            {item.title}
+                          </h4>
+                          <p className="text-sm text-gray-600 lowercase tracking-wider">
+                            {item.variant.title}
+                          </p>
+                          <p className="text-sm text-gray-600 lowercase tracking-wider">
+                            qty: {item.quantity}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+
                     {/* Order Summary */}
-                    <div className="flex justify-between items-center">
+                    <div className="flex justify-between items-center pt-4 border-t border-gray-200">
                       <span className="font-medium lowercase tracking-wider text-black">
                         total
                       </span>
@@ -326,8 +397,41 @@ export default function CustomerOrders({ config }: CustomerOrdersProps) {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
+                    {/* Line Items */}
+                    {order.lineItems.edges.map(({ node: item }) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center space-x-4"
+                      >
+                        <div className="w-16 h-16 bg-gray-100 rounded-md flex items-center justify-center">
+                          {item.variant.image ? (
+                            <img
+                              src={item.variant.image.url}
+                              alt={item.variant.image.altText || item.title}
+                              className="w-full h-full object-cover rounded-md"
+                            />
+                          ) : (
+                            <div className="text-gray-400 text-xs">
+                              No Image
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-medium lowercase tracking-wider text-black">
+                            {item.title}
+                          </h4>
+                          <p className="text-sm text-gray-600 lowercase tracking-wider">
+                            {item.variant.title}
+                          </p>
+                          <p className="text-sm text-gray-600 lowercase tracking-wider">
+                            qty: {item.quantity}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+
                     {/* Order Summary */}
-                    <div className="flex justify-between items-center">
+                    <div className="flex justify-between items-center pt-4 border-t border-gray-200">
                       <span className="font-medium lowercase tracking-wider text-black">
                         total
                       </span>
