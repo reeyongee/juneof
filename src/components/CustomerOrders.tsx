@@ -20,7 +20,6 @@ import {
 interface OrderNode {
   id: string;
   name: string;
-  orderNumber: number;
   processedAt: string;
   totalPrice: {
     amount: string;
@@ -34,14 +33,6 @@ interface OrderNode {
         id: string;
         title: string;
         quantity: number;
-        variant: {
-          id: string;
-          title: string;
-          image: {
-            url: string;
-            altText: string;
-          };
-        };
       };
     }>;
   };
@@ -95,7 +86,6 @@ export default function CustomerOrders({ config }: CustomerOrdersProps) {
                     node {
                       id
                       name
-                      orderNumber
                       processedAt
                       totalPrice {
                         amount
@@ -109,14 +99,6 @@ export default function CustomerOrders({ config }: CustomerOrdersProps) {
                             id
                             title
                             quantity
-                            variant {
-                              id
-                              title
-                              image {
-                                url
-                                altText
-                              }
-                            }
                           }
                         }
                       }
@@ -293,7 +275,7 @@ export default function CustomerOrders({ config }: CustomerOrdersProps) {
                   <div className="flex justify-between items-start">
                     <div>
                       <CardTitle className="text-lg lowercase tracking-wider text-black">
-                        order #{order.orderNumber}
+                        {order.name}
                       </CardTitle>
                       <CardDescription className="lowercase tracking-wider">
                         placed on {formatDate(order.processedAt)}
@@ -328,25 +310,12 @@ export default function CustomerOrders({ config }: CustomerOrdersProps) {
                         className="flex items-center space-x-4"
                       >
                         <div className="w-16 h-16 bg-gray-100 rounded-md flex items-center justify-center">
-                          {item.variant.image ? (
-                            <img
-                              src={item.variant.image.url}
-                              alt={item.variant.image.altText || item.title}
-                              className="w-full h-full object-cover rounded-md"
-                            />
-                          ) : (
-                            <div className="text-gray-400 text-xs">
-                              No Image
-                            </div>
-                          )}
+                          <div className="text-gray-400 text-xs">No Image</div>
                         </div>
                         <div className="flex-1">
                           <h4 className="font-medium lowercase tracking-wider text-black">
                             {item.title}
                           </h4>
-                          <p className="text-sm text-gray-600 lowercase tracking-wider">
-                            {item.variant.title}
-                          </p>
                           <p className="text-sm text-gray-600 lowercase tracking-wider">
                             qty: {item.quantity}
                           </p>
@@ -387,7 +356,7 @@ export default function CustomerOrders({ config }: CustomerOrdersProps) {
                   <div className="flex justify-between items-start">
                     <div>
                       <CardTitle className="text-lg lowercase tracking-wider text-black">
-                        order #{order.orderNumber}
+                        {order.name}
                       </CardTitle>
                       <CardDescription className="lowercase tracking-wider">
                         delivered on {formatDate(order.processedAt)}
@@ -404,25 +373,12 @@ export default function CustomerOrders({ config }: CustomerOrdersProps) {
                         className="flex items-center space-x-4"
                       >
                         <div className="w-16 h-16 bg-gray-100 rounded-md flex items-center justify-center">
-                          {item.variant.image ? (
-                            <img
-                              src={item.variant.image.url}
-                              alt={item.variant.image.altText || item.title}
-                              className="w-full h-full object-cover rounded-md"
-                            />
-                          ) : (
-                            <div className="text-gray-400 text-xs">
-                              No Image
-                            </div>
-                          )}
+                          <div className="text-gray-400 text-xs">No Image</div>
                         </div>
                         <div className="flex-1">
                           <h4 className="font-medium lowercase tracking-wider text-black">
                             {item.title}
                           </h4>
-                          <p className="text-sm text-gray-600 lowercase tracking-wider">
-                            {item.variant.title}
-                          </p>
                           <p className="text-sm text-gray-600 lowercase tracking-wider">
                             qty: {item.quantity}
                           </p>
