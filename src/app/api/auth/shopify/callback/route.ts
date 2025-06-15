@@ -50,7 +50,18 @@ export async function GET(request: NextRequest) {
     // Get environment variables
     const shopId = process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_SHOP_ID;
     const clientId = process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID;
-    const redirectUri = process.env.NEXTAUTH_URL + "/api/auth/shopify/callback";
+    const baseUrl =
+      process.env.NEXTAUTH_URL ||
+      process.env.NEXT_PUBLIC_NEXTAUTH_URL ||
+      "https://dev.juneof.com";
+    const redirectUri = baseUrl + "/api/auth/shopify/callback";
+
+    console.log("🔧 Callback GET - Environment check:", {
+      NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+      NEXT_PUBLIC_NEXTAUTH_URL: process.env.NEXT_PUBLIC_NEXTAUTH_URL,
+      baseUrl,
+      redirectUri,
+    });
 
     if (!shopId || !clientId || !redirectUri) {
       console.error("Missing environment variables");
@@ -147,7 +158,18 @@ export async function POST(request: NextRequest) {
     // Get environment variables
     const shopId = process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_SHOP_ID;
     const clientId = process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID;
-    const redirectUri = process.env.NEXTAUTH_URL + "/api/auth/shopify/callback";
+    const baseUrl =
+      process.env.NEXTAUTH_URL ||
+      process.env.NEXT_PUBLIC_NEXTAUTH_URL ||
+      "https://dev.juneof.com";
+    const redirectUri = baseUrl + "/api/auth/shopify/callback";
+
+    console.log("🔧 Callback POST - Environment check:", {
+      NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+      NEXT_PUBLIC_NEXTAUTH_URL: process.env.NEXT_PUBLIC_NEXTAUTH_URL,
+      baseUrl,
+      redirectUri,
+    });
 
     if (!shopId || !clientId || !redirectUri) {
       return NextResponse.json(

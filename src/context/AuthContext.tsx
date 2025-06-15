@@ -81,15 +81,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   );
 
   // Shopify auth configuration
-  const config: ShopifyAuthConfig = useMemo(
-    () => ({
+  const config: ShopifyAuthConfig = useMemo(() => {
+    const baseUrl =
+      process.env.NEXTAUTH_URL ||
+      process.env.NEXT_PUBLIC_NEXTAUTH_URL ||
+      "https://dev.juneof.com";
+    console.log("🔧 AuthContext config:", {
+      NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+      NEXT_PUBLIC_NEXTAUTH_URL: process.env.NEXT_PUBLIC_NEXTAUTH_URL,
+      baseUrl,
+      redirectUri: baseUrl + "/api/auth/shopify/callback",
+    });
+
+    return {
       shopId: process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_SHOP_ID || "",
       clientId:
         process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID || "",
-      redirectUri: process.env.NEXTAUTH_URL + "/api/auth/shopify/callback",
-    }),
-    []
-  );
+      redirectUri: baseUrl + "/api/auth/shopify/callback",
+    };
+  }, []);
 
   // Function to fetch customer profile
   const fetchCustomerProfile = useCallback(

@@ -71,11 +71,15 @@ export default function DashboardPage() {
 
   const renderOrders = () => {
     // Shopify auth configuration
+    const baseUrl =
+      process.env.NEXTAUTH_URL ||
+      process.env.NEXT_PUBLIC_NEXTAUTH_URL ||
+      "https://dev.juneof.com";
     const config = {
       shopId: process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_SHOP_ID || "",
       clientId:
         process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID || "",
-      redirectUri: process.env.NEXTAUTH_URL + "/api/auth/shopify/callback",
+      redirectUri: baseUrl + "/api/auth/shopify/callback",
     };
 
     return <CustomerOrders config={config} />;
