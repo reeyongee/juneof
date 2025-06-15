@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Image from "next/image";
 import { useAddress } from "@/context/AddressContext";
+import { useAuth } from "@/context/AuthContext";
+import { useCustomerData } from "@/hooks/useCustomerData";
 import AddAddressOverlay from "@/app/components/AddAddressOverlay";
 import { toast } from "sonner";
 import {
@@ -13,6 +15,8 @@ import {
   X,
   RotateCcw,
   FileText,
+  AlertCircle,
+  Loader2,
 } from "lucide-react";
 import {
   Card,
@@ -24,92 +28,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 
-// Dummy data for orders
-const currentOrders = [
-  {
-    id: "ORD-2024-001",
-    date: "2024-01-15",
-    status: "shipped",
-    total: 4500,
-    estimatedDelivery: "2024-01-18",
-    items: [
-      {
-        id: "1",
-        name: "minimalist white tee",
-        size: "M",
-        quantity: 2,
-        price: 1500,
-        image: "/api/placeholder/80/80",
-      },
-      {
-        id: "2",
-        name: "organic cotton hoodie",
-        size: "L",
-        quantity: 1,
-        price: 3000,
-        image: "/api/placeholder/80/80",
-      },
-    ],
-  },
-  {
-    id: "ORD-2024-002",
-    date: "2024-01-12",
-    status: "processing",
-    total: 2200,
-    estimatedDelivery: "2024-01-20",
-    items: [
-      {
-        id: "3",
-        name: "linen summer dress",
-        size: "S",
-        quantity: 1,
-        price: 2200,
-        image: "/api/placeholder/80/80",
-      },
-    ],
-  },
-];
-
-const pastOrders = [
-  {
-    id: "ORD-2023-045",
-    date: "2023-12-20",
-    status: "delivered",
-    total: 3200,
-    deliveredDate: "2023-12-23",
-    items: [
-      {
-        id: "4",
-        name: "wool winter coat",
-        size: "M",
-        quantity: 1,
-        price: 3200,
-        image: "/api/placeholder/80/80",
-      },
-    ],
-  },
-  {
-    id: "ORD-2023-038",
-    date: "2023-11-15",
-    status: "delivered",
-    total: 1800,
-    deliveredDate: "2023-11-18",
-    items: [
-      {
-        id: "5",
-        name: "cotton joggers",
-        size: "L",
-        quantity: 2,
-        price: 900,
-        image: "/api/placeholder/80/80",
-      },
-    ],
-  },
-];
-
 // Format price function
-const formatPrice = (price: number): string => {
-  return `₹ ${price.toLocaleString("en-IN", {
+const formatPrice = (price: number, currencyCode: string = "INR"): string => {
+  const currencySymbol = currencyCode === "INR" ? "₹" : currencyCode;
+  return `${currencySymbol} ${price.toLocaleString("en-IN", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
@@ -135,205 +57,336 @@ export default function DashboardPage() {
     deleteAddress,
   } = useAddress();
 
-  // Use a default username since we removed authentication
-  const userName = "user";
+  const { isAuthenticated, customerData } = useAuth();
+  const { profile, orders, isLoading, error } = useCustomerData();
 
-  const renderOrders = () => (
-    <div className="space-y-8">
-      {/* Current Orders */}
-      {currentOrders.length > 0 && (
-        <div>
-          <h3 className="text-xl font-serif lowercase tracking-widest text-black mb-4">
-            current orders
-          </h3>
-          <div className="space-y-4">
-            {currentOrders.map((order) => (
-              <Card key={order.id} className="bg-white border-gray-300">
-                <CardHeader className="pb-4">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <CardTitle className="text-lg lowercase tracking-wider text-black">
-                        order {order.id}
-                      </CardTitle>
-                      <CardDescription className="lowercase tracking-wider">
-                        placed on {formatDate(order.date)}
-                      </CardDescription>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {/* Order Items */}
-                    {order.items.map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex items-center space-x-4"
-                      >
-                        <div className="w-16 h-16 relative bg-gray-100">
-                          <Image
-                            src={item.image}
-                            alt={item.name}
-                            fill
-                            style={{ objectFit: "cover" }}
-                          />
-                        </div>
-                        <div className="flex-grow">
-                          <h4 className="font-medium lowercase tracking-wider text-black">
-                            {item.name}
-                          </h4>
-                          <p className="text-sm text-gray-600 lowercase tracking-wider">
-                            size: {item.size} • qty: {item.quantity}
-                          </p>
-                        </div>
-                        <p className="font-medium text-black">
-                          {formatPrice(item.price * item.quantity)}
-                        </p>
-                      </div>
-                    ))}
+  // Get user name from customer data or fallback
+  const userName =
+    profile?.displayName ||
+    profile?.firstName ||
+    customerData?.displayName ||
+    "user";
 
-                    <Separator />
-
-                    {/* Order Total */}
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium lowercase tracking-wider text-black">
-                        total
-                      </span>
-                      <span className="font-medium text-lg text-black">
-                        {formatPrice(order.total)}
-                      </span>
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="flex gap-3 pt-4">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="lowercase tracking-wider border-black text-black hover:bg-black hover:text-white no-underline-effect"
-                      >
-                        <Truck className="w-4 h-4 mr-2" />
-                        track order
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="lowercase tracking-wider border-black text-black hover:bg-black hover:text-white no-underline-effect"
-                      >
-                        <X className="w-4 h-4 mr-2" />
-                        cancel
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="lowercase tracking-wider border-black text-black hover:bg-black hover:text-white no-underline-effect"
-                      >
-                        <FileText className="w-4 h-4 mr-2" />
-                        return policy
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+  // If not authenticated, show login prompt
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-[#F8F4EC] pt-32 pb-8 px-4">
+        <div className="container mx-auto text-center">
+          <div className="max-w-md mx-auto">
+            <AlertCircle className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+            <h1 className="text-2xl font-serif lowercase tracking-widest text-black mb-4">
+              please log in
+            </h1>
+            <p className="text-gray-600 lowercase tracking-wider mb-6">
+              you need to be logged in to view your dashboard
+            </p>
+            <p className="text-sm text-gray-500 lowercase tracking-wider">
+              hover over the user icon in the navbar to log in
+            </p>
           </div>
         </div>
-      )}
+      </div>
+    );
+  }
 
-      {/* Past Orders */}
-      {pastOrders.length > 0 && (
-        <div>
-          <h3 className="text-xl font-serif lowercase tracking-widest text-black mb-4">
-            past orders
+  const renderOrders = () => {
+    if (isLoading) {
+      return (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+          <span className="ml-2 text-gray-600 lowercase tracking-wider">
+            loading orders...
+          </span>
+        </div>
+      );
+    }
+
+    if (error) {
+      return (
+        <div className="text-center py-12">
+          <AlertCircle className="w-12 h-12 mx-auto text-red-400 mb-4" />
+          <p className="text-red-600 lowercase tracking-wider mb-4">{error}</p>
+          <Button
+            onClick={() => window.location.reload()}
+            variant="outline"
+            className="lowercase tracking-wider border-red-400 text-red-600 hover:bg-red-50"
+          >
+            try again
+          </Button>
+        </div>
+      );
+    }
+
+    if (!orders || orders.length === 0) {
+      return (
+        <div className="text-center py-12">
+          <Package className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+          <h3 className="text-xl font-serif lowercase tracking-widest text-black mb-2">
+            no orders yet
           </h3>
-          <div className="space-y-4">
-            {pastOrders.map((order) => (
-              <Card key={order.id} className="bg-white border-gray-300">
-                <CardHeader className="pb-4">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <CardTitle className="text-lg lowercase tracking-wider text-black">
-                        order {order.id}
-                      </CardTitle>
-                      <CardDescription className="lowercase tracking-wider">
-                        placed on {formatDate(order.date)}
-                      </CardDescription>
+          <p className="text-gray-600 lowercase tracking-wider">
+            your order history will appear here once you make a purchase
+          </p>
+        </div>
+      );
+    }
+
+    // Separate current and past orders based on fulfillment status
+    const currentOrders = orders.filter(
+      (order) =>
+        order.fulfillmentStatus !== "FULFILLED" &&
+        order.financialStatus !== "REFUNDED"
+    );
+    const pastOrders = orders.filter(
+      (order) =>
+        order.fulfillmentStatus === "FULFILLED" ||
+        order.financialStatus === "REFUNDED"
+    );
+
+    return (
+      <div className="space-y-8">
+        {/* Current Orders */}
+        {currentOrders.length > 0 && (
+          <div>
+            <h3 className="text-xl font-serif lowercase tracking-widest text-black mb-4">
+              current orders
+            </h3>
+            <div className="space-y-4">
+              {currentOrders.map((order) => (
+                <Card key={order.id} className="bg-white border-gray-300">
+                  <CardHeader className="pb-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <CardTitle className="text-lg lowercase tracking-wider text-black">
+                          order {order.name}
+                        </CardTitle>
+                        <CardDescription className="lowercase tracking-wider">
+                          placed on {formatDate(order.processedAt)}
+                        </CardDescription>
+                      </div>
+                      <div className="text-right">
+                        <span
+                          className={`text-xs lowercase tracking-wider px-2 py-1 rounded ${
+                            order.fulfillmentStatus === "FULFILLED"
+                              ? "bg-green-100 text-green-800"
+                              : order.fulfillmentStatus === "PARTIAL"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : "bg-blue-100 text-blue-800"
+                          }`}
+                        >
+                          {order.fulfillmentStatus.toLowerCase()}
+                        </span>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm text-gray-600 mt-1 lowercase tracking-wider">
-                        delivered on {formatDate(order.deliveredDate)}
-                      </p>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {/* Order Items */}
-                    {order.items.map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex items-center space-x-4"
-                      >
-                        <div className="w-16 h-16 relative bg-gray-100">
-                          <Image
-                            src={item.image}
-                            alt={item.name}
-                            fill
-                            style={{ objectFit: "cover" }}
-                          />
-                        </div>
-                        <div className="flex-grow">
-                          <h4 className="font-medium lowercase tracking-wider text-black">
-                            {item.name}
-                          </h4>
-                          <p className="text-sm text-gray-600 lowercase tracking-wider">
-                            size: {item.size} • qty: {item.quantity}
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {/* Order Items */}
+                      {order.lineItems.edges.map((edge) => (
+                        <div
+                          key={edge.node.id}
+                          className="flex items-center space-x-4"
+                        >
+                          <div className="w-16 h-16 relative bg-gray-100">
+                            <Image
+                              src={
+                                edge.node.variant.image?.originalSrc ||
+                                "/api/placeholder/80/80"
+                              }
+                              alt={
+                                edge.node.variant.image?.altText ||
+                                edge.node.title
+                              }
+                              fill
+                              style={{ objectFit: "cover" }}
+                            />
+                          </div>
+                          <div className="flex-grow">
+                            <h4 className="font-medium lowercase tracking-wider text-black">
+                              {edge.node.title}
+                            </h4>
+                            <p className="text-sm text-gray-600 lowercase tracking-wider">
+                              {edge.node.variant.title} • qty:{" "}
+                              {edge.node.quantity}
+                            </p>
+                          </div>
+                          <p className="font-medium text-black">
+                            {formatPrice(
+                              parseFloat(edge.node.variant.price.amount) *
+                                edge.node.quantity,
+                              edge.node.variant.price.currencyCode
+                            )}
                           </p>
                         </div>
-                        <p className="font-medium text-black">
-                          {formatPrice(item.price * item.quantity)}
-                        </p>
+                      ))}
+
+                      <Separator />
+
+                      {/* Order Total */}
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium lowercase tracking-wider text-black">
+                          total
+                        </span>
+                        <span className="font-medium text-lg text-black">
+                          {formatPrice(
+                            parseFloat(order.totalPrice.amount),
+                            order.totalPrice.currencyCode
+                          )}
+                        </span>
                       </div>
-                    ))}
 
-                    <Separator />
-
-                    {/* Order Total */}
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium lowercase tracking-wider text-black">
-                        total
-                      </span>
-                      <span className="font-medium text-lg text-black">
-                        {formatPrice(order.total)}
-                      </span>
+                      {/* Action Buttons */}
+                      <div className="flex gap-3 pt-4">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="lowercase tracking-wider border-black text-black hover:bg-black hover:text-white no-underline-effect"
+                        >
+                          <Truck className="w-4 h-4 mr-2" />
+                          track order
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="lowercase tracking-wider border-black text-black hover:bg-black hover:text-white no-underline-effect"
+                        >
+                          <X className="w-4 h-4 mr-2" />
+                          cancel
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="lowercase tracking-wider border-black text-black hover:bg-black hover:text-white no-underline-effect"
+                        >
+                          <FileText className="w-4 h-4 mr-2" />
+                          return policy
+                        </Button>
+                      </div>
                     </div>
-
-                    {/* Action Buttons */}
-                    <div className="flex gap-3 pt-4">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="lowercase tracking-wider border-black text-black hover:bg-black hover:text-white no-underline-effect"
-                      >
-                        <RotateCcw className="w-4 h-4 mr-2" />
-                        return
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="lowercase tracking-wider border-black text-black hover:bg-black hover:text-white no-underline-effect"
-                      >
-                        <FileText className="w-4 h-4 mr-2" />
-                        return policy
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
-    </div>
-  );
+        )}
+
+        {/* Past Orders */}
+        {pastOrders.length > 0 && (
+          <div>
+            <h3 className="text-xl font-serif lowercase tracking-widest text-black mb-4">
+              past orders
+            </h3>
+            <div className="space-y-4">
+              {pastOrders.map((order) => (
+                <Card key={order.id} className="bg-white border-gray-300">
+                  <CardHeader className="pb-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <CardTitle className="text-lg lowercase tracking-wider text-black">
+                          order {order.name}
+                        </CardTitle>
+                        <CardDescription className="lowercase tracking-wider">
+                          placed on {formatDate(order.processedAt)}
+                        </CardDescription>
+                      </div>
+                      <div className="text-right">
+                        <span
+                          className={`text-xs lowercase tracking-wider px-2 py-1 rounded ${
+                            order.fulfillmentStatus === "FULFILLED"
+                              ? "bg-green-100 text-green-800"
+                              : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          {order.fulfillmentStatus.toLowerCase()}
+                        </span>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {/* Order Items */}
+                      {order.lineItems.edges.map((edge) => (
+                        <div
+                          key={edge.node.id}
+                          className="flex items-center space-x-4"
+                        >
+                          <div className="w-16 h-16 relative bg-gray-100">
+                            <Image
+                              src={
+                                edge.node.variant.image?.originalSrc ||
+                                "/api/placeholder/80/80"
+                              }
+                              alt={
+                                edge.node.variant.image?.altText ||
+                                edge.node.title
+                              }
+                              fill
+                              style={{ objectFit: "cover" }}
+                            />
+                          </div>
+                          <div className="flex-grow">
+                            <h4 className="font-medium lowercase tracking-wider text-black">
+                              {edge.node.title}
+                            </h4>
+                            <p className="text-sm text-gray-600 lowercase tracking-wider">
+                              {edge.node.variant.title} • qty:{" "}
+                              {edge.node.quantity}
+                            </p>
+                          </div>
+                          <p className="font-medium text-black">
+                            {formatPrice(
+                              parseFloat(edge.node.variant.price.amount) *
+                                edge.node.quantity,
+                              edge.node.variant.price.currencyCode
+                            )}
+                          </p>
+                        </div>
+                      ))}
+
+                      <Separator />
+
+                      {/* Order Total */}
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium lowercase tracking-wider text-black">
+                          total
+                        </span>
+                        <span className="font-medium text-lg text-black">
+                          {formatPrice(
+                            parseFloat(order.totalPrice.amount),
+                            order.totalPrice.currencyCode
+                          )}
+                        </span>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex gap-3 pt-4">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="lowercase tracking-wider border-black text-black hover:bg-black hover:text-white no-underline-effect"
+                        >
+                          <RotateCcw className="w-4 h-4 mr-2" />
+                          return
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="lowercase tracking-wider border-black text-black hover:bg-black hover:text-white no-underline-effect"
+                        >
+                          <FileText className="w-4 h-4 mr-2" />
+                          return policy
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   const renderAddresses = () => (
     <div className="space-y-6">

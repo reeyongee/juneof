@@ -7,6 +7,7 @@ import Footer from "./Footer";
 import CustomCursor from "./CustomCursor";
 import { useSplash } from "@/context/SplashContext";
 import { AddressProvider } from "@/context/AddressContext";
+import { AuthProvider } from "@/context/AuthContext";
 import { Toaster } from "@/components/ui/sonner";
 
 interface ClientLayoutProps {
@@ -44,22 +45,24 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
   }, [showSplash]);
 
   return (
-    <AddressProvider>
-      <CustomCursor />
-      {showSplash && <SplashScreen onLoadComplete={handleLoadComplete} />}
+    <AuthProvider>
+      <AddressProvider>
+        <CustomCursor />
+        {showSplash && <SplashScreen onLoadComplete={handleLoadComplete} />}
 
-      <div
-        className={`transition-opacity duration-500 ${
-          !showSplash ? "opacity-100" : "opacity-0"
-        }`}
-      >
-        <Navbar />
-        <main className="flex-grow bg-[#F8F4EC] relative z-[1]">
-          {children}
-        </main>
-        <Footer />
-      </div>
-      <Toaster position="bottom-left" />
-    </AddressProvider>
+        <div
+          className={`transition-opacity duration-500 ${
+            !showSplash ? "opacity-100" : "opacity-0"
+          }`}
+        >
+          <Navbar />
+          <main className="flex-grow bg-[#F8F4EC] relative z-[1]">
+            {children}
+          </main>
+          <Footer />
+        </div>
+        <Toaster position="bottom-left" />
+      </AddressProvider>
+    </AuthProvider>
   );
 }

@@ -5,6 +5,7 @@ import Link from "next/link";
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import CartOverlay from "./CartOverlay";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
 
 // Placeholder SVGs - Replace with actual SVGs
 const InstagramIcon = () => (
@@ -55,6 +56,7 @@ const Navbar: React.FC = () => {
   const HOVER_DELAY_MS = 300;
 
   const { cartItems } = useCart();
+  const { isAuthenticated, isLoading, login, logout } = useAuth();
 
   const totalCartItems = cartItems.reduce(
     (sum, item) => sum + item.quantity,
@@ -315,12 +317,30 @@ const Navbar: React.FC = () => {
                 {isProfileDropdownOpen && (
                   <div className="absolute right-0 top-full mt-2 w-48 bg-[#F8F4EC] border border-gray-200 shadow-lg z-50">
                     <div className="py-1">
-                      <Link
-                        href="/dashboard"
-                        className="block px-4 py-2 text-lg lowercase tracking-wider hover:opacity-75 hover:bg-gray-100 transition-colors text-center"
-                      >
-                        dashboard
-                      </Link>
+                      {isAuthenticated ? (
+                        <>
+                          <Link
+                            href="/dashboard"
+                            className="block px-4 py-2 text-lg lowercase tracking-wider hover:opacity-75 hover:bg-gray-100 transition-colors text-center"
+                          >
+                            dashboard
+                          </Link>
+                          <button
+                            onClick={logout}
+                            className="w-full px-4 py-2 text-lg lowercase tracking-wider hover:opacity-75 hover:bg-gray-100 transition-colors text-center"
+                          >
+                            logout
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          onClick={login}
+                          disabled={isLoading}
+                          className="w-full px-4 py-2 text-lg lowercase tracking-wider hover:opacity-75 hover:bg-gray-100 transition-colors text-center disabled:opacity-50"
+                        >
+                          {isLoading ? "loading..." : "login"}
+                        </button>
+                      )}
                     </div>
                   </div>
                 )}

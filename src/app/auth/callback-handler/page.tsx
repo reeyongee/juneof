@@ -73,9 +73,9 @@ function CallbackHandler() {
 
         setStatus("success");
 
-        // Redirect back to auth-test page to see the customer data
+        // Redirect to dashboard to see the customer data
         setTimeout(() => {
-          window.location.href = "/auth-test";
+          window.location.href = "/dashboard";
         }, 2000);
       } catch (err) {
         console.error("Callback handler error:", err);
