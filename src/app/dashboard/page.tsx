@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useAddress } from "@/context/AddressContext";
 import { useAuth } from "@/context/AuthContext";
 import AddAddressOverlay from "@/app/components/AddAddressOverlay";
@@ -22,12 +22,8 @@ export default function DashboardPage() {
   } = useAddress();
   const { isAuthenticated, customerData, login, isLoading } = useAuth();
 
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!isAuthenticated && !isLoading) {
-      login();
-    }
-  }, [isAuthenticated, isLoading, login]);
+  // Note: Removed automatic login redirect to prevent authentication loops
+  // Users can manually click the login button if not authenticated
 
   // Get user name from customer data
   const userName =
