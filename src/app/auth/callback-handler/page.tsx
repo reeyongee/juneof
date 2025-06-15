@@ -40,7 +40,10 @@ function CallbackHandler() {
         }
 
         // Get stored code verifier from localStorage
-        const codeVerifier = localStorage.getItem("shopify-auth-code-verifier");
+        const codeVerifier =
+          typeof window !== "undefined"
+            ? localStorage.getItem("shopify-auth-code-verifier")
+            : null;
 
         if (!codeVerifier) {
           setError(

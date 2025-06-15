@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import {
   executeCustomerAccountQuery,
@@ -168,7 +168,7 @@ export function useCustomerData(): UseCustomerDataReturn {
     );
   };
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!isAuthenticated || !tokens?.accessToken) {
       return;
     }
@@ -192,11 +192,11 @@ export function useCustomerData(): UseCustomerDataReturn {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [isAuthenticated, tokens?.accessToken]);
 
   useEffect(() => {
     fetchData();
-  }, [isAuthenticated, tokens?.accessToken]);
+  }, [fetchData]);
 
   return {
     profile,

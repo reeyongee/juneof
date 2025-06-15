@@ -65,7 +65,9 @@ const getAuthConfig = (): ShopifyAuthConfig => {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(
+    typeof window === "undefined" ? false : true
+  );
   const [customerData, setCustomerData] = useState<CustomerData | null>(null);
   const [tokens, setTokens] = useState<TokenStorage | null>(null);
 

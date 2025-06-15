@@ -53,6 +53,10 @@ export default function ShopifyAuth({
 
   // Check for callback parameters on component mount
   const checkCallback = useCallback(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
     const currentUrl = window.location.href;
     const urlParams = new URLSearchParams(window.location.search);
 
