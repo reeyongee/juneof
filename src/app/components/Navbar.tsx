@@ -339,7 +339,7 @@ const Navbar: React.FC = () => {
                         </>
                       ) : (
                         <button
-                          onClick={login}
+                          onClick={() => login()}
                           className="block w-full px-4 py-2 text-lg lowercase tracking-wider hover:opacity-75 hover:bg-gray-100 transition-colors text-center"
                         >
                           login

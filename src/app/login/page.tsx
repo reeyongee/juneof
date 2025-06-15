@@ -36,9 +36,13 @@ export default function LoginPage() {
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
             Login to Your Account
           </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-4">
             Sign in with your Shopify account to access your dashboard and
             manage your orders.
+          </p>
+          <p className="text-sm text-gray-500 max-w-2xl mx-auto">
+            💡 Tip: You can also login directly from the user icon in the
+            navbar!
           </p>
         </div>
 

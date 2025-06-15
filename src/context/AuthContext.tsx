@@ -47,7 +47,7 @@ interface AuthContextType {
   customerData: CustomerProfile | null;
   loading: boolean;
   error: string | null;
-  login: () => void;
+  login: () => Promise<void>;
   logout: () => void;
   refreshTokens: () => Promise<void>;
   fetchCustomerData: () => Promise<void>;
@@ -129,28 +129,68 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     [config]
   );
 
-  // Check for stored tokens on mount
+  // Check for stored tokens on mount and listen for storage changes
   useEffect(() => {
-    const storedTokens = getStoredTokens();
-    if (storedTokens) {
-      setTokens(storedTokens);
-      setIsAuthenticated(true);
+    const checkTokens = () => {
+      const storedTokens = getStoredTokens();
+      if (storedTokens) {
+        setTokens(storedTokens);
+        setIsAuthenticated(true);
 
-      // Create API client
-      const client = new CustomerAccountApiClient({
-        shopId: config.shopId,
-        accessToken: storedTokens.accessToken,
-      });
-      setApiClient(client);
+        // Create API client
+        const client = new CustomerAccountApiClient({
+          shopId: config.shopId,
+          accessToken: storedTokens.accessToken,
+        });
+        setApiClient(client);
 
-      // Auto-fetch customer data
-      fetchCustomerDataInternal(client, storedTokens);
-    }
+        // Auto-fetch customer data
+        fetchCustomerDataInternal(client, storedTokens);
+      } else {
+        setIsAuthenticated(false);
+        setTokens(null);
+        setCustomerData(null);
+        setApiClient(null);
+      }
+    };
+
+    // Check tokens on mount
+    checkTokens();
+
+    // Listen for storage changes (when tokens are stored by callback handler)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "shopify-auth-tokens" || e.key === null) {
+        checkTokens();
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+
+    // Also listen for custom events (for same-tab updates)
+    const handleTokenUpdate = () => {
+      checkTokens();
+    };
+
+    window.addEventListener("shopify-auth-updated", handleTokenUpdate);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("shopify-auth-updated", handleTokenUpdate);
+    };
   }, [config.shopId, fetchCustomerDataInternal]);
 
-  const login = () => {
-    // Redirect to login page
-    window.location.href = `/login`;
+  const login = async () => {
+    try {
+      // Import the auth function
+      const { initiateShopifyAuth } = await import("@/lib/shopify-auth");
+
+      // Directly initiate Shopify auth
+      await initiateShopifyAuth(config);
+    } catch (error) {
+      console.error("Failed to initiate Shopify auth:", error);
+      // Fallback to login page if direct auth fails
+      window.location.href = `/login`;
+    }
   };
 
   const logout = () => {
@@ -160,6 +200,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setCustomerData(null);
     setApiClient(null);
     setError(null);
+
+    // Dispatch custom event to notify other tabs/components
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("shopify-auth-updated"));
+    }
   };
 
   const refreshTokens = async () => {

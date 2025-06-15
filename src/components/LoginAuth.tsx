@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import ShopifyAuth from "@/components/ShopifyAuth";
-import { useAuth } from "@/context/AuthContext";
 import type {
   ShopifyAuthConfig,
   AccessTokenResponse,
@@ -10,7 +9,6 @@ import type {
 
 export function LoginAuth() {
   const router = useRouter();
-  const { fetchCustomerData } = useAuth();
 
   // Construct redirect URI
   const getRedirectUri = () => {
@@ -43,15 +41,15 @@ export function LoginAuth() {
         hasIdToken: !!data.tokens.id_token,
       });
 
-      // Fetch customer data to update the auth context
-      try {
-        await fetchCustomerData();
-      } catch (error) {
-        console.error("Failed to fetch customer data:", error);
+      // Dispatch custom event to notify AuthContext of token update
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("shopify-auth-updated"));
       }
 
-      // Redirect to dashboard
-      router.push("/dashboard");
+      // Small delay to allow AuthContext to update, then redirect to dashboard
+      setTimeout(() => {
+        router.push("/dashboard");
+      }, 500);
     }
   };
 

@@ -64,6 +64,9 @@ function CallbackHandler() {
         // Store tokens in localStorage for persistence
         storeTokens(tokens);
 
+        // Dispatch custom event to notify AuthContext of token update
+        window.dispatchEvent(new CustomEvent("shopify-auth-updated"));
+
         console.log("✅ Authentication successful! Tokens stored:", {
           tokenType: tokens.token_type,
           expiresIn: tokens.expires_in,
@@ -73,9 +76,9 @@ function CallbackHandler() {
 
         setStatus("success");
 
-        // Redirect back to auth-test page to see the customer data
+        // Redirect to dashboard to see the customer data
         setTimeout(() => {
-          window.location.href = "/auth-test";
+          window.location.href = "/dashboard";
         }, 2000);
       } catch (err) {
         console.error("Callback handler error:", err);
@@ -124,7 +127,7 @@ function CallbackHandler() {
             <p className="text-gray-600 mb-4">{error}</p>
             <div className="space-y-2">
               <Link
-                href="/auth-test"
+                href="/login"
                 className="block w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition-colors"
               >
                 Try Again
@@ -159,7 +162,7 @@ function CallbackHandler() {
           Authentication Successful!
         </h2>
         <p className="text-gray-600 mb-4">
-          Redirecting back to test page to view customer data...
+          Redirecting to your dashboard to view customer data...
         </p>
       </div>
     </div>
