@@ -72,6 +72,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Check for existing authentication on mount
   useEffect(() => {
     const checkAuth = async () => {
+      // Only run on client side
+      if (typeof window === "undefined") {
+        setIsLoading(false);
+        return;
+      }
+
       try {
         const storedTokens = getStoredTokens();
 
@@ -162,7 +168,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     try {
       // If we have tokens with id_token, use proper logout
-      if (tokens?.idToken) {
+      if (tokens?.idToken && typeof window !== "undefined") {
         logoutCustomer({
           shopId: getAuthConfig().shopId,
           idToken: tokens.idToken,
