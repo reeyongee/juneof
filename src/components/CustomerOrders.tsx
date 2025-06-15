@@ -33,8 +33,8 @@ interface OrderNode {
         id: string;
         presentmentTitle: string;
         quantity: number;
-        variant: {
-          image: {
+        merchandise: {
+          image?: {
             url: string;
             altText: string;
           };
@@ -105,10 +105,12 @@ export default function CustomerOrders({ config }: CustomerOrdersProps) {
                             id
                             presentmentTitle
                             quantity
-                            variant {
-                              image {
-                                url
-                                altText
+                            merchandise {
+                              ... on ProductVariant {
+                                image {
+                                  url
+                                  altText
+                                }
                               }
                             }
                           }
@@ -322,11 +324,11 @@ export default function CustomerOrders({ config }: CustomerOrdersProps) {
                         className="flex items-center space-x-4"
                       >
                         <div className="w-16 h-16 bg-gray-100 rounded-md flex items-center justify-center">
-                          {item.variant.image ? (
+                          {item.merchandise.image ? (
                             <img
-                              src={item.variant.image.url}
+                              src={item.merchandise.image.url}
                               alt={
-                                item.variant.image.altText ||
+                                item.merchandise.image.altText ||
                                 item.presentmentTitle
                               }
                               className="w-full h-full object-cover rounded-md"
@@ -398,11 +400,11 @@ export default function CustomerOrders({ config }: CustomerOrdersProps) {
                         className="flex items-center space-x-4"
                       >
                         <div className="w-16 h-16 bg-gray-100 rounded-md flex items-center justify-center">
-                          {item.variant.image ? (
+                          {item.merchandise.image ? (
                             <img
-                              src={item.variant.image.url}
+                              src={item.merchandise.image.url}
                               alt={
-                                item.variant.image.altText ||
+                                item.merchandise.image.altText ||
                                 item.presentmentTitle
                               }
                               className="w-full h-full object-cover rounded-md"
