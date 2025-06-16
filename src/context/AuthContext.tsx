@@ -8,7 +8,6 @@ import React, {
   useCallback,
   useMemo,
 } from "react";
-import { useSearchParams } from "next/navigation"; // For robust URL checking
 
 import {
   getStoredTokens,
@@ -82,8 +81,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [apiClient, setApiClient] = useState<CustomerAccountApiClient | null>(
     null
   );
-
-  const searchParamsFromHook = useSearchParams(); // From next/navigation
 
   const shopifyAuthConfig: ShopifyAuthConfig = useMemo(() => {
     // On Vercel, NEXTAUTH_URL might not be available on client side since it's not NEXT_PUBLIC_
@@ -336,16 +333,48 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     );
   }, [shopifyAuthConfig, _internalFetchAndSetCustomerData]); // `logout` is included via _internalFetch
 
-  // This useEffect will run on:
-  // 1. Initial mount of AuthProvider.
-  // 2. When `searchParamsFromHook` changes (i.e., URL query parameters change after client-side navigation).
+  // This useEffect will run on initial mount and when initializeAuth changes
   useEffect(() => {
     console.log(
-      "AuthContext: useEffect[searchParamsFromHook] - searchParams changed or initial mount. Calling initializeAuth. Current path:",
+      "AuthContext: useEffect - Component mounted or initializeAuth changed. Calling initializeAuth. Current path:",
       typeof window !== "undefined" ? window.location.pathname : "SSR"
     );
     initializeAuth();
-  }, [searchParamsFromHook, initializeAuth]); // `initializeAuth` is memoized
+  }, [initializeAuth]);
+
+  // Additional useEffect to handle URL changes for auth completion signal
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handlePopState = () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const hasAuthCompleted = urlParams.get("auth_completed") === "true";
+      if (hasAuthCompleted) {
+        console.log(
+          "AuthContext: URL changed with auth_completed=true, re-running initializeAuth"
+        );
+        initializeAuth();
+      }
+    };
+
+    // Listen for browser navigation events
+    window.addEventListener("popstate", handlePopState);
+
+    // Also check immediately if we're on a page with auth_completed
+    const urlParams = new URLSearchParams(window.location.search);
+    const hasAuthCompleted = urlParams.get("auth_completed") === "true";
+    if (hasAuthCompleted) {
+      console.log(
+        "AuthContext: Initial mount detected auth_completed=true, ensuring initializeAuth runs"
+      );
+      // Small delay to ensure this runs after the main useEffect
+      setTimeout(() => initializeAuth(), 50);
+    }
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, [initializeAuth]);
 
   const login = async () => {
     console.log("AuthContext: login - START");
