@@ -34,8 +34,7 @@ export interface ProfileCompletionStatus {
   missingFields: {
     firstName: boolean;
     lastName: boolean;
-    phoneNumber: boolean;
-    completeAddress: boolean;
+    completeAddressWithPhone: boolean;
   };
   completionPercentage: number;
 }
@@ -83,22 +82,27 @@ export function validateAddress(
 }
 
 /**
- * Checks if customer has at least one complete address
+ * Checks if customer has at least one complete address with phone number
  */
-export function hasCompleteAddress(customer: CustomerProfile): boolean {
+export function hasCompleteAddressWithPhone(
+  customer: CustomerProfile
+): boolean {
   // Check default address first
   if (customer.defaultAddress) {
     const defaultAddressValidation = validateAddress(customer.defaultAddress);
-    if (defaultAddressValidation.isCompleteAddress) {
+    const hasPhoneInAddress =
+      customer.addresses?.some((addr) => addr.phoneNumber?.trim()) ||
+      customer.phoneNumber?.phoneNumber?.trim();
+    if (defaultAddressValidation.isCompleteAddress && hasPhoneInAddress) {
       return true;
     }
   }
 
-  // Check all addresses
+  // Check all addresses for complete address with phone
   if (customer.addresses && customer.addresses.length > 0) {
     return customer.addresses.some((address) => {
       const validation = validateAddress(address);
-      return validation.isCompleteAddress;
+      return validation.isCompleteAddress && address.phoneNumber?.trim();
     });
   }
 
@@ -117,8 +121,7 @@ export function analyzeProfileCompletion(
       missingFields: {
         firstName: true,
         lastName: true,
-        phoneNumber: true,
-        completeAddress: true,
+        completeAddressWithPhone: true,
       },
       completionPercentage: 0,
     };
@@ -127,11 +130,10 @@ export function analyzeProfileCompletion(
   const missingFields = {
     firstName: !customer.firstName?.trim(),
     lastName: !customer.lastName?.trim(),
-    phoneNumber: !customer.phoneNumber?.phoneNumber?.trim(),
-    completeAddress: !hasCompleteAddress(customer),
+    completeAddressWithPhone: !hasCompleteAddressWithPhone(customer),
   };
 
-  const totalFields = 4;
+  const totalFields = 3;
   const completedFields = Object.values(missingFields).filter(
     (missing) => !missing
   ).length;
@@ -153,16 +155,12 @@ export function analyzeProfileCompletion(
  */
 export function getNextCompletionStep(
   status: ProfileCompletionStatus
-): "name" | "phone" | "address" | "complete" {
+): "name" | "address" | "complete" {
   if (status.missingFields.firstName || status.missingFields.lastName) {
     return "name";
   }
 
-  if (status.missingFields.phoneNumber) {
-    return "phone";
-  }
-
-  if (status.missingFields.completeAddress) {
+  if (status.missingFields.completeAddressWithPhone) {
     return "address";
   }
 

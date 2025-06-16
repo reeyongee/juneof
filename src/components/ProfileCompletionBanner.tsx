@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { X, User, Phone, MapPin, AlertCircle } from "lucide-react";
+import { X, User, MapPin, AlertCircle } from "lucide-react";
 import { type ProfileCompletionStatus } from "@/lib/profile-completion";
 
 interface ProfileCompletionBannerProps {
@@ -29,19 +29,13 @@ export function ProfileCompletionBanner({
     ) {
       missing.push("name");
     }
-    if (profileStatus.missingFields.phoneNumber) {
-      missing.push("phone number");
-    }
-    if (profileStatus.missingFields.completeAddress) {
-      missing.push("address");
+    if (profileStatus.missingFields.completeAddressWithPhone) {
+      missing.push("address and phone number");
     }
 
     if (missing.length === 0) return "";
     if (missing.length === 1) return missing[0];
-    if (missing.length === 2) return `${missing[0]} and ${missing[1]}`;
-    return `${missing.slice(0, -1).join(", ")}, and ${
-      missing[missing.length - 1]
-    }`;
+    return `${missing[0]} and ${missing[1]}`;
   };
 
   const getMissingFieldIcons = () => {
@@ -52,10 +46,7 @@ export function ProfileCompletionBanner({
     ) {
       icons.push(<User key="user" className="h-4 w-4" />);
     }
-    if (profileStatus.missingFields.phoneNumber) {
-      icons.push(<Phone key="phone" className="h-4 w-4" />);
-    }
-    if (profileStatus.missingFields.completeAddress) {
+    if (profileStatus.missingFields.completeAddressWithPhone) {
       icons.push(<MapPin key="address" className="h-4 w-4" />);
     }
     return icons;

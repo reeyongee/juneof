@@ -17,8 +17,7 @@ interface NameCompletionStepProps {
   missingFields?: {
     firstName: boolean;
     lastName: boolean;
-    phoneNumber: boolean;
-    completeAddress: boolean;
+    completeAddressWithPhone: boolean;
   };
 }
 

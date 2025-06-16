@@ -62,7 +62,7 @@ export function ProfileCompletionDemo() {
                   </Badge>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   <div
                     className={`flex items-center space-x-2 p-3 rounded-lg border ${
                       !profileStatus.missingFields.firstName &&
@@ -88,40 +88,29 @@ export function ProfileCompletionDemo() {
 
                   <div
                     className={`flex items-center space-x-2 p-3 rounded-lg border ${
-                      !profileStatus.missingFields.phoneNumber
+                      !profileStatus.missingFields.completeAddressWithPhone
                         ? "bg-green-50 border-green-200"
                         : "bg-gray-50 border-gray-200"
                     }`}
                   >
-                    <Phone
-                      className={`h-4 w-4 ${
-                        !profileStatus.missingFields.phoneNumber
-                          ? "text-green-600"
-                          : "text-gray-400"
-                      }`}
-                    />
-                    <span className="text-sm">Phone</span>
-                    {!profileStatus.missingFields.phoneNumber && (
-                      <CheckCircle className="h-4 w-4 text-green-600" />
-                    )}
-                  </div>
-
-                  <div
-                    className={`flex items-center space-x-2 p-3 rounded-lg border ${
-                      !profileStatus.missingFields.completeAddress
-                        ? "bg-green-50 border-green-200"
-                        : "bg-gray-50 border-gray-200"
-                    }`}
-                  >
-                    <MapPin
-                      className={`h-4 w-4 ${
-                        !profileStatus.missingFields.completeAddress
-                          ? "text-green-600"
-                          : "text-gray-400"
-                      }`}
-                    />
-                    <span className="text-sm">Address</span>
-                    {!profileStatus.missingFields.completeAddress && (
+                    <div className="flex items-center space-x-1">
+                      <MapPin
+                        className={`h-4 w-4 ${
+                          !profileStatus.missingFields.completeAddressWithPhone
+                            ? "text-green-600"
+                            : "text-gray-400"
+                        }`}
+                      />
+                      <Phone
+                        className={`h-3 w-3 ${
+                          !profileStatus.missingFields.completeAddressWithPhone
+                            ? "text-green-600"
+                            : "text-gray-400"
+                        }`}
+                      />
+                    </div>
+                    <span className="text-sm">Address & Phone</span>
+                    {!profileStatus.missingFields.completeAddressWithPhone && (
                       <CheckCircle className="h-4 w-4 text-green-600" />
                     )}
                   </div>

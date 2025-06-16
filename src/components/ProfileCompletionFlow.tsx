@@ -22,9 +22,8 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { X, User, Phone, MapPin, CheckCircle } from "lucide-react";
+import { X, User, MapPin, CheckCircle } from "lucide-react";
 import { NameCompletionStep } from "./profile-completion/NameCompletionStep";
-import { PhoneCompletionStep } from "./profile-completion/PhoneCompletionStep";
 import { AddressCompletionStep } from "./profile-completion/AddressCompletionStep";
 import { CompletionSuccessStep } from "./profile-completion/CompletionSuccessStep";
 
@@ -43,7 +42,7 @@ export function ProfileCompletionFlow({
 }: ProfileCompletionFlowProps) {
   const { apiClient, fetchCustomerData } = useAuth();
   const [currentStep, setCurrentStep] = useState<
-    "name" | "phone" | "address" | "complete"
+    "name" | "address" | "complete"
   >("name");
   const [profileStatus, setProfileStatus] =
     useState<ProfileCompletionStatus | null>(null);
@@ -136,8 +135,6 @@ export function ProfileCompletionFlow({
     switch (step) {
       case "name":
         return <User className="h-4 w-4" />;
-      case "phone":
-        return <Phone className="h-4 w-4" />;
       case "address":
         return <MapPin className="h-4 w-4" />;
       case "complete":
@@ -151,10 +148,8 @@ export function ProfileCompletionFlow({
     switch (currentStep) {
       case "name":
         return "Complete Your Name";
-      case "phone":
-        return "Add Your Phone Number";
       case "address":
-        return "Add Your Address";
+        return "Add Your Address & Phone";
       case "complete":
         return "Profile Complete!";
       default:
@@ -166,10 +161,8 @@ export function ProfileCompletionFlow({
     switch (currentStep) {
       case "name":
         return "Help us personalize your experience by completing your name.";
-      case "phone":
-        return "Add your phone number for order updates and support.";
       case "address":
-        return "Add your address for faster checkout and delivery.";
+        return "Add your complete address and phone number for delivery and order updates.";
       case "complete":
         return "Your profile is now complete! You can update it anytime.";
       default:
@@ -188,14 +181,6 @@ export function ProfileCompletionFlow({
             customerProfile={customerProfile}
             onComplete={handleStepComplete}
             missingFields={profileStatus?.missingFields}
-          />
-        );
-      case "phone":
-        return (
-          <PhoneCompletionStep
-            apiClient={apiClient}
-            onComplete={handleStepComplete}
-            onSkip={handleStepComplete}
           />
         );
       case "address":
