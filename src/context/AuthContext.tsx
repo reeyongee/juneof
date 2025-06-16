@@ -224,99 +224,115 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   );
 
   const initializeAuth = useCallback(async () => {
-    console.log("AuthContext: initializeAuth - START");
-    setIsLoading(true); // Crucial: set isLoading true at the very start
+    console.log(
+      "AuthContext: initializeAuth - START. Current URL:",
+      typeof window !== "undefined" ? window.location.href : "SSR"
+    );
+    setIsLoading(true); // Set loading true at the very beginning
 
-    const attemptAuthInitialization = async (attempt = 0): Promise<boolean> => {
+    const urlParams =
+      typeof window !== "undefined"
+        ? new URLSearchParams(window.location.search)
+        : null;
+    const justCompletedAuth = urlParams?.get("auth_completed") === "true";
+    console.log(
+      "AuthContext: initializeAuth - justCompletedAuth signal:",
+      justCompletedAuth
+    );
+
+    let tokensFound = false;
+    let attempts = 0;
+    const maxAttempts = 4; // Try once, then 3 retries
+    const retryDelay = 200; // ms
+
+    while (attempts < maxAttempts && !tokensFound) {
       console.log(
-        `AuthContext: attemptAuthInitialization - Attempt ${attempt + 1}`
+        `AuthContext: initializeAuth - Attempt ${attempts + 1} to get tokens.`
       );
       const storedTokens = getStoredTokens();
       console.log(
-        `AuthContext: attempt ${attempt + 1} - getStoredTokens() result:`,
+        `AuthContext: initializeAuth - Attempt ${
+          attempts + 1
+        } - getStoredTokens() result:`,
         storedTokens
       );
 
       if (storedTokens) {
         console.log(
-          "AuthContext: attempt - Stored tokens FOUND.",
+          "AuthContext: initializeAuth - Stored tokens FOUND.",
           storedTokens
         );
-        setTokens(storedTokens); // Set tokens first
+        setTokens(storedTokens);
         const client = new CustomerAccountApiClient({
           shopId: shopifyAuthConfig.shopId,
           accessToken: storedTokens.accessToken,
         });
         setApiClient(client);
-        setIsAuthenticated(true); // Assume authenticated, _internalFetch will verify
+        setIsAuthenticated(true);
         console.log(
-          "AuthContext: attempt - Set isAuthenticated=true, apiClient created."
+          "AuthContext: initializeAuth - Set isAuthenticated=true, apiClient created."
         );
         try {
-          await _internalFetchAndSetCustomerData(client, storedTokens);
+          await _internalFetchAndSetCustomerData(client, storedTokens); // Pass storedTokens
           console.log(
-            "AuthContext: attempt - _internalFetchAndSetCustomerData COMPLETED."
+            "AuthContext: initializeAuth - _internalFetchAndSetCustomerData COMPLETED."
           );
         } catch (fetchError) {
           console.error(
-            "AuthContext: attempt - Error after _internalFetchAndSetCustomerData:",
+            "AuthContext: initializeAuth - Error from _internalFetch:",
             fetchError
           );
-          // Error state is set within _internalFetchAndSetCustomerData.
-          // If logout was called, isAuthenticated will be false.
+          // If _internalFetchAndSetCustomerData calls logout, isAuthenticated will be set to false there.
+          // Error state is also set there.
         }
-        return true; // Tokens found and processing initiated
-      }
-
-      const urlParams =
-        typeof window !== "undefined"
-          ? new URLSearchParams(window.location.search)
-          : null;
-      const justCompletedAuth = urlParams?.get("auth_completed") === "true";
-      console.log(
-        `AuthContext: attempt ${attempt + 1} - justCompletedAuth signal:`,
-        justCompletedAuth
-      );
-
-      if (justCompletedAuth && attempt < 3) {
-        // Retry up to 3 times
-        const delay = 200 * (attempt + 1);
+        tokensFound = true; // Exit loop
+      } else if (justCompletedAuth && attempts < maxAttempts - 1) {
+        // Only retry if signal is present and more attempts left
         console.warn(
-          `AuthContext: attempt - No tokens yet (Attempt ${
-            attempt + 1
-          }), auth_completed=true. Retrying in ${delay}ms...`
+          `AuthContext: initializeAuth - No tokens yet (Attempt ${
+            attempts + 1
+          }), auth_completed=true. Retrying in ${retryDelay}ms...`
         );
-        await new Promise((resolve) => setTimeout(resolve, delay));
-        return attemptAuthInitialization(attempt + 1); // Recursive call for retry
+        await new Promise((resolve) => setTimeout(resolve, retryDelay));
+      } else {
+        // No tokens, and either no signal or max attempts reached
+        break; // Exit loop
       }
+      attempts++;
+    }
 
+    if (!tokensFound) {
       console.log(
-        "AuthContext: attempt - No stored tokens after all retries or no signal. Setting unauthenticated state."
+        "AuthContext: initializeAuth - No stored tokens after all attempts or no signal. Setting unauthenticated state."
       );
       setIsAuthenticated(false);
       setCustomerData(null);
       setTokens(null);
       setApiClient(null);
-      setError(null);
+      setError(null); // Clear any previous error
+    }
 
-      if (justCompletedAuth && urlParams && typeof window !== "undefined") {
-        console.log(
-          "AuthContext: attempt - Cleaning up auth_completed URL param."
-        );
-        const cleanUrl = new URL(window.location.href);
-        cleanUrl.searchParams.delete("auth_completed");
-        window.history.replaceState({}, document.title, cleanUrl.toString());
-      }
-      return false; // No tokens found
-    };
+    // Clean up the URL parameter if it exists
+    if (justCompletedAuth && urlParams && typeof window !== "undefined") {
+      console.log(
+        "AuthContext: initializeAuth - Cleaning up auth_completed URL param."
+      );
+      const cleanUrl = new URL(window.location.href);
+      cleanUrl.searchParams.delete("auth_completed");
+      window.history.replaceState({}, document.title, cleanUrl.toString());
+    }
 
-    await attemptAuthInitialization();
-    setIsLoading(false); // Set loading to false AFTER all attempts are done.
-    console.log("AuthContext: initializeAuth - END. Final isLoading:", false);
+    setIsLoading(false); // Set loading to false AFTER all logic is done.
+    console.log(
+      "AuthContext: initializeAuth - END. Final isLoading:",
+      false,
+      "isAuthenticated:",
+      isAuthenticated
+    ); // Log final isAuthenticated
   }, [shopifyAuthConfig, _internalFetchAndSetCustomerData]);
 
   useEffect(() => {
-    console.log("AuthContext: useEffect for initializeAuth - MOUNTING");
+    console.log("AuthContext: AuthProvider MOUNTED. Calling initializeAuth.");
     initializeAuth();
   }, [initializeAuth]);
 
@@ -424,16 +440,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     refreshCustomerData,
   };
 
-  // Log context value changes for debugging
   useEffect(() => {
-    console.log("AuthContext: Value updated ->", {
+    console.log("AuthContext: PROVIDER VALUE CHANGED ->", {
       isAuthenticated,
       isLoading,
-      hasCustomerData: !!customerData,
-      error,
       hasTokens: !!tokens,
+      error: error,
     });
-  }, [isAuthenticated, isLoading, customerData, error, tokens]);
+  }, [isAuthenticated, isLoading, tokens, error]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
