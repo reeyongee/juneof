@@ -17,8 +17,11 @@ export default function DashboardPage() {
     addresses,
     selectedAddressId,
     selectAddress,
-    setAsDefault,
-    deleteAddress,
+    setShopifyDefaultAddress,
+    deleteShopifyAddress,
+    fetchAddresses,
+    isLoading: addressLoading,
+    error: addressError,
   } = useAddress();
   const {
     isAuthenticated,
@@ -44,6 +47,14 @@ export default function DashboardPage() {
       fetchCustomerData();
     }
   }, [isAuthenticated, customerData, isLoading, error, fetchCustomerData]);
+
+  // Effect to fetch addresses when authenticated
+  useEffect(() => {
+    if (isAuthenticated && addresses.length === 0 && !addressLoading) {
+      console.log("Dashboard: Fetching addresses...");
+      fetchAddresses();
+    }
+  }, [isAuthenticated, fetchAddresses, addresses.length, addressLoading]);
 
   // Show loading state while checking authentication
   if (isLoading) {
@@ -137,119 +148,160 @@ export default function DashboardPage() {
         saved addresses
       </h3>
 
-      {/* Address Cards */}
-      <div className="space-y-4">
-        {addresses.map((address) => (
-          <Card
-            key={address.id}
-            className={`bg-white border-2 cursor-pointer transition-all duration-200 ${
-              selectedAddressId === address.id
-                ? "border-black bg-gray-50"
-                : "border-gray-300 hover:border-gray-400"
-            }`}
-            onClick={() => selectAddress(address.id)}
-          >
-            <CardContent className="p-6">
-              <div className="flex justify-between items-start">
-                <div className="flex-grow">
-                  <div className="flex items-center gap-2 mb-2">
-                    <h4 className="font-medium lowercase tracking-wider text-black text-lg">
-                      {address.name}
-                    </h4>
-                    {address.isDefault && (
-                      <span className="text-xs lowercase tracking-wider bg-black text-white px-2 py-1">
-                        default
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-sm text-gray-600 lowercase tracking-wider space-y-1">
-                    <p>{address.addressLine1}</p>
-                    {address.addressLine2 && <p>{address.addressLine2}</p>}
-                    <p>
-                      {address.city}, {address.state} {address.pincode}
-                    </p>
-                    <p>{address.phone}</p>
-                  </div>
-                </div>
-                {selectedAddressId === address.id && (
-                  <div className="w-6 h-6 border-2 border-black bg-black flex items-center justify-center">
-                    <div className="w-2 h-2 bg-white"></div>
-                  </div>
-                )}
-              </div>
+      {/* Show address loading state */}
+      {addressLoading && (
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto mb-4"></div>
+          <p className="text-sm lowercase tracking-wider text-gray-600">
+            loading addresses...
+          </p>
+        </div>
+      )}
 
-              {/* Action Buttons - only show for selected addresses */}
-              {selectedAddressId === address.id && (
-                <div className="flex justify-end gap-2 mt-4">
-                  {/* Set as Default Button - only for non-default addresses */}
-                  {!address.isDefault && (
+      {/* Show address error state */}
+      {addressError && (
+        <div className="text-center py-8">
+          <p className="text-sm lowercase tracking-wider text-red-600 mb-4">
+            {addressError}
+          </p>
+          <Button
+            onClick={fetchAddresses}
+            variant="outline"
+            className="lowercase tracking-wider border-black text-black hover:bg-black hover:text-white"
+          >
+            retry
+          </Button>
+        </div>
+      )}
+
+      {/* Address Cards */}
+      {!addressLoading && !addressError && (
+        <div className="space-y-4">
+          {addresses.map((address) => (
+            <Card
+              key={address.id}
+              className={`bg-white border-2 cursor-pointer transition-all duration-200 ${
+                selectedAddressId === address.id
+                  ? "border-black bg-gray-50"
+                  : "border-gray-300 hover:border-gray-400"
+              }`}
+              onClick={() => selectAddress(address.id)}
+            >
+              <CardContent className="p-6">
+                <div className="flex justify-between items-start">
+                  <div className="flex-grow">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h4 className="font-medium lowercase tracking-wider text-black text-lg">
+                        {address.name ||
+                          `${address.firstName} ${address.lastName}`.trim()}
+                      </h4>
+                      {address.isDefaultShopify && (
+                        <span className="text-xs lowercase tracking-wider bg-black text-white px-2 py-1">
+                          default
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-sm text-gray-600 lowercase tracking-wider space-y-1">
+                      <p>{address.address1}</p>
+                      {address.address2 && <p>{address.address2}</p>}
+                      <p>
+                        {address.city},{" "}
+                        {address.province || address.provinceCode} {address.zip}
+                      </p>
+                      {address.country && <p>{address.country}</p>}
+                      {address.phone && <p>{address.phone}</p>}
+                      {address.company && <p>{address.company}</p>}
+                    </div>
+                  </div>
+                  {selectedAddressId === address.id && (
+                    <div className="w-6 h-6 border-2 border-black bg-black flex items-center justify-center">
+                      <div className="w-2 h-2 bg-white"></div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Action Buttons - only show for selected addresses */}
+                {selectedAddressId === address.id && (
+                  <div className="flex justify-end gap-2 mt-4">
+                    {/* Set as Default Button - only for non-default addresses */}
+                    {!address.isDefaultShopify && (
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent card selection when clicking button
+                          setShopifyDefaultAddress(address.id);
+                          toast.success("default address updated!", {
+                            description: `address is now your default address.`,
+                            duration: 3000,
+                          });
+                        }}
+                        variant="outline"
+                        size="sm"
+                        className="lowercase tracking-wider border-black text-black hover:bg-black hover:text-white text-xs transition-all duration-300 no-underline-effect"
+                        disabled={addressLoading}
+                      >
+                        set as default
+                      </Button>
+                    )}
+
+                    {/* Remove Address Button */}
                     <Button
                       onClick={(e) => {
                         e.stopPropagation(); // Prevent card selection when clicking button
-                        setAsDefault(address.id);
-                        toast.success("default address updated!", {
-                          description: `${address.name} is now your default address.`,
-                          duration: 3000,
+                        if (addresses.length === 1) {
+                          toast.error("cannot remove address", {
+                            description: "you must have at least one address.",
+                            duration: 3000,
+                          });
+                          return;
+                        }
+                        const wasDefault = address.isDefaultShopify;
+                        const addressName =
+                          address.name ||
+                          `${address.firstName} ${address.lastName}`.trim();
+                        deleteShopifyAddress(address.id).then((deletedId) => {
+                          if (deletedId) {
+                            if (wasDefault && addresses.length > 1) {
+                              toast.success("address removed!", {
+                                description: `${addressName} has been deleted. another address is now your default.`,
+                                duration: 4000,
+                              });
+                            } else {
+                              toast.success("address removed!", {
+                                description: `${addressName} has been deleted.`,
+                                duration: 3000,
+                              });
+                            }
+                          } else {
+                            toast.error(
+                              "failed to remove address from shopify."
+                            );
+                          }
                         });
                       }}
                       variant="outline"
                       size="sm"
-                      className="lowercase tracking-wider border-black text-black hover:bg-black hover:text-white text-xs transition-all duration-300 no-underline-effect"
+                      className="lowercase tracking-wider border-red-600 text-red-600 hover:bg-red-600 hover:text-white text-xs transition-all duration-300 no-underline-effect"
+                      disabled={addressLoading}
                     >
-                      set as default
+                      remove
                     </Button>
-                  )}
-
-                  {/* Remove Address Button */}
-                  <Button
-                    onClick={(e) => {
-                      e.stopPropagation(); // Prevent card selection when clicking button
-                      if (addresses.length === 1) {
-                        toast.error("cannot remove address", {
-                          description: "you must have at least one address.",
-                          duration: 3000,
-                        });
-                        return;
-                      }
-                      const wasDefault = address.isDefault;
-                      const addressName = address.name;
-                      deleteAddress(address.id);
-
-                      if (wasDefault && addresses.length > 1) {
-                        toast.success("address removed!", {
-                          description: `${addressName} has been deleted. another address is now your default.`,
-                          duration: 4000,
-                        });
-                      } else {
-                        toast.success("address removed!", {
-                          description: `${addressName} has been deleted.`,
-                          duration: 3000,
-                        });
-                      }
-                    }}
-                    variant="outline"
-                    size="sm"
-                    className="lowercase tracking-wider border-red-600 text-red-600 hover:bg-red-600 hover:text-white text-xs transition-all duration-300 no-underline-effect"
-                  >
-                    remove
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
       {/* Add Address Button */}
-      <div className="pt-6">
-        <Button
-          onClick={() => setIsAddAddressOpen(true)}
-          variant="outline"
-          className="w-full lowercase tracking-widest border-black text-black hover:bg-black hover:text-white h-12 text-sm transition-all duration-300 no-underline-effect"
-        >
-          + add new address
-        </Button>
-      </div>
+      <Button
+        onClick={() => setIsAddAddressOpen(true)}
+        variant="outline"
+        className="w-full lowercase tracking-widest border-black text-black hover:bg-black hover:text-white h-12 text-sm transition-all duration-300 no-underline-effect"
+        disabled={addressLoading}
+      >
+        + add new address
+      </Button>
     </div>
   );
 

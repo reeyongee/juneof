@@ -17,18 +17,26 @@ import {
 } from "@/components/ui/form";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAddress } from "@/context/AddressContext";
+import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
+import { CustomerAddressInput } from "@/lib/shopify-customer-address-api";
 
 const addressSchema = z.object({
-  name: z.string().min(1, "Address name is required"),
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
   addressLine1: z.string().min(1, "Address line 1 is required"),
   addressLine2: z.string().optional(),
   city: z.string().min(1, "City is required"),
-  state: z.string().min(1, "State is required"),
-  pincode: z.string().regex(/^\d{6}$/, "Pincode must be 6 digits"),
+  zoneCode: z.string().min(1, "State/Province code is required (e.g., MH, CA)"),
+  territoryCode: z.string().min(2, "Country code is required (e.g., IN, US)"),
+  zip: z.string().regex(/^\d{5,6}$/, "Pincode/Zip must be 5 or 6 digits"),
   phone: z
     .string()
-    .regex(/^\+91\s\d{10}$/, "Phone must be in format +91 XXXXXXXXXX"),
+    .regex(
+      /^\+\d{1,3}\d{7,15}$/,
+      "Phone must be in E.164 format (e.g., +919876543210)"
+    ),
+  company: z.string().optional(),
   isDefault: z.boolean(),
 });
 
@@ -44,18 +52,22 @@ export default function AddAddressOverlay({
   onClose,
 }: AddAddressOverlayProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const { addAddress } = useAddress();
+  const { addShopifyAddress } = useAddress();
+  const { customerData } = useAuth();
 
   const form = useForm<AddressFormValues>({
     resolver: zodResolver(addressSchema),
     defaultValues: {
-      name: "",
+      firstName: customerData?.customer.firstName || "",
+      lastName: customerData?.customer.lastName || "",
       addressLine1: "",
       addressLine2: "",
       city: "",
-      state: "",
-      pincode: "",
-      phone: "+91 ",
+      zoneCode: "",
+      territoryCode: "IN", // Default to India
+      zip: "",
+      phone: "+91", // Start with India country code
+      company: "",
       isDefault: false,
     },
   });
@@ -64,19 +76,38 @@ export default function AddAddressOverlay({
     setIsLoading(true);
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const shopifyAddressInput: CustomerAddressInput = {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        address1: data.addressLine1,
+        address2: data.addressLine2 || null,
+        city: data.city,
+        zoneCode: data.zoneCode,
+        territoryCode: data.territoryCode,
+        zip: data.zip,
+        phone: data.phone,
+        company: data.company || null,
+      };
 
-      addAddress(data);
-
-      toast.success("address added!", {
-        description: "your new address has been saved successfully.",
-        duration: 3000,
-      });
-
-      form.reset();
-      onClose();
-    } catch {
+      const newAddress = await addShopifyAddress(
+        shopifyAddressInput,
+        data.isDefault
+      );
+      if (newAddress) {
+        toast.success("address added to shopify!", {
+          description: "your new address has been saved successfully.",
+          duration: 3000,
+        });
+        form.reset();
+        onClose();
+      } else {
+        toast.error("failed to add address to shopify.", {
+          description: "please try again.",
+          duration: 3000,
+        });
+      }
+    } catch (error) {
+      console.error("Error adding address:", error);
       toast.error("failed to add address", {
         description: "please try again.",
         duration: 3000,
@@ -120,25 +151,47 @@ export default function AddAddressOverlay({
         <div className="p-6">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-sm lowercase tracking-widest text-black">
-                      address name
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="e.g. home, office, etc."
-                        className="bg-white border-gray-300 text-black placeholder:text-gray-500 focus:border-black focus:ring-black/20 h-10 text-sm"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage className="text-red-600 text-sm" />
-                  </FormItem>
-                )}
-              />
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="firstName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm lowercase tracking-widest text-black">
+                        first name
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="first name"
+                          className="bg-white border-gray-300 text-black placeholder:text-gray-500 focus:border-black focus:ring-black/20 h-10 text-sm"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage className="text-red-600 text-sm" />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="lastName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm lowercase tracking-widest text-black">
+                        last name
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="last name"
+                          className="bg-white border-gray-300 text-black placeholder:text-gray-500 focus:border-black focus:ring-black/20 h-10 text-sm"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage className="text-red-600 text-sm" />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
               <FormField
                 control={form.control}
@@ -203,15 +256,57 @@ export default function AddAddressOverlay({
 
                 <FormField
                   control={form.control}
-                  name="state"
+                  name="zoneCode"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-sm lowercase tracking-widest text-black">
-                        state
+                        state code
                       </FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="state"
+                          placeholder="e.g., MH, CA"
+                          className="bg-white border-gray-300 text-black placeholder:text-gray-500 focus:border-black focus:ring-black/20 h-10 text-sm"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage className="text-red-600 text-sm" />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="territoryCode"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm lowercase tracking-widest text-black">
+                        country code
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="e.g., IN, US"
+                          className="bg-white border-gray-300 text-black placeholder:text-gray-500 focus:border-black focus:ring-black/20 h-10 text-sm"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage className="text-red-600 text-sm" />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="zip"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm lowercase tracking-widest text-black">
+                        pincode/zip
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="5-6 digits"
                           className="bg-white border-gray-300 text-black placeholder:text-gray-500 focus:border-black focus:ring-black/20 h-10 text-sm"
                           {...field}
                         />
@@ -224,15 +319,15 @@ export default function AddAddressOverlay({
 
               <FormField
                 control={form.control}
-                name="pincode"
+                name="phone"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-sm lowercase tracking-widest text-black">
-                      pincode
+                      phone number
                     </FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="6-digit pincode"
+                        placeholder="+919876543210"
                         className="bg-white border-gray-300 text-black placeholder:text-gray-500 focus:border-black focus:ring-black/20 h-10 text-sm"
                         {...field}
                       />
@@ -244,15 +339,15 @@ export default function AddAddressOverlay({
 
               <FormField
                 control={form.control}
-                name="phone"
+                name="company"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-sm lowercase tracking-widest text-black">
-                      phone number
+                      company (optional)
                     </FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="+91 XXXXXXXXXX"
+                        placeholder="company name"
                         className="bg-white border-gray-300 text-black placeholder:text-gray-500 focus:border-black focus:ring-black/20 h-10 text-sm"
                         {...field}
                       />

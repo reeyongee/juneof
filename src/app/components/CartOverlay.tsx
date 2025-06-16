@@ -267,14 +267,17 @@ export default function CartOverlay({ isOpen, onClose }: CartOverlayProps) {
                   <div className="space-y-3">
                     <div>
                       <p className="font-medium text-black lowercase tracking-wider truncate">
-                        {selectedAddress.name}
+                        {selectedAddress.name ||
+                          `${selectedAddress.firstName} ${selectedAddress.lastName}`.trim()}
                       </p>
                     </div>
                     <div className="text-gray-600 lowercase tracking-wider">
-                      <p className="truncate">{selectedAddress.addressLine1}</p>
+                      <p className="truncate">{selectedAddress.address1}</p>
                       <p className="truncate">
-                        {selectedAddress.city}, {selectedAddress.state}{" "}
-                        {selectedAddress.pincode}
+                        {selectedAddress.city},{" "}
+                        {selectedAddress.province ||
+                          selectedAddress.provinceCode}{" "}
+                        {selectedAddress.zip}
                       </p>
                     </div>
                     <div className="flex justify-center">

@@ -1,28 +1,40 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
-
-export interface Address {
-  id: string;
-  name: string;
-  addressLine1: string;
-  addressLine2?: string;
-  city: string;
-  state: string;
-  pincode: string;
-  phone: string;
-  isDefault: boolean;
-  lastUsed?: Date;
-}
+import React, { createContext, useContext, useState, useCallback } from "react";
+import {
+  GET_CUSTOMER_ADDRESSES_QUERY,
+  CREATE_CUSTOMER_ADDRESS_MUTATION,
+  UPDATE_CUSTOMER_ADDRESS_MUTATION,
+  DELETE_CUSTOMER_ADDRESS_MUTATION,
+  SET_DEFAULT_CUSTOMER_ADDRESS_MUTATION,
+  CustomerAddressesData,
+  CreateCustomerAddressData,
+  UpdateCustomerAddressData,
+  DeleteCustomerAddressData,
+  SetDefaultAddressData,
+  AppAddress,
+  CustomerAddressInput,
+} from "@/lib/shopify-customer-address-api";
+import { useAuth } from "./AuthContext";
 
 interface AddressContextType {
-  addresses: Address[];
+  addresses: AppAddress[];
   selectedAddressId: string | null;
-  addAddress: (address: Omit<Address, "id">) => void;
-  updateAddress: (id: string, address: Partial<Address>) => void;
-  deleteAddress: (id: string) => void;
+  isLoading: boolean;
+  error: string | null;
+  fetchAddresses: () => Promise<void>;
+  addShopifyAddress: (
+    addressInput: CustomerAddressInput,
+    isDefault?: boolean
+  ) => Promise<AppAddress | null>;
+  updateShopifyAddress: (
+    addressId: string,
+    addressInput: CustomerAddressInput,
+    isDefault?: boolean
+  ) => Promise<AppAddress | null>;
+  deleteShopifyAddress: (addressId: string) => Promise<string | null>;
+  setShopifyDefaultAddress: (addressId: string) => Promise<void>;
   selectAddress: (id: string) => void;
-  setAsDefault: (id: string) => void;
 }
 
 const AddressContext = createContext<AddressContextType | undefined>(undefined);
@@ -35,161 +47,278 @@ export const useAddress = () => {
   return context;
 };
 
-// Dummy addresses for development
-const dummyAddresses: Address[] = [
-  {
-    id: "addr-1",
-    name: "home",
-    addressLine1: "123 main street",
-    addressLine2: "apartment 4b",
-    city: "mumbai",
-    state: "maharashtra",
-    pincode: "400001",
-    phone: "+91 9876543210",
-    isDefault: false,
-    lastUsed: new Date("2024-01-10"),
-  },
-  {
-    id: "addr-2",
-    name: "office",
-    addressLine1: "456 business park",
-    city: "bangalore",
-    state: "karnataka",
-    pincode: "560001",
-    phone: "+91 9876543211",
-    isDefault: true,
-    lastUsed: new Date("2024-01-15"),
-  },
-  {
-    id: "addr-3",
-    name: "parents house",
-    addressLine1: "789 residential colony",
-    addressLine2: "near central park",
-    city: "delhi",
-    state: "delhi",
-    pincode: "110001",
-    phone: "+91 9876543212",
-    isDefault: false,
-    lastUsed: new Date("2024-01-05"),
-  },
-];
-
 export const AddressProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [addresses, setAddresses] = useState<Address[]>(dummyAddresses);
+  const [addresses, setAddresses] = useState<AppAddress[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(
     null
   );
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { apiClient, isAuthenticated } = useAuth();
 
-  // Load addresses from localStorage on mount
-  useEffect(() => {
-    const savedAddresses = localStorage.getItem("juneof_addresses");
-    if (savedAddresses) {
-      const parsedAddresses = JSON.parse(savedAddresses);
-      setAddresses(parsedAddresses);
+  const fetchAddresses = useCallback(async () => {
+    if (!apiClient || !isAuthenticated) {
+      setError("Not authenticated. Cannot fetch addresses.");
+      return;
     }
-  }, []);
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await apiClient.query<CustomerAddressesData>({
+        query: GET_CUSTOMER_ADDRESSES_QUERY,
+      });
 
-  // Save addresses to localStorage whenever they change
-  useEffect(() => {
-    localStorage.setItem("juneof_addresses", JSON.stringify(addresses));
-  }, [addresses]);
-
-  // Set initial selected address to the most recently used one
-  useEffect(() => {
-    if (addresses.length > 0 && !selectedAddressId) {
-      const mostRecentAddress = addresses
-        .filter((addr) => addr.lastUsed)
-        .sort(
-          (a, b) =>
-            new Date(b.lastUsed!).getTime() - new Date(a.lastUsed!).getTime()
-        )[0];
-
-      if (mostRecentAddress) {
-        setSelectedAddressId(mostRecentAddress.id);
-      } else {
-        // If no lastUsed dates, select the default one or first one
-        const defaultAddress =
-          addresses.find((addr) => addr.isDefault) || addresses[0];
-        setSelectedAddressId(defaultAddress.id);
+      if (response.errors || !response.data?.customer) {
+        throw new Error(
+          response.errors?.[0]?.message ||
+            "Failed to fetch addresses data from Shopify."
+        );
       }
-    }
-  }, [addresses, selectedAddressId]);
 
-  const addAddress = (addressData: Omit<Address, "id">) => {
-    const newAddress: Address = {
-      ...addressData,
-      id: `addr-${Date.now()}`,
-      lastUsed: new Date(),
-    };
-
-    setAddresses((prev) => {
-      // If the new address is set as default, clear default flag from all existing addresses
-      if (newAddress.isDefault) {
-        return [
-          ...prev.map((addr) => ({ ...addr, isDefault: false })),
-          newAddress,
-        ];
-      }
-      return [...prev, newAddress];
-    });
-    setSelectedAddressId(newAddress.id);
-  };
-
-  const updateAddress = (id: string, updates: Partial<Address>) => {
-    setAddresses((prev) =>
-      prev.map((addr) => (addr.id === id ? { ...addr, ...updates } : addr))
-    );
-  };
-
-  const deleteAddress = (id: string) => {
-    const addressToDelete = addresses.find((addr) => addr.id === id);
-    const remainingAddresses = addresses.filter((addr) => addr.id !== id);
-
-    // If we're deleting the default address and there are remaining addresses,
-    // set the first remaining address as default
-    if (addressToDelete?.isDefault && remainingAddresses.length > 0) {
-      const updatedAddresses = remainingAddresses.map((addr, index) => ({
-        ...addr,
-        isDefault: index === 0, // Set first remaining address as default
-      }));
-      setAddresses(updatedAddresses);
-    } else {
-      setAddresses(remainingAddresses);
-    }
-
-    // Update selected address if the deleted one was selected
-    if (selectedAddressId === id) {
-      setSelectedAddressId(
-        remainingAddresses.length > 0 ? remainingAddresses[0].id : null
+      const shopifyAddresses = response.data.customer.addresses.edges.map(
+        (edge) => edge.node
       );
+      const defaultShopifyAddressId = response.data.customer.defaultAddress?.id;
+
+      const appAddresses: AppAddress[] = shopifyAddresses.map((addr) => ({
+        ...addr,
+        isDefaultShopify: addr.id === defaultShopifyAddressId,
+      }));
+
+      setAddresses(appAddresses);
+
+      // Set selected address (default or first one)
+      if (appAddresses.length > 0) {
+        setSelectedAddressId(defaultShopifyAddressId || appAddresses[0].id);
+      } else {
+        setSelectedAddressId(null);
+      }
+    } catch (e: unknown) {
+      const errorMessage =
+        e instanceof Error ? e.message : "Unknown error occurred";
+      setError(errorMessage);
+      console.error("Failed to fetch Shopify addresses:", e);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [apiClient, isAuthenticated]);
+
+  const addShopifyAddress = async (
+    addressInput: CustomerAddressInput,
+    isDefault: boolean = false
+  ): Promise<AppAddress | null> => {
+    if (!apiClient || !isAuthenticated) {
+      setError("Not authenticated. Cannot add address.");
+      return null;
+    }
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await apiClient.query<CreateCustomerAddressData>({
+        query: CREATE_CUSTOMER_ADDRESS_MUTATION,
+        variables: { address: addressInput, defaultAddress: isDefault },
+      });
+
+      if (
+        response.errors ||
+        !response.data?.customerAddressCreate?.customerAddress
+      ) {
+        const errMessage =
+          response.data?.customerAddressCreate?.userErrors?.[0]?.message ||
+          response.errors?.[0]?.message ||
+          "Failed to create address.";
+        throw new Error(errMessage);
+      }
+
+      const newShopifyAddress =
+        response.data.customerAddressCreate.customerAddress;
+
+      // Refetch all addresses to get the updated list and default status
+      await fetchAddresses();
+
+      return {
+        ...newShopifyAddress,
+        isDefaultShopify: isDefault,
+      } as AppAddress;
+    } catch (e: unknown) {
+      const errorMessage =
+        e instanceof Error ? e.message : "Unknown error occurred";
+      setError(errorMessage);
+      console.error("Failed to add Shopify address:", e);
+      return null;
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  const updateShopifyAddress = async (
+    addressId: string,
+    addressInput: CustomerAddressInput,
+    isDefault?: boolean
+  ): Promise<AppAddress | null> => {
+    if (!apiClient || !isAuthenticated) {
+      setError("Not authenticated. Cannot update address.");
+      return null;
+    }
+    setIsLoading(true);
+    setError(null);
+    try {
+      const variables: Record<string, unknown> = {
+        addressId,
+        address: addressInput,
+      };
+      if (typeof isDefault === "boolean") {
+        variables.defaultAddress = isDefault;
+      }
+
+      const response = await apiClient.query<UpdateCustomerAddressData>({
+        query: UPDATE_CUSTOMER_ADDRESS_MUTATION,
+        variables,
+      });
+
+      if (
+        response.errors ||
+        !response.data?.customerAddressUpdate?.customerAddress
+      ) {
+        const errMessage =
+          response.data?.customerAddressUpdate?.userErrors?.[0]?.message ||
+          response.errors?.[0]?.message ||
+          "Failed to update address.";
+        throw new Error(errMessage);
+      }
+
+      const updatedShopifyAddress =
+        response.data.customerAddressUpdate.customerAddress;
+
+      // Refetch all addresses to ensure default status is correct across all addresses
+      await fetchAddresses();
+
+      return {
+        ...updatedShopifyAddress,
+        isDefaultShopify:
+          isDefault ??
+          addresses.find((a) => a.id === addressId)?.isDefaultShopify ??
+          false,
+      } as AppAddress;
+    } catch (e: unknown) {
+      const errorMessage =
+        e instanceof Error ? e.message : "Unknown error occurred";
+      setError(errorMessage);
+      console.error("Failed to update Shopify address:", e);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const setShopifyDefaultAddress = async (addressId: string): Promise<void> => {
+    if (!apiClient || !isAuthenticated) {
+      setError("Not authenticated. Cannot set default address.");
+      return;
+    }
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await apiClient.query<SetDefaultAddressData>({
+        query: SET_DEFAULT_CUSTOMER_ADDRESS_MUTATION,
+        variables: { addressId },
+      });
+
+      if (
+        response.errors ||
+        !response.data?.customerDefaultAddressUpdate?.customer
+      ) {
+        const errMessage =
+          response.data?.customerDefaultAddressUpdate?.userErrors?.[0]
+            ?.message ||
+          response.errors?.[0]?.message ||
+          "Failed to set default address.";
+        throw new Error(errMessage);
+      }
+
+      // Refetch all addresses to update all default statuses
+      await fetchAddresses();
+    } catch (e: unknown) {
+      const errorMessage =
+        e instanceof Error ? e.message : "Unknown error occurred";
+      setError(errorMessage);
+      console.error("Failed to set Shopify default address:", e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const deleteShopifyAddress = async (
+    addressId: string
+  ): Promise<string | null> => {
+    if (!apiClient || !isAuthenticated) {
+      setError("Not authenticated. Cannot delete address.");
+      return null;
+    }
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await apiClient.query<DeleteCustomerAddressData>({
+        query: DELETE_CUSTOMER_ADDRESS_MUTATION,
+        variables: { id: addressId },
+      });
+
+      if (
+        response.errors ||
+        !response.data?.customerAddressDelete?.deletedCustomerAddressId
+      ) {
+        const errMessage =
+          response.data?.customerAddressDelete?.userErrors?.[0]?.message ||
+          response.errors?.[0]?.message ||
+          "Failed to delete address.";
+        throw new Error(errMessage);
+      }
+
+      const deletedId =
+        response.data.customerAddressDelete.deletedCustomerAddressId;
+
+      // Refetch all addresses to update list
+      await fetchAddresses();
+
+      // If the deleted address was selected, clear selection or pick a new default
+      if (selectedAddressId === deletedId) {
+        const currentAddresses = addresses.filter((a) => a.id !== deletedId);
+        const newDefault =
+          currentAddresses.find((a) => a.isDefaultShopify) ||
+          currentAddresses[0];
+        setSelectedAddressId(newDefault ? newDefault.id : null);
+      }
+
+      return deletedId;
+    } catch (e: unknown) {
+      const errorMessage =
+        e instanceof Error ? e.message : "Unknown error occurred";
+      setError(errorMessage);
+      console.error("Failed to delete Shopify address:", e);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // UI selection logic remains the same
   const selectAddress = (id: string) => {
     setSelectedAddressId(id);
-    // Update lastUsed when selecting an address
-    updateAddress(id, { lastUsed: new Date() });
-  };
-
-  const setAsDefault = (id: string) => {
-    setAddresses((prev) =>
-      prev.map((addr) => ({
-        ...addr,
-        isDefault: addr.id === id,
-      }))
-    );
   };
 
   const value = {
     addresses,
     selectedAddressId,
-    addAddress,
-    updateAddress,
-    deleteAddress,
+    isLoading,
+    error,
+    fetchAddresses,
+    addShopifyAddress,
+    updateShopifyAddress,
+    deleteShopifyAddress,
+    setShopifyDefaultAddress,
     selectAddress,
-    setAsDefault,
   };
 
   return (

@@ -66,7 +66,9 @@ export default function AddressSelectionOverlay({
                     ? "border-2 border-black bg-gray-50"
                     : "border border-gray-300 hover:border-gray-400"
                 } ${
-                  address.isDefault ? "ring-1 ring-black ring-opacity-20" : ""
+                  address.isDefaultShopify
+                    ? "ring-1 ring-black ring-opacity-20"
+                    : ""
                 }`}
                 onClick={() => handleAddressSelect(address.id)}
               >
@@ -75,22 +77,28 @@ export default function AddressSelectionOverlay({
                     <div className="flex-grow min-w-0">
                       <div className="flex items-center gap-2 mb-2">
                         <h4 className="font-medium lowercase tracking-wider text-black text-sm truncate">
-                          {address.name}
+                          {address.name ||
+                            `${address.firstName} ${address.lastName}`.trim()}
                         </h4>
-                        {address.isDefault && (
+                        {address.isDefaultShopify && (
                           <span className="text-xs lowercase tracking-wider bg-black text-white px-2 py-0.5 flex-shrink-0">
                             default
                           </span>
                         )}
                       </div>
                       <div className="text-xs text-gray-600 lowercase tracking-wider space-y-0.5">
-                        <p className="truncate">{address.addressLine1}</p>
-                        {address.addressLine2 && (
-                          <p className="truncate">{address.addressLine2}</p>
+                        <p className="truncate">{address.address1}</p>
+                        {address.address2 && (
+                          <p className="truncate">{address.address2}</p>
                         )}
                         <p className="truncate">
-                          {address.city}, {address.state} {address.pincode}
+                          {address.city},{" "}
+                          {address.province || address.provinceCode}{" "}
+                          {address.zip}
                         </p>
+                        {address.country && (
+                          <p className="truncate">{address.country}</p>
+                        )}
                       </div>
                     </div>
 

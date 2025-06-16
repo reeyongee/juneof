@@ -47,6 +47,7 @@ interface AuthContextType {
   isLoading: boolean; // True during initial auth check, login, or data fetch
   customerData: CustomerProfileData | null;
   tokens: TokenStorage | null;
+  apiClient: CustomerAccountApiClient | null;
   error: string | null;
   login: () => Promise<void>;
   logout: () => void;
@@ -314,6 +315,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isLoading,
     customerData,
     tokens,
+    apiClient,
     error,
     login,
     logout,
