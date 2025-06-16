@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { CustomerAccountApiClient } from "@/lib/shopify-auth";
 import { CustomerProfile, validatePhoneNumber } from "@/lib/profile-completion";
-import { updateCustomerProfile } from "@/lib/shopify-profile-api";
+import { updateCustomerPhoneNumber } from "@/lib/shopify-profile-api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,59 +12,43 @@ import { Loader2, Phone } from "lucide-react";
 
 interface PhoneCompletionStepProps {
   apiClient: CustomerAccountApiClient;
-  customerProfile: CustomerProfile;
-  onComplete: () => void;
+  onComplete: (updatedProfile: Partial<CustomerProfile>) => void;
+  onSkip: () => void;
 }
 
 export function PhoneCompletionStep({
   apiClient,
-  customerProfile,
   onComplete,
+  onSkip,
 }: PhoneCompletionStepProps) {
-  // Extract existing phone number if it exists
-  const existingPhone = customerProfile.phoneNumber?.phoneNumber || "";
-  const [countryCode] = useState("+91"); // India country code, unselectable
-  const [phoneNumber, setPhoneNumber] = useState(() => {
-    // If existing phone starts with +91, remove it for display
-    if (existingPhone.startsWith("+91")) {
-      return existingPhone.substring(3);
-    }
-    // If it starts with any other country code, keep as is for now
-    if (existingPhone.startsWith("+")) {
-      return existingPhone;
-    }
-    return existingPhone;
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const validateForm = () => {
-    // Combine country code with phone number for validation
-    const fullPhoneNumber = countryCode + phoneNumber.replace(/^\+/, "");
-    const validation = validatePhoneNumber(fullPhoneNumber);
-    setError(validation.isValid ? null : validation.message || null);
-    return validation.isValid;
-  };
+  // Fixed country code for India (+91) - unselectable as requested
+  const countryCode = "+91";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
 
-    if (!validateForm()) {
+    // Format phone number in E.164 format
+    const e164PhoneNumber = `${countryCode}${phoneNumber.replace(/\D/g, "")}`;
+
+    // Validate phone number
+    const validation = validatePhoneNumber(e164PhoneNumber);
+    if (!validation.isValid) {
+      setError(validation.message || "Invalid phone number");
       return;
     }
 
-    setIsSubmitting(true);
-    setSubmitError(null);
+    setIsLoading(true);
 
     try {
-      // Format phone number in E.164 format
-      const cleanPhoneNumber = phoneNumber.replace(/[\s\-\(\)]/g, "");
-      const e164PhoneNumber = countryCode + cleanPhoneNumber.replace(/^\+/, "");
-
-      const response = await updateCustomerProfile(apiClient, {
-        phone: e164PhoneNumber,
-      });
+      const response = await updateCustomerPhoneNumber(
+        apiClient,
+        e164PhoneNumber
+      );
 
       if (!response.success) {
         throw new Error(
@@ -72,77 +56,84 @@ export function PhoneCompletionStep({
         );
       }
 
-      onComplete();
+      // Update the customer profile with the new phone number
+      onComplete({
+        phoneNumber: {
+          phoneNumber: e164PhoneNumber,
+        },
+      });
     } catch (err) {
-      console.error("Error updating customer phone:", err);
-      setSubmitError(
+      setError(
         err instanceof Error ? err.message : "Failed to update phone number"
       );
     } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleSkipStep = () => {
-    onComplete();
-  };
-
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    // Remove any non-digit characters except spaces and dashes for display
-    const cleanValue = value.replace(/[^\d\s\-]/g, "");
-    setPhoneNumber(cleanValue);
-
-    // Clear error when user starts typing
-    if (error) {
-      setError(null);
+      setIsLoading(false);
     }
   };
 
   return (
-    <Card>
-      <CardContent className="pt-6">
-        <div className="flex items-center space-x-2 mb-4">
-          <Phone className="h-5 w-5 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">
-            We&apos;ll use this for order updates and customer support.
-          </p>
+    <Card className="w-full max-w-md mx-auto">
+      <CardContent className="p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <Phone className="h-5 w-5 text-blue-600" />
+          <h2 className="text-lg font-semibold">Add Your Phone Number</h2>
         </div>
+
+        <p className="text-sm text-gray-600 mb-6">
+          We&apos;ll use this to send you order updates and important
+          notifications.
+        </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="phoneNumber">Phone Number</Label>
+            <Label htmlFor="phone">Phone Number</Label>
             <div className="flex">
-              <div className="flex items-center px-3 border border-r-0 rounded-l-md bg-muted text-muted-foreground text-sm font-medium">
-                {countryCode}
+              {/* Fixed country code selector - unselectable */}
+              <div className="flex items-center px-3 py-2 border border-r-0 border-gray-300 bg-gray-50 rounded-l-md text-sm font-medium text-gray-700">
+                🇮🇳 +91
               </div>
               <Input
-                id="phoneNumber"
+                id="phone"
                 type="tel"
                 value={phoneNumber}
-                onChange={handlePhoneChange}
+                onChange={(e) => {
+                  // Only allow digits and limit to 10 digits for Indian numbers
+                  const value = e.target.value.replace(/\D/g, "").slice(0, 10);
+                  setPhoneNumber(value);
+                }}
                 placeholder="9876543210"
-                className={`rounded-l-none ${
-                  error ? "border-destructive" : ""
-                }`}
-                disabled={isSubmitting}
+                className="rounded-l-none"
+                required
+                disabled={isLoading}
               />
             </div>
-            {error && <p className="text-sm text-destructive">{error}</p>}
-            <p className="text-xs text-muted-foreground">
-              Enter your 10-digit mobile number (India +91)
+            <p className="text-xs text-gray-500">
+              Enter your 10-digit mobile number (without country code)
             </p>
           </div>
 
-          {submitError && (
-            <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20">
-              <p className="text-sm text-destructive">{submitError}</p>
+          {error && (
+            <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
+              {error}
             </div>
           )}
 
-          <div className="flex gap-3 pt-4">
-            <Button type="submit" disabled={isSubmitting} className="flex-1">
-              {isSubmitting ? (
+          <div className="flex gap-3 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onSkip}
+              disabled={isLoading}
+              className="flex-1"
+            >
+              Skip for now
+            </Button>
+            <Button
+              type="submit"
+              disabled={isLoading || phoneNumber.length !== 10}
+              className="flex-1"
+            >
+              {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Saving...
@@ -150,14 +141,6 @@ export function PhoneCompletionStep({
               ) : (
                 "Continue"
               )}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleSkipStep}
-              disabled={isSubmitting}
-            >
-              Skip for now
             </Button>
           </div>
         </form>

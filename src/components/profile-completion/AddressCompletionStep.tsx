@@ -3,10 +3,7 @@
 import React, { useState } from "react";
 import { CustomerAccountApiClient } from "@/lib/shopify-auth";
 import { CustomerProfile, validateAddressForm } from "@/lib/profile-completion";
-import {
-  createCustomerAddress,
-  handleGraphQLErrors,
-} from "@/lib/shopify-profile-api";
+import { createCustomerAddress } from "@/lib/shopify-profile-api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -77,15 +74,15 @@ export function AddressCompletionStep({
         address1: formData.address1.trim(),
         address2: formData.address2.trim() || undefined,
         city: formData.city.trim(),
-        province: formData.province.trim(),
+        territoryCode: formData.country,
+        zoneCode: formData.province.trim(),
         zip: formData.zip.trim(),
-        country: formData.country,
       });
 
-      const apiErrors = handleGraphQLErrors(response);
-
-      if (apiErrors.length > 0) {
-        throw new Error(apiErrors.join(", "));
+      if (!response.success) {
+        throw new Error(
+          response.errors?.join(", ") || "Failed to create address"
+        );
       }
 
       onComplete();

@@ -194,8 +194,8 @@ export function ProfileCompletionFlow({
         return (
           <PhoneCompletionStep
             apiClient={apiClient}
-            customerProfile={customerProfile}
             onComplete={handleStepComplete}
+            onSkip={handleStepComplete}
           />
         );
       case "address":

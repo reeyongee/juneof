@@ -22,40 +22,68 @@ export interface UpdateAddressInput extends CreateAddressInput {
   addressId: string;
 }
 
-export interface CustomerUpdateResponse {
+// GraphQL response types
+interface CustomerUpdateResponse {
+  customerUpdate: {
+    customer: {
+      id: string;
+      firstName?: string;
+      lastName?: string;
+    };
+    userErrors: Array<{
+      field: string;
+      message: string;
+    }>;
+  };
+}
+
+interface CustomerResponse {
   customer: {
     id: string;
     firstName?: string;
     lastName?: string;
-    phoneNumber?: {
-      phoneNumber: string;
+    defaultAddress?: {
+      id: string;
+      address1?: string;
+      address2?: string;
+      city?: string;
+      company?: string;
+      firstName?: string;
+      lastName?: string;
+      territoryCode?: string;
+      zip?: string;
+      zoneCode?: string;
     };
   };
 }
 
-export interface AddressCreateResponse {
-  customerAddress: {
-    id: string;
-    address1?: string;
-    address2?: string;
-    city?: string;
-    province?: string;
-    zip?: string;
-    country?: string;
-    phoneNumber?: string;
+interface CustomerAddressUpdateResponse {
+  customerAddressUpdate: {
+    customerAddress: {
+      id: string;
+      phoneNumber?: string;
+    };
+    userErrors: Array<{
+      field: string;
+      message: string;
+    }>;
   };
 }
 
-export interface AddressUpdateResponse {
-  customerAddress: {
-    id: string;
-    address1?: string;
-    address2?: string;
-    city?: string;
-    province?: string;
-    zip?: string;
-    country?: string;
-    phoneNumber?: string;
+interface CustomerAddressCreateResponse {
+  customerAddressCreate: {
+    customerAddress: {
+      id: string;
+      phoneNumber?: string;
+      address1?: string;
+      city?: string;
+      territoryCode?: string;
+      zip?: string;
+    };
+    userErrors: Array<{
+      field: string;
+      message: string;
+    }>;
   };
 }
 
@@ -67,7 +95,6 @@ export async function updateCustomerProfile(
   updates: {
     firstName?: string;
     lastName?: string;
-    phone?: string;
   }
 ): Promise<{ success: boolean; errors?: string[] }> {
   try {
@@ -78,9 +105,6 @@ export async function updateCustomerProfile(
           id
           firstName
           lastName
-          phoneNumber {
-            phoneNumber
-          }
         }
         userErrors {
           field
@@ -92,22 +116,28 @@ export async function updateCustomerProfile(
 
     const variables = {
       input: {
-        ...(updates.firstName && { firstName: updates.firstName }),
-        ...(updates.lastName && { lastName: updates.lastName }),
-        ...(updates.phone && { phone: updates.phone }),
+        ...(updates.firstName !== undefined && {
+          firstName: updates.firstName,
+        }),
+        ...(updates.lastName !== undefined && { lastName: updates.lastName }),
       },
     };
 
-    const response = await apiClient.query({
+    const response = await apiClient.query<CustomerUpdateResponse>({
       query: mutation,
       variables,
       operationName: "customerUpdate",
     });
 
-    if (response.errors) {
+    if (
+      response.data?.customerUpdate?.userErrors &&
+      response.data.customerUpdate.userErrors.length > 0
+    ) {
       return {
         success: false,
-        errors: response.errors.map((error) => error.message),
+        errors: response.data.customerUpdate.userErrors.map(
+          (error) => error.message
+        ),
       };
     }
 
@@ -123,23 +153,192 @@ export async function updateCustomerProfile(
 }
 
 /**
+ * Updates customer phone number by creating or updating their default address
+ * In the Customer Account API, phone numbers are stored with addresses
+ */
+export async function updateCustomerPhoneNumber(
+  apiClient: CustomerAccountApiClient,
+  phoneNumber: string
+): Promise<{ success: boolean; errors?: string[] }> {
+  try {
+    // First, get the customer's current default address
+    const customerQuery = `
+      query {
+        customer {
+          id
+          firstName
+          lastName
+          defaultAddress {
+            id
+            address1
+            address2
+            city
+            company
+            firstName
+            lastName
+            territoryCode
+            zip
+            zoneCode
+          }
+        }
+      }
+    `;
+
+    const customerResponse = await apiClient.query<CustomerResponse>({
+      query: customerQuery,
+      operationName: "getCustomer",
+    });
+
+    const customer = customerResponse.data?.customer;
+
+    if (!customer) {
+      return {
+        success: false,
+        errors: ["Unable to fetch customer information"],
+      };
+    }
+
+    const defaultAddress = customer.defaultAddress;
+
+    if (defaultAddress) {
+      // Update existing default address with new phone number
+      const updateMutation = `
+        mutation customerAddressUpdate($addressId: ID!, $address: CustomerAddressInput!) {
+          customerAddressUpdate(addressId: $addressId, address: $address) {
+            customerAddress {
+              id
+              phoneNumber
+            }
+            userErrors {
+              field
+              message
+            }
+          }
+        }
+      `;
+
+      const updateVariables = {
+        addressId: defaultAddress.id,
+        address: {
+          address1: defaultAddress.address1,
+          address2: defaultAddress.address2,
+          city: defaultAddress.city,
+          company: defaultAddress.company,
+          firstName: defaultAddress.firstName,
+          lastName: defaultAddress.lastName,
+          phoneNumber: phoneNumber,
+          territoryCode: defaultAddress.territoryCode,
+          zip: defaultAddress.zip,
+          zoneCode: defaultAddress.zoneCode,
+        },
+      };
+
+      const updateResponse =
+        await apiClient.query<CustomerAddressUpdateResponse>({
+          query: updateMutation,
+          variables: updateVariables,
+          operationName: "customerAddressUpdate",
+        });
+
+      if (
+        updateResponse.data?.customerAddressUpdate?.userErrors &&
+        updateResponse.data.customerAddressUpdate.userErrors.length > 0
+      ) {
+        return {
+          success: false,
+          errors: updateResponse.data.customerAddressUpdate.userErrors.map(
+            (error) => error.message
+          ),
+        };
+      }
+
+      return { success: true };
+    } else {
+      // Create a new default address with the phone number
+      const createMutation = `
+        mutation customerAddressCreate($address: CustomerAddressInput!, $defaultAddress: Boolean!) {
+          customerAddressCreate(address: $address, defaultAddress: $defaultAddress) {
+            customerAddress {
+              id
+              phoneNumber
+            }
+            userErrors {
+              field
+              message
+            }
+          }
+        }
+      `;
+
+      const createVariables = {
+        address: {
+          phoneNumber: phoneNumber,
+          // We need at least some address information, so we'll use minimal data
+          firstName: customer.firstName || "",
+          lastName: customer.lastName || "",
+        },
+        defaultAddress: true,
+      };
+
+      const createResponse =
+        await apiClient.query<CustomerAddressCreateResponse>({
+          query: createMutation,
+          variables: createVariables,
+          operationName: "customerAddressCreate",
+        });
+
+      if (
+        createResponse.data?.customerAddressCreate?.userErrors &&
+        createResponse.data.customerAddressCreate.userErrors.length > 0
+      ) {
+        return {
+          success: false,
+          errors: createResponse.data.customerAddressCreate.userErrors.map(
+            (error) => error.message
+          ),
+        };
+      }
+
+      return { success: true };
+    }
+  } catch (error) {
+    return {
+      success: false,
+      errors: [
+        error instanceof Error ? error.message : "Unknown error occurred",
+      ],
+    };
+  }
+}
+
+/**
  * Creates a new address for the customer
  */
 export async function createCustomerAddress(
   apiClient: CustomerAccountApiClient,
-  input: CreateAddressInput
-): Promise<GraphQLResponse<{ customerAddressCreate: AddressCreateResponse }>> {
-  const mutation = `
-    mutation customerAddressCreate($address: CustomerAddressInput!) {
-      customerAddressCreate(address: $address) {
+  address: {
+    firstName?: string;
+    lastName?: string;
+    company?: string;
+    address1?: string;
+    address2?: string;
+    city?: string;
+    territoryCode?: string;
+    zip?: string;
+    zoneCode?: string;
+    phoneNumber?: string;
+  }
+): Promise<{ success: boolean; errors?: string[] }> {
+  try {
+    const mutation = `
+    mutation customerAddressCreate($address: CustomerAddressInput!, $defaultAddress: Boolean!) {
+      customerAddressCreate(address: $address, defaultAddress: $defaultAddress) {
         customerAddress {
           id
           address1
-          address2
           city
-          province
+          territoryCode
           zip
-          country
           phoneNumber
         }
         userErrors {
@@ -150,72 +349,41 @@ export async function createCustomerAddress(
     }
   `;
 
-  const variables = {
-    address: {
-      address1: input.address1,
-      ...(input.address2 && { address2: input.address2 }),
-      city: input.city,
-      province: input.province,
-      zip: input.zip,
-      country: input.country,
-      ...(input.phoneNumber && { phoneNumber: input.phoneNumber }),
-    },
-  };
+    const variables = {
+      address,
+      defaultAddress: false, // Don't make it default unless explicitly requested
+    };
 
-  return apiClient.query({
-    query: mutation,
-    variables,
-    operationName: "customerAddressCreate",
-  });
-}
+    const response = await apiClient.query<CustomerAddressCreateResponse>({
+      query: mutation,
+      variables,
+      operationName: "customerAddressCreate",
+    });
 
-/**
- * Updates an existing customer address
- */
-export async function updateCustomerAddress(
-  apiClient: CustomerAccountApiClient,
-  input: UpdateAddressInput
-): Promise<GraphQLResponse<{ customerAddressUpdate: AddressUpdateResponse }>> {
-  const mutation = `
-    mutation customerAddressUpdate($address: CustomerAddressInput!, $addressId: ID!) {
-      customerAddressUpdate(address: $address, addressId: $addressId) {
-        customerAddress {
-          id
-          address1
-          address2
-          city
-          province
-          zip
-          country
-          phoneNumber
-        }
-        userErrors {
-          field
-          message
-        }
-      }
+    if (
+      response.data?.customerAddressCreate?.userErrors &&
+      response.data.customerAddressCreate.userErrors.length > 0
+    ) {
+      return {
+        success: false,
+        errors: response.data.customerAddressCreate.userErrors.map(
+          (error) => error.message
+        ),
+      };
     }
-  `;
 
-  const variables = {
-    addressId: input.addressId,
-    address: {
-      address1: input.address1,
-      ...(input.address2 && { address2: input.address2 }),
-      city: input.city,
-      province: input.province,
-      zip: input.zip,
-      country: input.country,
-      ...(input.phoneNumber && { phoneNumber: input.phoneNumber }),
-    },
-  };
-
-  return apiClient.query({
-    query: mutation,
-    variables,
-    operationName: "customerAddressUpdate",
-  });
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      errors: [
+        error instanceof Error ? error.message : "Unknown error occurred",
+      ],
+    };
+  }
 }
+
+// Keep the existing functions for backward compatibility
 
 /**
  * Fetches customer profile with addresses for completion checking
