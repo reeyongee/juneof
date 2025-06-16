@@ -60,13 +60,18 @@ export interface AddressUpdateResponse {
 }
 
 /**
- * Updates customer profile information (name and phone)
+ * Updates customer profile information using Shopify Customer Account API
  */
 export async function updateCustomerProfile(
   apiClient: CustomerAccountApiClient,
-  input: UpdateCustomerProfileInput
-): Promise<GraphQLResponse<{ customerUpdate: CustomerUpdateResponse }>> {
-  const mutation = `
+  updates: {
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+  }
+): Promise<{ success: boolean; errors?: string[] }> {
+  try {
+    const mutation = `
     mutation customerUpdate($input: CustomerUpdateInput!) {
       customerUpdate(input: $input) {
         customer {
@@ -85,19 +90,36 @@ export async function updateCustomerProfile(
     }
   `;
 
-  const variables = {
-    input: {
-      ...(input.firstName && { firstName: input.firstName }),
-      ...(input.lastName && { lastName: input.lastName }),
-      ...(input.phoneNumber && { phoneNumber: input.phoneNumber }),
-    },
-  };
+    const variables = {
+      input: {
+        ...(updates.firstName && { firstName: updates.firstName }),
+        ...(updates.lastName && { lastName: updates.lastName }),
+        ...(updates.phone && { phone: updates.phone }),
+      },
+    };
 
-  return apiClient.query({
-    query: mutation,
-    variables,
-    operationName: "customerUpdate",
-  });
+    const response = await apiClient.query({
+      query: mutation,
+      variables,
+      operationName: "customerUpdate",
+    });
+
+    if (response.errors) {
+      return {
+        success: false,
+        errors: response.errors.map((error) => error.message),
+      };
+    }
+
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      errors: [
+        error instanceof Error ? error.message : "Unknown error occurred",
+      ],
+    };
+  }
 }
 
 /**

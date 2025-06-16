@@ -3,10 +3,7 @@
 import React, { useState } from "react";
 import { CustomerAccountApiClient } from "@/lib/shopify-auth";
 import { CustomerProfile, validatePhoneNumber } from "@/lib/profile-completion";
-import {
-  updateCustomerProfile,
-  handleGraphQLErrors,
-} from "@/lib/shopify-profile-api";
+import { updateCustomerProfile } from "@/lib/shopify-profile-api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -66,13 +63,13 @@ export function PhoneCompletionStep({
       const e164PhoneNumber = countryCode + cleanPhoneNumber.replace(/^\+/, "");
 
       const response = await updateCustomerProfile(apiClient, {
-        phoneNumber: e164PhoneNumber,
+        phone: e164PhoneNumber,
       });
 
-      const apiErrors = handleGraphQLErrors(response);
-
-      if (apiErrors.length > 0) {
-        throw new Error(apiErrors.join(", "));
+      if (!response.success) {
+        throw new Error(
+          response.errors?.join(", ") || "Failed to update phone number"
+        );
       }
 
       onComplete();
