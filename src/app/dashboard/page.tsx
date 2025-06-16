@@ -27,10 +27,18 @@ export default function DashboardPage() {
     isAuthenticated,
     customerData,
     login,
-    isLoading,
-    error,
+    isLoading: authIsLoading, // Rename to avoid conflict with local isLoading if any
+    error: authError,
     fetchCustomerData,
   } = useAuth();
+
+  // Log the initial state from AuthContext IMMEDIATELY
+  console.log("DashboardPage RENDER - AuthContext state:", {
+    isAuthenticated,
+    authIsLoading,
+    hasCustomerData: !!customerData,
+    authError,
+  });
 
   // Get user name from customer data
   const userName =
@@ -42,11 +50,17 @@ export default function DashboardPage() {
   useEffect(() => {
     // If user lands here and is authenticated but data isn't loaded yet
     // (e.g., after redirect from callback-handler), trigger a fetch.
-    if (isAuthenticated && !customerData && !isLoading && !error) {
+    if (isAuthenticated && !customerData && !authIsLoading && !authError) {
       console.log("Dashboard: Authenticated, no customer data. Fetching...");
       fetchCustomerData();
     }
-  }, [isAuthenticated, customerData, isLoading, error, fetchCustomerData]);
+  }, [
+    isAuthenticated,
+    customerData,
+    authIsLoading,
+    authError,
+    fetchCustomerData,
+  ]);
 
   // Effect to fetch addresses when authenticated
   useEffect(() => {
@@ -57,7 +71,10 @@ export default function DashboardPage() {
   }, [isAuthenticated, fetchAddresses, addresses.length, addressLoading]);
 
   // Show loading state while checking authentication
-  if (isLoading) {
+  if (authIsLoading) {
+    console.log(
+      "DashboardPage: Rendering loading state (authIsLoading is true)"
+    );
     return (
       <div className="min-h-screen bg-[#F8F4EC] flex items-center justify-center">
         <div className="text-center">
@@ -71,7 +88,8 @@ export default function DashboardPage() {
   }
 
   // Show error state if there's an authentication error
-  if (error) {
+  if (authError) {
+    console.log("DashboardPage: Rendering error state", authError);
     return (
       <div className="min-h-screen bg-[#F8F4EC] flex items-center justify-center">
         <div className="text-center max-w-md">
@@ -79,7 +97,7 @@ export default function DashboardPage() {
             error loading dashboard
           </h2>
           <p className="text-lg lowercase tracking-wider text-gray-600 mb-6">
-            {error}
+            {authError}
           </p>
           <div className="space-y-3">
             <button
@@ -102,6 +120,9 @@ export default function DashboardPage() {
 
   // Show login prompt if not authenticated
   if (!isAuthenticated) {
+    console.log(
+      "DashboardPage: Rendering 'Please log in' (isAuthenticated is false, authIsLoading is false)"
+    );
     return (
       <div className="min-h-screen bg-[#F8F4EC] flex items-center justify-center">
         <div className="text-center">
@@ -121,6 +142,9 @@ export default function DashboardPage() {
       </div>
     );
   }
+
+  // If authenticated and not loading and no error:
+  console.log("DashboardPage: Rendering authenticated content");
 
   const renderOrders = () => {
     // Shopify auth configuration
