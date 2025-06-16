@@ -5,6 +5,9 @@ import { useAddress } from "@/context/AddressContext";
 import { useAuth } from "@/context/AuthContext";
 import AddAddressOverlay from "@/app/components/AddAddressOverlay";
 import CustomerOrders from "@/components/CustomerOrders";
+import { ProfileCompletionFlow } from "@/components/ProfileCompletionFlow";
+import { ProfileCompletionBanner } from "@/components/ProfileCompletionBanner";
+import { useProfileCompletion } from "@/hooks/useProfileCompletion";
 import { toast } from "sonner";
 import { Package, MapPin, User } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,6 +16,7 @@ import { Button } from "@/components/ui/button";
 export default function DashboardPage() {
   const [activeSection, setActiveSection] = useState("orders");
   const [isAddAddressOpen, setIsAddAddressOpen] = useState(false);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
   const {
     addresses,
     selectedAddressId,
@@ -31,6 +35,14 @@ export default function DashboardPage() {
     error: authError,
     fetchCustomerData,
   } = useAuth();
+  const {
+    profileStatus,
+    shouldShowCompletion,
+    showCompletionFlow,
+    hideCompletionFlow,
+    isCompletionFlowOpen,
+    refreshProfileStatus,
+  } = useProfileCompletion();
 
   // Log the initial state from AuthContext IMMEDIATELY
   console.log("DashboardPage RENDER - AuthContext state:", {
@@ -362,6 +374,17 @@ export default function DashboardPage() {
           </h1>
         </div>
 
+        {/* Profile Completion Banner */}
+        {shouldShowCompletion && profileStatus && !bannerDismissed && (
+          <div className="mb-8">
+            <ProfileCompletionBanner
+              profileStatus={profileStatus}
+              onComplete={showCompletionFlow}
+              onDismiss={() => setBannerDismissed(true)}
+            />
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Sidebar Navigation */}
           <div className="lg:col-span-1">
@@ -415,6 +438,21 @@ export default function DashboardPage() {
       <AddAddressOverlay
         isOpen={isAddAddressOpen}
         onClose={() => setIsAddAddressOpen(false)}
+      />
+
+      {/* Profile Completion Flow */}
+      <ProfileCompletionFlow
+        isOpen={isCompletionFlowOpen}
+        onClose={hideCompletionFlow}
+        onComplete={() => {
+          refreshProfileStatus();
+          hideCompletionFlow();
+          toast.success("Profile completed!", {
+            description: "Your profile has been successfully updated.",
+            duration: 3000,
+          });
+        }}
+        allowSkip={true}
       />
     </div>
   );
