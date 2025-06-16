@@ -273,9 +273,13 @@ export async function updateCustomerPhoneNumber(
       const createVariables = {
         address: {
           phoneNumber: phoneNumber,
-          // We need at least some address information, so we'll use minimal data
+          // Provide minimal but valid address information for India
           firstName: customer.firstName || "",
           lastName: customer.lastName || "",
+          city: "Mumbai", // Default city for India
+          territoryCode: "IN", // India country code
+          zip: "400001", // Default Mumbai postal code
+          zoneCode: "MH", // Maharashtra state code
         },
         defaultAddress: true,
       };
