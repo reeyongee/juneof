@@ -8,13 +8,13 @@ export interface ShopifyCustomerAddress {
   city?: string | null;
   company?: string | null;
   country?: string | null; // Full country name
-  countryCodeV2?: string | null; // Territory code (e.g., "IN")
+  territoryCode?: string | null; // Country code (e.g., "IN", "US")
   firstName?: string | null;
   lastName?: string | null;
   name?: string | null; // Concatenation of firstName and lastName
-  phone?: string | null; // E.164 format
+  phoneNumber?: string | null; // E.164 format phone number
   province?: string | null; // Full province/state name
-  provinceCode?: string | null; // Zone code (e.g., "MH")
+  zoneCode?: string | null; // Province/state code (e.g., "MH", "CA")
   zip?: string | null;
 }
 
@@ -32,7 +32,7 @@ export interface CustomerAddressInput {
   company?: string | null;
   firstName?: string | null;
   lastName?: string | null;
-  phone?: string | null;
+  phone?: string | null; // Note: For mutations, it's still 'phone' not 'phoneNumber'
   territoryCode?: string | null; // Country code (e.g., "IN", "US")
   zip?: string | null;
   zoneCode?: string | null; // Province/state code (e.g., "MH", "CA")
@@ -49,13 +49,13 @@ export const GET_CUSTOMER_ADDRESSES_QUERY = gql`
         city
         company
         country
-        countryCodeV2
+        territoryCode
         firstName
         lastName
         name
-        phone
+        phoneNumber
         province
-        provinceCode
+        zoneCode
         zip
       }
       addresses(first: 10) {
@@ -67,13 +67,13 @@ export const GET_CUSTOMER_ADDRESSES_QUERY = gql`
             city
             company
             country
-            countryCodeV2
+            territoryCode
             firstName
             lastName
             name
-            phone
+            phoneNumber
             province
-            provinceCode
+            zoneCode
             zip
           }
         }
@@ -96,13 +96,13 @@ export const CREATE_CUSTOMER_ADDRESS_MUTATION = gql`
         city
         company
         country
-        countryCodeV2
+        territoryCode
         firstName
         lastName
         name
-        phone
+        phoneNumber
         province
-        provinceCode
+        zoneCode
         zip
       }
       userErrors {
@@ -131,13 +131,13 @@ export const UPDATE_CUSTOMER_ADDRESS_MUTATION = gql`
         city
         company
         country
-        countryCodeV2
+        territoryCode
         firstName
         lastName
         name
-        phone
+        phoneNumber
         province
-        provinceCode
+        zoneCode
         zip
       }
       userErrors {

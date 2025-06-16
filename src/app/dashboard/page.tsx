@@ -205,11 +205,15 @@ export default function DashboardPage() {
                       <p>{address.address1}</p>
                       {address.address2 && <p>{address.address2}</p>}
                       <p>
-                        {address.city},{" "}
-                        {address.province || address.provinceCode} {address.zip}
+                        {address.city}, {address.province || address.zoneCode}{" "}
+                        {address.zip}
                       </p>
-                      {address.country && <p>{address.country}</p>}
-                      {address.phone && <p>{address.phone}</p>}
+                      {address.country && (
+                        <p>
+                          {address.country} ({address.territoryCode})
+                        </p>
+                      )}
+                      {address.phoneNumber && <p>{address.phoneNumber}</p>}
                       {address.company && <p>{address.company}</p>}
                     </div>
                   </div>

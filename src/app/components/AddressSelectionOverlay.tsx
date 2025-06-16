@@ -92,12 +92,13 @@ export default function AddressSelectionOverlay({
                           <p className="truncate">{address.address2}</p>
                         )}
                         <p className="truncate">
-                          {address.city},{" "}
-                          {address.province || address.provinceCode}{" "}
+                          {address.city}, {address.province || address.zoneCode}{" "}
                           {address.zip}
                         </p>
                         {address.country && (
-                          <p className="truncate">{address.country}</p>
+                          <p className="truncate">
+                            {address.country} ({address.territoryCode})
+                          </p>
                         )}
                       </div>
                     </div>

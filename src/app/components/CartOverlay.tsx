@@ -275,8 +275,7 @@ export default function CartOverlay({ isOpen, onClose }: CartOverlayProps) {
                       <p className="truncate">{selectedAddress.address1}</p>
                       <p className="truncate">
                         {selectedAddress.city},{" "}
-                        {selectedAddress.province ||
-                          selectedAddress.provinceCode}{" "}
+                        {selectedAddress.province || selectedAddress.zoneCode}{" "}
                         {selectedAddress.zip}
                       </p>
                     </div>
