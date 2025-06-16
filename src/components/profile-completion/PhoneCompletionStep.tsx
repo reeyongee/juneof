@@ -24,15 +24,28 @@ export function PhoneCompletionStep({
   customerProfile,
   onComplete,
 }: PhoneCompletionStepProps) {
-  const [phoneNumber, setPhoneNumber] = useState(
-    customerProfile.phoneNumber?.phoneNumber || ""
-  );
+  // Extract existing phone number if it exists
+  const existingPhone = customerProfile.phoneNumber?.phoneNumber || "";
+  const [countryCode] = useState("+91"); // India country code, unselectable
+  const [phoneNumber, setPhoneNumber] = useState(() => {
+    // If existing phone starts with +91, remove it for display
+    if (existingPhone.startsWith("+91")) {
+      return existingPhone.substring(3);
+    }
+    // If it starts with any other country code, keep as is for now
+    if (existingPhone.startsWith("+")) {
+      return existingPhone;
+    }
+    return existingPhone;
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const validateForm = () => {
-    const validation = validatePhoneNumber(phoneNumber);
+    // Combine country code with phone number for validation
+    const fullPhoneNumber = countryCode + phoneNumber.replace(/^\+/, "");
+    const validation = validatePhoneNumber(fullPhoneNumber);
     setError(validation.isValid ? null : validation.message || null);
     return validation.isValid;
   };
@@ -48,8 +61,12 @@ export function PhoneCompletionStep({
     setSubmitError(null);
 
     try {
+      // Format phone number in E.164 format
+      const cleanPhoneNumber = phoneNumber.replace(/[\s\-\(\)]/g, "");
+      const e164PhoneNumber = countryCode + cleanPhoneNumber.replace(/^\+/, "");
+
       const response = await updateCustomerProfile(apiClient, {
-        phoneNumber: phoneNumber.trim(),
+        phoneNumber: e164PhoneNumber,
       });
 
       const apiErrors = handleGraphQLErrors(response);
@@ -75,7 +92,9 @@ export function PhoneCompletionStep({
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    setPhoneNumber(value);
+    // Remove any non-digit characters except spaces and dashes for display
+    const cleanValue = value.replace(/[^\d\s\-]/g, "");
+    setPhoneNumber(cleanValue);
 
     // Clear error when user starts typing
     if (error) {
@@ -96,18 +115,25 @@ export function PhoneCompletionStep({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="phoneNumber">Phone Number</Label>
-            <Input
-              id="phoneNumber"
-              type="tel"
-              value={phoneNumber}
-              onChange={handlePhoneChange}
-              placeholder="(555) 123-4567"
-              className={error ? "border-destructive" : ""}
-              disabled={isSubmitting}
-            />
+            <div className="flex">
+              <div className="flex items-center px-3 border border-r-0 rounded-l-md bg-muted text-muted-foreground text-sm font-medium">
+                {countryCode}
+              </div>
+              <Input
+                id="phoneNumber"
+                type="tel"
+                value={phoneNumber}
+                onChange={handlePhoneChange}
+                placeholder="9876543210"
+                className={`rounded-l-none ${
+                  error ? "border-destructive" : ""
+                }`}
+                disabled={isSubmitting}
+              />
+            </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
             <p className="text-xs text-muted-foreground">
-              Include country code if outside the US (e.g., +1 for US)
+              Enter your 10-digit mobile number (India +91)
             </p>
           </div>
 

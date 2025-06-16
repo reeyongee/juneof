@@ -170,7 +170,7 @@ export function getNextCompletionStep(
 }
 
 /**
- * Validates phone number format
+ * Validates phone number format (E.164 standard)
  */
 export function validatePhoneNumber(phone: string): {
   isValid: boolean;
@@ -180,12 +180,57 @@ export function validatePhoneNumber(phone: string): {
     return { isValid: false, message: "Phone number is required" };
   }
 
-  // Basic phone validation - adjust regex as needed for your requirements
-  const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
-  const cleanPhone = phone.replace(/[\s\-\(\)]/g, "");
+  // Remove all non-digit characters except the leading +
+  const cleanPhone = phone.replace(/[^\d+]/g, "");
 
-  if (!phoneRegex.test(cleanPhone)) {
-    return { isValid: false, message: "Please enter a valid phone number" };
+  // Check if it starts with + (E.164 format requirement)
+  if (!cleanPhone.startsWith("+")) {
+    return {
+      isValid: false,
+      message: "Phone number must include country code (e.g., +91)",
+    };
+  }
+
+  // For Indian numbers (+91), validate the format
+  if (cleanPhone.startsWith("+91")) {
+    // Indian mobile numbers: +91 followed by 10 digits
+    const indianNumber = cleanPhone.substring(3); // Remove +91
+
+    if (indianNumber.length !== 10) {
+      return {
+        isValid: false,
+        message: "Indian mobile number must be 10 digits",
+      };
+    }
+
+    // Indian mobile numbers start with 6, 7, 8, or 9
+    if (!/^[6-9]/.test(indianNumber)) {
+      return {
+        isValid: false,
+        message: "Indian mobile number must start with 6, 7, 8, or 9",
+      };
+    }
+
+    return { isValid: true };
+  }
+
+  // General E.164 validation for other countries
+  // E.164 format: + followed by up to 15 digits
+  const phoneDigits = cleanPhone.substring(1); // Remove the +
+
+  if (phoneDigits.length < 7 || phoneDigits.length > 15) {
+    return {
+      isValid: false,
+      message: "Phone number must be between 7 and 15 digits",
+    };
+  }
+
+  // Check if all characters after + are digits
+  if (!/^\d+$/.test(phoneDigits)) {
+    return {
+      isValid: false,
+      message: "Phone number can only contain digits after country code",
+    };
   }
 
   return { isValid: true };

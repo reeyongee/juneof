@@ -4,8 +4,8 @@ import React, { useState } from "react";
 import { ProfileCompletionFlow } from "./ProfileCompletionFlow";
 import { ProfileCompletionBanner } from "./ProfileCompletionBanner";
 import { useProfileCompletion } from "@/hooks/useProfileCompletion";
-import { Button } from "./ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "./ui/badge";
 import { User, Phone, MapPin, CheckCircle } from "lucide-react";
 
@@ -191,6 +191,38 @@ export function ProfileCompletionDemo() {
         onComplete={handleComplete}
         allowSkip={true}
       />
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Phone Number Format Testing</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2 text-sm">
+            <p>
+              <strong>Expected Format:</strong> E.164 standard with +91 country
+              code
+            </p>
+            <p>
+              <strong>Valid Examples:</strong>
+            </p>
+            <ul className="list-disc list-inside ml-4 space-y-1">
+              <li>+919876543210 (10 digits starting with 6-9)</li>
+              <li>+918765432109 (10 digits starting with 6-9)</li>
+              <li>+917654321098 (10 digits starting with 6-9)</li>
+              <li>+916543210987 (10 digits starting with 6-9)</li>
+            </ul>
+            <p>
+              <strong>Invalid Examples:</strong>
+            </p>
+            <ul className="list-disc list-inside ml-4 space-y-1">
+              <li>9876543210 (missing country code)</li>
+              <li>+91123456789 (starts with 1, not 6-9)</li>
+              <li>+9198765432 (only 8 digits)</li>
+              <li>+91987654321012 (12 digits, too long)</li>
+            </ul>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
