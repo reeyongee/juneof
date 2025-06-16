@@ -8,6 +8,7 @@ import React, {
   useCallback,
   useMemo,
 } from "react";
+import { useSearchParams } from "next/navigation"; // For robust URL checking
 
 import {
   getStoredTokens,
@@ -72,7 +73,7 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true); // Start true for initial auth state check
+  const [isLoading, setIsLoading] = useState(true); // Key: Start true
   const [customerData, setCustomerData] = useState<CustomerProfileData | null>(
     null
   );
@@ -81,6 +82,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [apiClient, setApiClient] = useState<CustomerAccountApiClient | null>(
     null
   );
+
+  const searchParamsFromHook = useSearchParams(); // From next/navigation
 
   const shopifyAuthConfig: ShopifyAuthConfig = useMemo(() => {
     // On Vercel, NEXTAUTH_URL might not be available on client side since it's not NEXT_PUBLIC_
@@ -225,117 +228,124 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   );
 
   const initializeAuth = useCallback(async () => {
-    console.log(
-      "AuthContext: initializeAuth - START. Current URL:",
-      typeof window !== "undefined" ? window.location.href : "SSR"
-    );
-    setIsLoading(true); // Set loading true at the very beginning
+    // Always get the freshest URL params when this function is called
+    const currentRawSearchParams =
+      typeof window !== "undefined" ? window.location.search : "";
+    const localUrlParams = new URLSearchParams(currentRawSearchParams);
+    const justCompletedAuthSignal =
+      localUrlParams.get("auth_completed") === "true";
 
-    const urlParams =
-      typeof window !== "undefined"
-        ? new URLSearchParams(window.location.search)
-        : null;
-    const justCompletedAuth = urlParams?.get("auth_completed") === "true";
     console.log(
-      "AuthContext: initializeAuth - justCompletedAuth signal:",
-      justCompletedAuth
+      `AuthContext: initializeAuth - START. URL Search: "${currentRawSearchParams}", Signal: ${justCompletedAuthSignal}`
     );
+    setIsLoading(true); // Set loading to true at the beginning of this entire process
 
-    let tokensFound = false;
+    let tokensFoundAndValid = false;
     let attempts = 0;
-    const maxAttempts = 4; // Try once, then 3 retries
-    const retryDelay = 200; // ms
+    const maxAttempts = justCompletedAuthSignal ? 5 : 1; // More attempts if signal is present
+    const retryDelay = 250; // ms
 
-    while (attempts < maxAttempts && !tokensFound) {
+    while (attempts < maxAttempts && !tokensFoundAndValid) {
       console.log(
-        `AuthContext: initializeAuth - Attempt ${attempts + 1} to get tokens.`
+        `AuthContext: initializeAuth - Attempt ${attempts + 1}/${maxAttempts}`
       );
       const storedTokens = getStoredTokens();
       console.log(
         `AuthContext: initializeAuth - Attempt ${
           attempts + 1
-        } - getStoredTokens() result:`,
-        storedTokens
+        } - getStoredTokens():`,
+        storedTokens ? "FOUND" : "NULL"
       );
 
       if (storedTokens) {
         console.log(
-          "AuthContext: initializeAuth - Stored tokens FOUND.",
+          "AuthContext: initializeAuth - Tokens FOUND.",
           storedTokens
         );
-        setTokens(storedTokens);
+        setTokens(storedTokens); // Set tokens state
         const client = new CustomerAccountApiClient({
           shopId: shopifyAuthConfig.shopId,
           accessToken: storedTokens.accessToken,
         });
         setApiClient(client);
+        // Assume authenticated for now, _internalFetch will confirm or call logout
         setIsAuthenticated(true);
-        console.log(
-          "AuthContext: initializeAuth - Set isAuthenticated=true, apiClient created."
-        );
-        try {
-          await _internalFetchAndSetCustomerData(client, storedTokens); // Pass storedTokens
+        await _internalFetchAndSetCustomerData(client, storedTokens);
+
+        // IMPORTANT: After _internalFetchAndSetCustomerData, check if still authenticated
+        // because _internalFetchAndSetCustomerData might call logout() if tokens are bad.
+        if (getStoredTokens()) {
+          // If tokens still exist, assume fetch was fine or error didn't invalidate tokens
+          tokensFoundAndValid = true; // Mark as successful
+        } else {
+          // Tokens were cleared, likely by logout() in _internalFetch
           console.log(
-            "AuthContext: initializeAuth - _internalFetchAndSetCustomerData COMPLETED."
+            "AuthContext: initializeAuth - Tokens were cleared during/after data fetch. Assuming logout."
           );
-        } catch (fetchError) {
-          console.error(
-            "AuthContext: initializeAuth - Error from _internalFetch:",
-            fetchError
-          );
-          // If _internalFetchAndSetCustomerData calls logout, isAuthenticated will be set to false there.
-          // Error state is also set there.
+          setIsAuthenticated(false); // Ensure this is set to false
+          tokensFoundAndValid = false; // Mark as unsuccessful
         }
-        tokensFound = true; // Exit loop
-      } else if (justCompletedAuth && attempts < maxAttempts - 1) {
-        // Only retry if signal is present and more attempts left
+        break; // Exit loop whether successful or token became invalid
+      } else if (justCompletedAuthSignal && attempts < maxAttempts - 1) {
         console.warn(
-          `AuthContext: initializeAuth - No tokens yet (Attempt ${
+          `AuthContext: initializeAuth - No tokens (Attempt ${
             attempts + 1
-          }), auth_completed=true. Retrying in ${retryDelay}ms...`
+          }), signal=true. Retrying in ${retryDelay}ms...`
         );
         await new Promise((resolve) => setTimeout(resolve, retryDelay));
       } else {
-        // No tokens, and either no signal or max attempts reached
+        // No tokens, and either no signal or max attempts reached for signaled auth
         break; // Exit loop
       }
       attempts++;
     }
 
-    if (!tokensFound) {
+    if (!tokensFoundAndValid) {
       console.log(
-        "AuthContext: initializeAuth - No stored tokens after all attempts or no signal. Setting unauthenticated state."
+        "AuthContext: initializeAuth - No valid tokens after all attempts. Setting unauthenticated."
       );
       setIsAuthenticated(false);
       setCustomerData(null);
       setTokens(null);
       setApiClient(null);
-      setError(null); // Clear any previous error
+      setError(null);
     }
 
-    // Clean up the URL parameter if it exists
-    if (justCompletedAuth && urlParams && typeof window !== "undefined") {
-      console.log(
-        "AuthContext: initializeAuth - Cleaning up auth_completed URL param."
-      );
-      const cleanUrl = new URL(window.location.href);
-      cleanUrl.searchParams.delete("auth_completed");
-      window.history.replaceState({}, document.title, cleanUrl.toString());
+    // Clean up the URL parameter only if the signal was processed and we are on the client
+    if (justCompletedAuthSignal && typeof window !== "undefined") {
+      const currentUrl = new URL(window.location.href);
+      if (currentUrl.searchParams.has("auth_completed")) {
+        currentUrl.searchParams.delete("auth_completed");
+        window.history.replaceState(
+          {},
+          document.title,
+          currentUrl.pathname + currentUrl.search
+        );
+        console.log(
+          "AuthContext: initializeAuth - Cleaned up auth_completed URL param."
+        );
+      }
     }
 
-    setIsLoading(false); // Set loading to false AFTER all logic is done.
+    setIsLoading(false); // Set loading to false only AFTER all processing (including retries) is done
     console.log(
-      "AuthContext: initializeAuth - END. Final isLoading:",
+      "AuthContext: initializeAuth - END. Final State -> isLoading:",
       false,
       "isAuthenticated:",
-      isAuthenticated
-    ); // Log final isAuthenticated
-  }, [shopifyAuthConfig, _internalFetchAndSetCustomerData]);
+      tokensFoundAndValid
+    );
+  }, [shopifyAuthConfig, _internalFetchAndSetCustomerData]); // `logout` is included via _internalFetch
 
+  // This useEffect will run on:
+  // 1. Initial mount of AuthProvider.
+  // 2. When `searchParamsFromHook` changes (i.e., URL query parameters change after client-side navigation).
   useEffect(() => {
-    console.log("AuthContext: AuthProvider MOUNTED. Calling initializeAuth.");
+    console.log(
+      "AuthContext: useEffect[searchParamsFromHook] - searchParams changed or initial mount. Calling initializeAuth. Current path:",
+      typeof window !== "undefined" ? window.location.pathname : "SSR"
+    );
     initializeAuth();
-  }, [initializeAuth]);
+  }, [searchParamsFromHook, initializeAuth]); // `initializeAuth` is memoized
 
   const login = async () => {
     console.log("AuthContext: login - START");
