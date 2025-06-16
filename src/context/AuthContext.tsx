@@ -231,16 +231,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const localUrlParams = new URLSearchParams(currentRawSearchParams);
     const justCompletedAuthSignal =
       localUrlParams.get("auth_completed") === "true";
+    const authTimestamp = localUrlParams.get("t");
 
     console.log(
-      `AuthContext: initializeAuth - START. URL Search: "${currentRawSearchParams}", Signal: ${justCompletedAuthSignal}`
+      `AuthContext: initializeAuth - START. URL Search: "${currentRawSearchParams}", Signal: ${justCompletedAuthSignal}, Timestamp: ${authTimestamp}`
     );
     setIsLoading(true); // Set loading to true at the beginning of this entire process
 
     let tokensFoundAndValid = false;
     let attempts = 0;
-    const maxAttempts = justCompletedAuthSignal ? 5 : 1; // More attempts if signal is present
-    const retryDelay = 250; // ms
+    const maxAttempts = justCompletedAuthSignal ? 10 : 1; // More attempts if signal is present (increased from 5 to 10)
+    let currentRetryDelay = 100; // Start with 100ms, will use exponential backoff
+    const maxTotalWaitTime = 5000; // Maximum 5 seconds total wait time
+    const startTime = Date.now();
 
     while (attempts < maxAttempts && !tokensFoundAndValid) {
       console.log(
@@ -284,12 +287,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
         break; // Exit loop whether successful or token became invalid
       } else if (justCompletedAuthSignal && attempts < maxAttempts - 1) {
+        // Check if we've exceeded maximum total wait time
+        const elapsedTime = Date.now() - startTime;
+        if (elapsedTime >= maxTotalWaitTime) {
+          console.warn(
+            `AuthContext: initializeAuth - Maximum wait time (${maxTotalWaitTime}ms) exceeded. Stopping retries.`
+          );
+          break;
+        }
+
         console.warn(
           `AuthContext: initializeAuth - No tokens (Attempt ${
             attempts + 1
-          }), signal=true. Retrying in ${retryDelay}ms...`
+          }), signal=true. Retrying in ${currentRetryDelay}ms... (Total elapsed: ${elapsedTime}ms)`
         );
-        await new Promise((resolve) => setTimeout(resolve, retryDelay));
+        await new Promise((resolve) => setTimeout(resolve, currentRetryDelay));
+
+        // Exponential backoff: double the delay for next attempt, max 1000ms
+        currentRetryDelay = Math.min(currentRetryDelay * 2, 1000);
       } else {
         // No tokens, and either no signal or max attempts reached for signaled auth
         break; // Exit loop
@@ -308,18 +323,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setError(null);
     }
 
-    // Clean up the URL parameter only if the signal was processed and we are on the client
+    // Clean up the URL parameters only if the signal was processed and we are on the client
     if (justCompletedAuthSignal && typeof window !== "undefined") {
       const currentUrl = new URL(window.location.href);
+      let paramsRemoved = false;
       if (currentUrl.searchParams.has("auth_completed")) {
         currentUrl.searchParams.delete("auth_completed");
+        paramsRemoved = true;
+      }
+      if (currentUrl.searchParams.has("t")) {
+        currentUrl.searchParams.delete("t");
+        paramsRemoved = true;
+      }
+      if (paramsRemoved) {
         window.history.replaceState(
           {},
           document.title,
           currentUrl.pathname + currentUrl.search
         );
         console.log(
-          "AuthContext: initializeAuth - Cleaned up auth_completed URL param."
+          "AuthContext: initializeAuth - Cleaned up auth_completed and timestamp URL params."
         );
       }
     }
@@ -342,7 +365,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     initializeAuth();
   }, [initializeAuth]);
 
-  // Additional useEffect to handle URL changes for auth completion signal
+  // Additional useEffect to handle URL changes and storage events for auth completion
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -357,8 +380,39 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     };
 
+    // Storage event listener to detect when tokens are stored from callback handler
+    const handleStorageChange = (event: StorageEvent) => {
+      // Check if Shopify auth tokens were added
+      if (
+        event.key === "shopify_access_token" ||
+        event.key === "shopify_refresh_token"
+      ) {
+        console.log(
+          `AuthContext: Storage event detected - ${event.key} was ${
+            event.oldValue ? "updated" : "added"
+          }. Re-running initializeAuth.`
+        );
+        // Small delay to ensure all tokens are stored
+        setTimeout(() => initializeAuth(), 100);
+      }
+    };
+
+    // Custom event listener for direct auth completion signals
+    const handleAuthComplete = () => {
+      console.log(
+        "AuthContext: Custom auth-complete event received. Re-running initializeAuth."
+      );
+      setTimeout(() => initializeAuth(), 50);
+    };
+
     // Listen for browser navigation events
     window.addEventListener("popstate", handlePopState);
+
+    // Listen for storage changes (tokens being stored)
+    window.addEventListener("storage", handleStorageChange);
+
+    // Listen for custom auth completion events
+    window.addEventListener("shopify-auth-complete", handleAuthComplete);
 
     // Also check immediately if we're on a page with auth_completed
     const urlParams = new URLSearchParams(window.location.search);
@@ -373,6 +427,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     return () => {
       window.removeEventListener("popstate", handlePopState);
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("shopify-auth-complete", handleAuthComplete);
     };
   }, [initializeAuth]);
 

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
+import Image from "next/image";
 import {
   Card,
   CardContent,
@@ -321,9 +322,11 @@ export default function CustomerOrders({ config }: CustomerOrdersProps) {
                       >
                         <div className="w-16 h-16 bg-gray-100 rounded-md flex items-center justify-center overflow-hidden">
                           {item.image ? (
-                            <img
+                            <Image
                               src={item.image.url}
                               alt={item.image.altText || item.name}
+                              width={64}
+                              height={64}
                               className="w-full h-full object-cover"
                             />
                           ) : (
@@ -399,9 +402,11 @@ export default function CustomerOrders({ config }: CustomerOrdersProps) {
                       >
                         <div className="w-16 h-16 bg-gray-100 rounded-md flex items-center justify-center overflow-hidden">
                           {item.image ? (
-                            <img
+                            <Image
                               src={item.image.url}
                               alt={item.image.altText || item.name}
+                              width={64}
+                              height={64}
                               className="w-full h-full object-cover"
                             />
                           ) : (

@@ -112,9 +112,19 @@ function CallbackHandlerContent() {
           "Authentication successful! Redirecting to your dashboard..."
         );
 
-        // Add a signal to the dashboard URL to help AuthContext retry if needed
+        // Dispatch custom event to notify AuthContext immediately
+        window.dispatchEvent(new CustomEvent("shopify-auth-complete"));
+        console.log(
+          "ClientCallbackHandler: Dispatched shopify-auth-complete event"
+        );
+
+        // Add a small delay to ensure tokens are fully stored before redirect
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        // Add a signal and timestamp to the dashboard URL to help AuthContext retry if needed
         const dashboardUrl = new URL("/dashboard", window.location.origin);
         dashboardUrl.searchParams.set("auth_completed", "true"); // Our signal
+        dashboardUrl.searchParams.set("t", Date.now().toString()); // Timestamp for freshness
 
         // Clean the current URL of auth code/state before pushing new history state
         const cleanCurrentUrl = new URL(window.location.href);
@@ -126,8 +136,8 @@ function CallbackHandlerContent() {
           cleanCurrentUrl.pathname
         ); // Clean current URL
 
-        // Redirect to dashboard with the signal
-        router.push(dashboardUrl.pathname + dashboardUrl.search); // Pushes /dashboard?auth_completed=true
+        // Redirect to dashboard with the signal and timestamp
+        router.push(dashboardUrl.pathname + dashboardUrl.search); // Pushes /dashboard?auth_completed=true&t=timestamp
       } catch (err) {
         const errorMessage =
           err instanceof Error
