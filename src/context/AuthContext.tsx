@@ -197,41 +197,70 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   );
 
   const initializeAuth = useCallback(async () => {
-    setIsLoading(true);
-    console.log("AuthContext: Initializing auth state...");
-    const storedTokens = getStoredTokens();
+    // Helper function for the retry logic
+    const attemptAuthInitialization = async (attemptCount = 0) => {
+      setIsLoading(true); // Ensure loading is true during the process
+      const storedTokens = getStoredTokens();
 
-    if (storedTokens) {
-      console.log(
-        "AuthContext: Stored tokens found. Validating and fetching user data...",
-        {
-          tokenType: storedTokens.tokenType,
-          expiresIn: storedTokens.expiresIn,
-          scope: storedTokens.scope,
-          issuedAt: new Date(storedTokens.issuedAt).toISOString(),
-          hasRefreshToken: !!storedTokens.refreshToken,
+      if (storedTokens) {
+        console.log(
+          "AuthContext: Stored tokens found on attempt",
+          attemptCount + 1
+        );
+        setTokens(storedTokens);
+        const client = new CustomerAccountApiClient({
+          shopId: shopifyAuthConfig.shopId,
+          accessToken: storedTokens.accessToken,
+        });
+        setApiClient(client);
+        setIsAuthenticated(true);
+        await _internalFetchAndSetCustomerData(client); // This will set isLoading=false in its finally
+      } else {
+        const urlParams =
+          typeof window !== "undefined"
+            ? new URLSearchParams(window.location.search)
+            : null;
+        const justCompletedAuth = urlParams?.get("auth_completed") === "true";
+
+        if (justCompletedAuth && attemptCount < 3) {
+          // Retry up to 3 times (total 4 attempts)
+          console.warn(
+            `AuthContext: No tokens on attempt ${
+              attemptCount + 1
+            }, but auth_completed signal present. Retrying...`
+          );
+          // Keep isLoading true and schedule next attempt
+          setTimeout(
+            () => attemptAuthInitialization(attemptCount + 1),
+            150 * (attemptCount + 1)
+          );
+        } else {
+          console.log(
+            "AuthContext: No stored tokens after all attempts or no signal. User is not authenticated."
+          );
+          setIsAuthenticated(false);
+          setCustomerData(null);
+          setTokens(null);
+          setApiClient(null);
+          setError(null); // Clear any previous error
+          setIsLoading(false); // Set loading to false as we've concluded
+
+          // Clean up the URL parameter if it exists and we're done retrying
+          if (justCompletedAuth && urlParams) {
+            const cleanUrl = new URL(window.location.href);
+            cleanUrl.searchParams.delete("auth_completed");
+            window.history.replaceState(
+              {},
+              document.title,
+              cleanUrl.toString()
+            );
+          }
         }
-      );
+      }
+    };
 
-      setTokens(storedTokens);
-      const client = new CustomerAccountApiClient({
-        shopId: shopifyAuthConfig.shopId,
-        accessToken: storedTokens.accessToken,
-      });
-      setApiClient(client);
-      setIsAuthenticated(true); // Tentatively set, will be confirmed by data fetch
-      await _internalFetchAndSetCustomerData(client);
-    } else {
-      console.log(
-        "AuthContext: No stored tokens found. User is not authenticated."
-      );
-      setIsAuthenticated(false);
-      setCustomerData(null);
-      setTokens(null);
-      setApiClient(null);
-      setIsLoading(false);
-    }
-  }, [shopifyAuthConfig, _internalFetchAndSetCustomerData]);
+    await attemptAuthInitialization(); // Start the process
+  }, [shopifyAuthConfig, _internalFetchAndSetCustomerData]); // Dependencies of initializeAuth
 
   useEffect(() => {
     initializeAuth();
@@ -289,22 +318,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Public function to allow components to trigger a data refresh
   const fetchCustomerData = useCallback(async () => {
-    if (!apiClient || !tokens) {
+    if (!isAuthenticated || !apiClient) {
+      // Simpler check: if not truly authenticated, or client not ready
       console.warn(
-        "AuthContext: fetchCustomerData called but not authenticated or client/tokens not ready."
+        "AuthContext: fetchCustomerData called, but user is not authenticated or API client is not ready. Attempting to initialize/re-check auth."
       );
-      // If not authenticated, try to re-initialize auth, which might pick up fresh tokens from callback
-      if (!isAuthenticated && !isLoading) await initializeAuth();
+      await initializeAuth(); // This will try to set up everything if possible
+      // After initializeAuth, if successful, _internalFetchAndSetCustomerData would have run.
+      // If not successful, state will reflect that.
       return;
     }
+    // If authenticated and client is ready, proceed to fetch/refresh data.
+    console.log(
+      "AuthContext: fetchCustomerData called while authenticated. Re-fetching data."
+    );
     await _internalFetchAndSetCustomerData(apiClient);
   }, [
-    apiClient,
-    tokens,
-    _internalFetchAndSetCustomerData,
     isAuthenticated,
-    isLoading,
+    apiClient,
     initializeAuth,
+    _internalFetchAndSetCustomerData,
   ]);
 
   // Alias for backward compatibility

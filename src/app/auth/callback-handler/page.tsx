@@ -112,15 +112,22 @@ function CallbackHandlerContent() {
           "Authentication successful! Redirecting to your dashboard..."
         );
 
-        // Redirect to the dashboard. The AuthProvider there will pick up the new tokens.
-        // Clean the URL of auth parameters before redirecting.
+        // Add a signal to the dashboard URL to help AuthContext retry if needed
         const dashboardUrl = new URL("/dashboard", window.location.origin);
+        dashboardUrl.searchParams.set("auth_completed", "true"); // Our signal
+
+        // Clean the current URL of auth code/state before pushing new history state
+        const cleanCurrentUrl = new URL(window.location.href);
+        cleanCurrentUrl.searchParams.delete("code");
+        cleanCurrentUrl.searchParams.delete("state");
         window.history.replaceState(
           {},
           document.title,
-          dashboardUrl.toString()
+          cleanCurrentUrl.pathname
         ); // Clean current URL
-        router.push("/dashboard"); // Navigate
+
+        // Redirect to dashboard with the signal
+        router.push(dashboardUrl.pathname + dashboardUrl.search); // Pushes /dashboard?auth_completed=true
       } catch (err) {
         const errorMessage =
           err instanceof Error
