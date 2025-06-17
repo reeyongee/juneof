@@ -161,13 +161,26 @@ export const DELETE_CUSTOMER_ADDRESS_MUTATION = gql`
 `;
 
 export const SET_DEFAULT_CUSTOMER_ADDRESS_MUTATION = gql`
-  mutation customerDefaultAddressUpdate($addressId: ID!) {
-    customerDefaultAddressUpdate(addressId: $addressId) {
-      customer {
+  mutation customerAddressUpdate($addressId: ID!, $defaultAddress: Boolean!) {
+    customerAddressUpdate(
+      addressId: $addressId
+      defaultAddress: $defaultAddress
+    ) {
+      customerAddress {
         id
-        defaultAddress {
-          id
-        }
+        address1
+        address2
+        city
+        company
+        country
+        territoryCode
+        firstName
+        lastName
+        name
+        phoneNumber
+        province
+        zoneCode
+        zip
       }
       userErrors {
         field
@@ -209,11 +222,8 @@ export interface DeleteCustomerAddressData {
 }
 
 export interface SetDefaultAddressData {
-  customerDefaultAddressUpdate: {
-    customer: {
-      id: string;
-      defaultAddress: { id: string } | null;
-    } | null;
+  customerAddressUpdate: {
+    customerAddress: ShopifyCustomerAddress | null;
     userErrors: Array<{ field: string[] | null; message: string }>;
   };
 }

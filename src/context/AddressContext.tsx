@@ -227,16 +227,15 @@ export const AddressProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       const response = await apiClient.query<SetDefaultAddressData>({
         query: SET_DEFAULT_CUSTOMER_ADDRESS_MUTATION,
-        variables: { addressId },
+        variables: { addressId, defaultAddress: true },
       });
 
       if (
         response.errors ||
-        !response.data?.customerDefaultAddressUpdate?.customer
+        !response.data?.customerAddressUpdate?.customerAddress
       ) {
         const errMessage =
-          response.data?.customerDefaultAddressUpdate?.userErrors?.[0]
-            ?.message ||
+          response.data?.customerAddressUpdate?.userErrors?.[0]?.message ||
           response.errors?.[0]?.message ||
           "Failed to set default address.";
         throw new Error(errMessage);
