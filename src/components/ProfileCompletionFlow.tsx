@@ -12,17 +12,9 @@ import {
   fetchCustomerProfileForCompletion,
   handleGraphQLErrors,
 } from "@/lib/shopify-profile-api";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { X, User, MapPin, CheckCircle } from "lucide-react";
+import { User, MapPin, CheckCircle } from "lucide-react";
 import { NameCompletionStep } from "./profile-completion/NameCompletionStep";
 import { AddressCompletionStep } from "./profile-completion/AddressCompletionStep";
 import { CompletionSuccessStep } from "./profile-completion/CompletionSuccessStep";
@@ -31,14 +23,12 @@ interface ProfileCompletionFlowProps {
   isOpen: boolean;
   onClose: () => void;
   onComplete?: () => void;
-  allowSkip?: boolean;
 }
 
 export function ProfileCompletionFlow({
   isOpen,
   onClose,
   onComplete,
-  allowSkip = true,
 }: ProfileCompletionFlowProps) {
   const { apiClient, fetchCustomerData } = useAuth();
   const [currentStep, setCurrentStep] = useState<
@@ -99,6 +89,23 @@ export function ProfileCompletionFlow({
     }
   }, [apiClient]);
 
+  // Prevent ESC key from closing the dialog
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener("keydown", handleKeyDown, true);
+      return () => {
+        document.removeEventListener("keydown", handleKeyDown, true);
+      };
+    }
+  }, [isOpen]);
+
   // Fetch and analyze customer profile when dialog opens
   useEffect(() => {
     if (isOpen && apiClient) {
@@ -121,24 +128,14 @@ export function ProfileCompletionFlow({
     }
   };
 
-  const handleSkip = () => {
-    if (allowSkip) {
-      onClose();
-    }
-  };
-
-  const handleClose = () => {
-    onClose();
-  };
-
   const getStepIcon = (step: string) => {
     switch (step) {
       case "name":
-        return <User className="h-4 w-4" />;
+        return <User className="h-5 w-5" />;
       case "address":
-        return <MapPin className="h-4 w-4" />;
+        return <MapPin className="h-5 w-5" />;
       case "complete":
-        return <CheckCircle className="h-4 w-4" />;
+        return <CheckCircle className="h-5 w-5" />;
       default:
         return null;
     }
@@ -147,26 +144,26 @@ export function ProfileCompletionFlow({
   const getStepTitle = () => {
     switch (currentStep) {
       case "name":
-        return "Complete Your Name";
+        return "complete your name";
       case "address":
-        return "Add Your Address & Phone";
+        return "add your address & phone";
       case "complete":
-        return "Profile Complete!";
+        return "profile complete!";
       default:
-        return "Complete Your Profile";
+        return "complete your profile";
     }
   };
 
   const getStepDescription = () => {
     switch (currentStep) {
       case "name":
-        return "Help us personalize your experience by completing your name.";
+        return "help us personalize your experience by completing your name.";
       case "address":
-        return "Add your complete address and phone number for delivery and order updates.";
+        return "add your complete address and phone number for delivery and order updates.";
       case "complete":
-        return "Your profile is now complete! You can update it anytime.";
+        return "your profile is now complete! you can update it anytime.";
       default:
-        return "Complete your profile to get the best experience.";
+        return "complete your profile to get the best experience.";
     }
   };
 
@@ -195,7 +192,7 @@ export function ProfileCompletionFlow({
         return (
           <CompletionSuccessStep
             customerProfile={customerProfile}
-            onClose={handleClose}
+            onClose={onClose}
           />
         );
       default:
@@ -203,69 +200,72 @@ export function ProfileCompletionFlow({
     }
   };
 
+  if (!isOpen) return null;
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              {getStepIcon(currentStep)}
-              <DialogTitle className="text-xl font-semibold">
-                {getStepTitle()}
-              </DialogTitle>
-            </div>
-            {allowSkip && currentStep !== "complete" && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleSkip}
-                className="text-muted-foreground hover:text-foreground"
-              >
-                <X className="h-4 w-4 mr-1" />
-                Skip
-              </Button>
-            )}
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" />
+
+      {/* Overlay Content */}
+      <div className="relative bg-[#F8F4EC] w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto border border-gray-300">
+        {/* Header */}
+        <div className="p-6 border-b border-gray-300">
+          <div className="flex items-center gap-3 mb-3">
+            {getStepIcon(currentStep)}
+            <h2 className="text-xl font-serif lowercase tracking-widest text-black">
+              {getStepTitle()}
+            </h2>
           </div>
 
-          <DialogDescription className="text-base">
+          <p className="text-sm lowercase tracking-wider text-gray-600 mb-4">
             {getStepDescription()}
-          </DialogDescription>
+          </p>
 
           {profileStatus && currentStep !== "complete" && (
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">
-                  Profile completion
+                <span className="lowercase tracking-wider text-gray-600">
+                  profile completion
                 </span>
-                <Badge variant="secondary">
+                <Badge
+                  variant="secondary"
+                  className="bg-black text-white text-xs lowercase tracking-widest"
+                >
                   {profileStatus.completionPercentage}%
                 </Badge>
               </div>
               <Progress
                 value={profileStatus.completionPercentage}
-                className="h-2"
+                className="h-2 bg-gray-200"
               />
             </div>
           )}
-        </DialogHeader>
+        </div>
 
-        <div className="mt-6">
+        {/* Content */}
+        <div className="p-6">
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
             </div>
           ) : error ? (
             <div className="text-center py-8">
-              <p className="text-destructive mb-4">{error}</p>
-              <Button onClick={loadCustomerProfile} variant="outline">
-                Try Again
-              </Button>
+              <p className="text-red-600 mb-4 text-sm lowercase tracking-wider">
+                {error}
+              </p>
+              <button
+                onClick={loadCustomerProfile}
+                className="bg-black text-white px-4 py-2 text-sm lowercase tracking-widest hover:opacity-75 transition-opacity"
+              >
+                try again
+              </button>
             </div>
           ) : (
             renderCurrentStep()
           )}
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 }

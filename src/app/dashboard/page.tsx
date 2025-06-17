@@ -452,7 +452,6 @@ export default function DashboardPage() {
             duration: 3000,
           });
         }}
-        allowSkip={true}
       />
     </div>
   );

@@ -178,7 +178,6 @@ export function ProfileCompletionDemo() {
         isOpen={showFlow || isCompletionFlowOpen}
         onClose={handleCloseFlow}
         onComplete={handleComplete}
-        allowSkip={true}
       />
 
       <Card>

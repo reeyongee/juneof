@@ -2,23 +2,22 @@
 
 import React, { useState } from "react";
 import { CustomerAccountApiClient } from "@/lib/shopify-auth";
-import { CustomerProfile, validateName } from "@/lib/profile-completion";
+import {
+  CustomerProfile,
+  validateName,
+  type ProfileCompletionStatus,
+} from "@/lib/profile-completion";
 import { updateCustomerProfile } from "@/lib/shopify-profile-api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 
 interface NameCompletionStepProps {
   apiClient: CustomerAccountApiClient;
   customerProfile: CustomerProfile;
   onComplete: () => void;
-  missingFields?: {
-    firstName: boolean;
-    lastName: boolean;
-    completeAddressWithPhone: boolean;
-  };
+  missingFields?: ProfileCompletionStatus["missingFields"];
 }
 
 export function NameCompletionStep({
@@ -27,30 +26,35 @@ export function NameCompletionStep({
   onComplete,
   missingFields,
 }: NameCompletionStepProps) {
-  const [firstName, setFirstName] = useState(customerProfile.firstName || "");
-  const [lastName, setLastName] = useState(customerProfile.lastName || "");
+  const [formData, setFormData] = useState({
+    firstName: customerProfile.firstName || "",
+    lastName: customerProfile.lastName || "",
+  });
+
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errors, setErrors] = useState<{
-    firstName?: string;
-    lastName?: string;
-  }>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const validateForm = () => {
-    const newErrors: { firstName?: string; lastName?: string } = {};
+    const newErrors: Record<string, string> = {};
 
     // Only validate fields that are actually missing
     if (missingFields?.firstName) {
-      const firstNameValidation = validateName(firstName, "First name");
+      const firstNameValidation = validateName(
+        formData.firstName,
+        "First name"
+      );
       if (!firstNameValidation.isValid) {
-        newErrors.firstName = firstNameValidation.message;
+        newErrors.firstName =
+          firstNameValidation.message || "First name is required";
       }
     }
 
     if (missingFields?.lastName) {
-      const lastNameValidation = validateName(lastName, "Last name");
+      const lastNameValidation = validateName(formData.lastName, "Last name");
       if (!lastNameValidation.isValid) {
-        newErrors.lastName = lastNameValidation.message;
+        newErrors.lastName =
+          lastNameValidation.message || "Last name is required";
       }
     }
 
@@ -69,105 +73,111 @@ export function NameCompletionStep({
     setSubmitError(null);
 
     try {
-      const updateData: { firstName?: string; lastName?: string } = {};
-
-      // Only update fields that are missing
-      if (missingFields?.firstName && firstName.trim()) {
-        updateData.firstName = firstName.trim();
-      }
-      if (missingFields?.lastName && lastName.trim()) {
-        updateData.lastName = lastName.trim();
-      }
-
-      const response = await updateCustomerProfile(apiClient, updateData);
+      const response = await updateCustomerProfile(apiClient, {
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+      });
 
       if (!response.success) {
-        throw new Error(response.errors?.join(", ") || "Failed to update name");
+        throw new Error(
+          response.errors?.join(", ") || "Failed to update profile"
+        );
       }
 
       onComplete();
     } catch (err) {
-      console.error("Error updating customer name:", err);
+      console.error("Error updating customer profile:", err);
       setSubmitError(
-        err instanceof Error ? err.message : "Failed to update name"
+        err instanceof Error ? err.message : "Failed to update profile"
       );
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleSkipStep = () => {
-    onComplete();
+  const handleInputChange = (field: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: "" }));
+    }
   };
 
   return (
-    <Card>
-      <CardContent className="pt-6">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {missingFields?.firstName && (
-            <div className="space-y-2">
-              <Label htmlFor="firstName">First Name</Label>
-              <Input
-                id="firstName"
-                type="text"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                placeholder="Enter your first name"
-                className={errors.firstName ? "border-destructive" : ""}
-                disabled={isSubmitting}
-              />
-              {errors.firstName && (
-                <p className="text-sm text-destructive">{errors.firstName}</p>
-              )}
-            </div>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label
+            htmlFor="firstName"
+            className="text-sm lowercase tracking-widest text-black"
+          >
+            first name
+          </Label>
+          <Input
+            id="firstName"
+            type="text"
+            value={formData.firstName}
+            onChange={(e) => handleInputChange("firstName", e.target.value)}
+            placeholder="first name"
+            className={`bg-white border-gray-300 text-black placeholder:text-gray-500 focus:border-black focus:ring-black/20 h-10 text-sm ${
+              errors.firstName ? "border-red-500" : ""
+            }`}
+            required={missingFields?.firstName}
+            disabled={isSubmitting}
+          />
+          {errors.firstName && (
+            <p className="text-sm text-red-600">{errors.firstName}</p>
           )}
+        </div>
 
-          {missingFields?.lastName && (
-            <div className="space-y-2">
-              <Label htmlFor="lastName">Last Name</Label>
-              <Input
-                id="lastName"
-                type="text"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                placeholder="Enter your last name"
-                className={errors.lastName ? "border-destructive" : ""}
-                disabled={isSubmitting}
-              />
-              {errors.lastName && (
-                <p className="text-sm text-destructive">{errors.lastName}</p>
-              )}
-            </div>
+        <div className="space-y-2">
+          <Label
+            htmlFor="lastName"
+            className="text-sm lowercase tracking-widest text-black"
+          >
+            last name
+          </Label>
+          <Input
+            id="lastName"
+            type="text"
+            value={formData.lastName}
+            onChange={(e) => handleInputChange("lastName", e.target.value)}
+            placeholder="last name"
+            className={`bg-white border-gray-300 text-black placeholder:text-gray-500 focus:border-black focus:ring-black/20 h-10 text-sm ${
+              errors.lastName ? "border-red-500" : ""
+            }`}
+            required={missingFields?.lastName}
+            disabled={isSubmitting}
+          />
+          {errors.lastName && (
+            <p className="text-sm text-red-600">{errors.lastName}</p>
           )}
+        </div>
+      </div>
 
-          {submitError && (
-            <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20">
-              <p className="text-sm text-destructive">{submitError}</p>
-            </div>
+      {submitError && (
+        <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
+          {submitError}
+        </div>
+      )}
+
+      <div className="pt-4">
+        <Button
+          type="submit"
+          disabled={isSubmitting}
+          className="w-full lowercase tracking-widest border-black text-black hover:bg-black hover:text-white h-10 text-sm transition-all duration-300 no-underline-effect bg-white border"
+        >
+          {isSubmitting ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              saving...
+            </>
+          ) : (
+            "continue"
           )}
-
-          <div className="flex gap-3 pt-4">
-            <Button type="submit" disabled={isSubmitting} className="flex-1">
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                "Continue"
-              )}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleSkipStep}
-              disabled={isSubmitting}
-            >
-              Skip for now
-            </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+        </Button>
+      </div>
+    </form>
   );
 }

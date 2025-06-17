@@ -11,7 +11,6 @@ import { createCustomerAddress } from "@/lib/shopify-profile-api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -19,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, MapPin, Phone } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 // Country options for the select
 const COUNTRIES = [
@@ -134,10 +133,6 @@ export function AddressCompletionStep({
     }
   };
 
-  const handleSkipStep = () => {
-    onComplete();
-  };
-
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
 
@@ -150,212 +145,234 @@ export function AddressCompletionStep({
   const getStateLabel = () => {
     switch (formData.country) {
       case "US":
-        return "State";
+        return "state";
       case "CA":
-        return "Province";
+        return "province";
       case "GB":
-        return "County";
+        return "county";
       default:
-        return "State/Province";
+        return "state/province";
     }
   };
 
   const getZipLabel = () => {
     switch (formData.country) {
       case "US":
-        return "ZIP Code";
+        return "zip code";
       case "CA":
-        return "Postal Code";
+        return "postal code";
       case "GB":
-        return "Postcode";
+        return "postcode";
       default:
-        return "Postal/ZIP Code";
+        return "postal/zip code";
     }
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardContent className="p-6">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="flex items-center gap-2">
-            <MapPin className="h-5 w-5 text-blue-600" />
-            <Phone className="h-4 w-4 text-blue-600" />
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Phone Number Section */}
+      <div className="space-y-2">
+        <Label
+          htmlFor="phoneNumber"
+          className="text-sm lowercase tracking-widest text-black"
+        >
+          phone number
+        </Label>
+        <div className="flex">
+          <div className="flex items-center px-3 py-2 border border-r-0 border-gray-300 bg-gray-50 rounded-l-md text-sm font-medium text-gray-700 h-10">
+            🇮🇳 +91
           </div>
-          <h2 className="text-lg font-semibold">
-            Complete Your Address & Phone
-          </h2>
+          <Input
+            id="phoneNumber"
+            type="tel"
+            value={formData.phoneNumber}
+            onChange={(e) => {
+              const value = e.target.value.replace(/\D/g, "").slice(0, 10);
+              handleInputChange("phoneNumber", value);
+            }}
+            placeholder="9876543210"
+            className={`rounded-l-none bg-white border-gray-300 text-black placeholder:text-gray-500 focus:border-black focus:ring-black/20 h-10 text-sm ${
+              errors.phoneNumber ? "border-red-500" : ""
+            }`}
+            required
+            disabled={isSubmitting}
+          />
+        </div>
+        {errors.phoneNumber && (
+          <p className="text-sm text-red-600">{errors.phoneNumber}</p>
+        )}
+      </div>
+
+      {/* Country Selection */}
+      <div className="space-y-2">
+        <Label
+          htmlFor="country"
+          className="text-sm lowercase tracking-widest text-black"
+        >
+          country
+        </Label>
+        <Select
+          value={formData.country}
+          onValueChange={(value) => handleInputChange("country", value)}
+        >
+          <SelectTrigger
+            className={`bg-white border-gray-300 text-black focus:border-black focus:ring-black/20 h-10 text-sm ${
+              errors.country ? "border-red-500" : ""
+            }`}
+          >
+            <SelectValue placeholder="select country" />
+          </SelectTrigger>
+          <SelectContent>
+            {COUNTRIES.map((country) => (
+              <SelectItem key={country.value} value={country.value}>
+                {country.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {errors.country && (
+          <p className="text-sm text-red-600">{errors.country}</p>
+        )}
+      </div>
+
+      {/* Address Line 1 */}
+      <div className="space-y-2">
+        <Label
+          htmlFor="address1"
+          className="text-sm lowercase tracking-widest text-black"
+        >
+          address line 1
+        </Label>
+        <Input
+          id="address1"
+          type="text"
+          value={formData.address1}
+          onChange={(e) => handleInputChange("address1", e.target.value)}
+          placeholder="street address, p.o. box, company name"
+          className={`bg-white border-gray-300 text-black placeholder:text-gray-500 focus:border-black focus:ring-black/20 h-10 text-sm ${
+            errors.address1 ? "border-red-500" : ""
+          }`}
+          required
+          disabled={isSubmitting}
+        />
+        {errors.address1 && (
+          <p className="text-sm text-red-600">{errors.address1}</p>
+        )}
+      </div>
+
+      {/* Address Line 2 */}
+      <div className="space-y-2">
+        <Label
+          htmlFor="address2"
+          className="text-sm lowercase tracking-widest text-black"
+        >
+          address line 2 (optional)
+        </Label>
+        <Input
+          id="address2"
+          type="text"
+          value={formData.address2}
+          onChange={(e) => handleInputChange("address2", e.target.value)}
+          placeholder="apartment, suite, unit, building, floor, etc."
+          className="bg-white border-gray-300 text-black placeholder:text-gray-500 focus:border-black focus:ring-black/20 h-10 text-sm"
+          disabled={isSubmitting}
+        />
+      </div>
+
+      {/* City and State/Province */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label
+            htmlFor="city"
+            className="text-sm lowercase tracking-widest text-black"
+          >
+            city
+          </Label>
+          <Input
+            id="city"
+            type="text"
+            value={formData.city}
+            onChange={(e) => handleInputChange("city", e.target.value)}
+            placeholder="city"
+            className={`bg-white border-gray-300 text-black placeholder:text-gray-500 focus:border-black focus:ring-black/20 h-10 text-sm ${
+              errors.city ? "border-red-500" : ""
+            }`}
+            required
+            disabled={isSubmitting}
+          />
+          {errors.city && <p className="text-sm text-red-600">{errors.city}</p>}
         </div>
 
-        <p className="text-sm text-gray-600 mb-6">
-          Add your complete address and phone number for delivery and order
-          updates.
-        </p>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Phone Number Section */}
-          <div className="space-y-2">
-            <Label htmlFor="phoneNumber">Phone Number</Label>
-            <div className="flex">
-              <div className="flex items-center px-3 py-2 border border-r-0 border-gray-300 bg-gray-50 rounded-l-md text-sm font-medium text-gray-700">
-                🇮🇳 +91
-              </div>
-              <Input
-                id="phoneNumber"
-                type="tel"
-                value={formData.phoneNumber}
-                onChange={(e) => {
-                  const value = e.target.value.replace(/\D/g, "").slice(0, 10);
-                  handleInputChange("phoneNumber", value);
-                }}
-                placeholder="9876543210"
-                className={`rounded-l-none ${
-                  errors.phoneNumber ? "border-red-500" : ""
-                }`}
-                required
-                disabled={isSubmitting}
-              />
-            </div>
-            {errors.phoneNumber && (
-              <p className="text-sm text-red-600">{errors.phoneNumber}</p>
-            )}
-          </div>
-
-          {/* Country Selection */}
-          <div className="space-y-2">
-            <Label htmlFor="country">Country</Label>
-            <Select
-              value={formData.country}
-              onValueChange={(value) => handleInputChange("country", value)}
-            >
-              <SelectTrigger className={errors.country ? "border-red-500" : ""}>
-                <SelectValue placeholder="Select country" />
-              </SelectTrigger>
-              <SelectContent>
-                {COUNTRIES.map((country) => (
-                  <SelectItem key={country.value} value={country.value}>
-                    {country.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {errors.country && (
-              <p className="text-sm text-red-600">{errors.country}</p>
-            )}
-          </div>
-
-          {/* Address Line 1 */}
-          <div className="space-y-2">
-            <Label htmlFor="address1">Address Line 1</Label>
-            <Input
-              id="address1"
-              type="text"
-              value={formData.address1}
-              onChange={(e) => handleInputChange("address1", e.target.value)}
-              placeholder="Street address, P.O. box, company name"
-              className={errors.address1 ? "border-red-500" : ""}
-              required
-              disabled={isSubmitting}
-            />
-            {errors.address1 && (
-              <p className="text-sm text-red-600">{errors.address1}</p>
-            )}
-          </div>
-
-          {/* Address Line 2 */}
-          <div className="space-y-2">
-            <Label htmlFor="address2">Address Line 2 (Optional)</Label>
-            <Input
-              id="address2"
-              type="text"
-              value={formData.address2}
-              onChange={(e) => handleInputChange("address2", e.target.value)}
-              placeholder="Apartment, suite, unit, building, floor, etc."
-              disabled={isSubmitting}
-            />
-          </div>
-
-          {/* City and State/Province */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="city">City</Label>
-              <Input
-                id="city"
-                type="text"
-                value={formData.city}
-                onChange={(e) => handleInputChange("city", e.target.value)}
-                placeholder="City"
-                className={errors.city ? "border-red-500" : ""}
-                required
-                disabled={isSubmitting}
-              />
-              {errors.city && (
-                <p className="text-sm text-red-600">{errors.city}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="province">{getStateLabel()}</Label>
-              <Input
-                id="province"
-                type="text"
-                value={formData.province}
-                onChange={(e) => handleInputChange("province", e.target.value)}
-                placeholder={getStateLabel()}
-                className={errors.province ? "border-red-500" : ""}
-                required
-                disabled={isSubmitting}
-              />
-              {errors.province && (
-                <p className="text-sm text-red-600">{errors.province}</p>
-              )}
-            </div>
-          </div>
-
-          {/* ZIP/Postal Code */}
-          <div className="space-y-2">
-            <Label htmlFor="zip">{getZipLabel()}</Label>
-            <Input
-              id="zip"
-              type="text"
-              value={formData.zip}
-              onChange={(e) => handleInputChange("zip", e.target.value)}
-              placeholder={getZipLabel()}
-              className={errors.zip ? "border-red-500" : ""}
-              required
-              disabled={isSubmitting}
-            />
-            {errors.zip && <p className="text-sm text-red-600">{errors.zip}</p>}
-          </div>
-
-          {submitError && (
-            <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
-              {submitError}
-            </div>
+        <div className="space-y-2">
+          <Label
+            htmlFor="province"
+            className="text-sm lowercase tracking-widest text-black"
+          >
+            {getStateLabel()}
+          </Label>
+          <Input
+            id="province"
+            type="text"
+            value={formData.province}
+            onChange={(e) => handleInputChange("province", e.target.value)}
+            placeholder={getStateLabel()}
+            className={`bg-white border-gray-300 text-black placeholder:text-gray-500 focus:border-black focus:ring-black/20 h-10 text-sm ${
+              errors.province ? "border-red-500" : ""
+            }`}
+            required
+            disabled={isSubmitting}
+          />
+          {errors.province && (
+            <p className="text-sm text-red-600">{errors.province}</p>
           )}
+        </div>
+      </div>
 
-          <div className="flex gap-3 pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleSkipStep}
-              disabled={isSubmitting}
-              className="flex-1"
-            >
-              Skip for now
-            </Button>
-            <Button type="submit" disabled={isSubmitting} className="flex-1">
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                "Complete Profile"
-              )}
-            </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+      {/* ZIP/Postal Code */}
+      <div className="space-y-2">
+        <Label
+          htmlFor="zip"
+          className="text-sm lowercase tracking-widest text-black"
+        >
+          {getZipLabel()}
+        </Label>
+        <Input
+          id="zip"
+          type="text"
+          value={formData.zip}
+          onChange={(e) => handleInputChange("zip", e.target.value)}
+          placeholder={getZipLabel()}
+          className={`bg-white border-gray-300 text-black placeholder:text-gray-500 focus:border-black focus:ring-black/20 h-10 text-sm ${
+            errors.zip ? "border-red-500" : ""
+          }`}
+          required
+          disabled={isSubmitting}
+        />
+        {errors.zip && <p className="text-sm text-red-600">{errors.zip}</p>}
+      </div>
+
+      {submitError && (
+        <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
+          {submitError}
+        </div>
+      )}
+
+      <div className="pt-4">
+        <Button
+          type="submit"
+          disabled={isSubmitting}
+          className="w-full lowercase tracking-widest border-black text-black hover:bg-black hover:text-white h-10 text-sm transition-all duration-300 no-underline-effect bg-white border"
+        >
+          {isSubmitting ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              saving...
+            </>
+          ) : (
+            "complete profile"
+          )}
+        </Button>
+      </div>
+    </form>
   );
 }
