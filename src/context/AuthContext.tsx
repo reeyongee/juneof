@@ -36,9 +36,10 @@ interface CustomerProfileData {
       address1?: string;
       address2?: string;
       city?: string;
-      province?: string;
-      country?: string;
+      territoryCode?: string;
+      zoneCode?: string;
       zip?: string;
+      phoneNumber?: string;
     };
   };
 }

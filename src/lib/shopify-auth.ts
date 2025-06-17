@@ -1368,8 +1368,8 @@ export class CustomerAccountApiClient {
               address1
               address2
               city
-              province
-              country
+              territoryCode
+              zoneCode
               zip
               phoneNumber
             }

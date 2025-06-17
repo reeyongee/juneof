@@ -1,11 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import {
   analyzeProfileCompletion,
   type ProfileCompletionStatus,
+  type CustomerProfile,
 } from "@/lib/profile-completion";
+import {
+  fetchCustomerProfileForCompletion,
+  handleGraphQLErrors,
+} from "@/lib/shopify-profile-api";
 
 interface UseProfileCompletionReturn {
   profileStatus: ProfileCompletionStatus | null;
@@ -17,35 +22,56 @@ interface UseProfileCompletionReturn {
 }
 
 export function useProfileCompletion(): UseProfileCompletionReturn {
-  const { customerData, isAuthenticated, isLoading } = useAuth();
+  const { apiClient, isAuthenticated, isLoading } = useAuth();
   const [profileStatus, setProfileStatus] =
     useState<ProfileCompletionStatus | null>(null);
   const [isCompletionFlowOpen, setIsCompletionFlowOpen] = useState(false);
   const [hasBeenPrompted, setHasBeenPrompted] = useState(false);
 
-  // Analyze profile completion status when customer data changes
+  // Function to fetch complete profile data for analysis
+  const fetchAndAnalyzeProfile = useCallback(async () => {
+    if (!apiClient) return;
+
+    try {
+      const response = await fetchCustomerProfileForCompletion(apiClient);
+      const errors = handleGraphQLErrors(response);
+
+      if (errors.length > 0) {
+        console.error("Error fetching profile for completion:", errors);
+        return;
+      }
+
+      if (response.data?.customer) {
+        const customer = response.data.customer;
+
+        // Transform the API response to match our CustomerProfile interface
+        const profile: CustomerProfile = {
+          id: customer.id,
+          displayName: customer.displayName,
+          firstName: customer.firstName,
+          lastName: customer.lastName,
+          emailAddress: customer.emailAddress,
+          phoneNumber: customer.phoneNumber,
+          defaultAddress: customer.defaultAddress,
+          addresses: customer.addresses.nodes,
+        };
+
+        const status = analyzeProfileCompletion(profile);
+        setProfileStatus(status);
+      }
+    } catch (error) {
+      console.error("Error analyzing profile completion:", error);
+    }
+  }, [apiClient]);
+
+  // Analyze profile completion status when auth state changes
   useEffect(() => {
-    if (customerData?.customer) {
-      const customer = customerData.customer;
-
-      // Transform to our CustomerProfile interface
-      const profile = {
-        id: customer.id,
-        displayName: customer.displayName,
-        firstName: customer.firstName,
-        lastName: customer.lastName,
-        emailAddress: customer.emailAddress,
-        phoneNumber: customer.phoneNumber,
-        defaultAddress: customer.defaultAddress,
-        addresses: [], // We don't have addresses in the basic customer data
-      };
-
-      const status = analyzeProfileCompletion(profile);
-      setProfileStatus(status);
+    if (isAuthenticated && !isLoading && apiClient) {
+      fetchAndAnalyzeProfile();
     } else {
       setProfileStatus(null);
     }
-  }, [customerData]);
+  }, [isAuthenticated, isLoading, apiClient, fetchAndAnalyzeProfile]);
 
   // Auto-show completion flow for incomplete profiles (only once per session)
   useEffect(() => {
@@ -85,23 +111,7 @@ export function useProfileCompletion(): UseProfileCompletionReturn {
   };
 
   const refreshProfileStatus = () => {
-    if (customerData?.customer) {
-      const customer = customerData.customer;
-
-      const profile = {
-        id: customer.id,
-        displayName: customer.displayName,
-        firstName: customer.firstName,
-        lastName: customer.lastName,
-        emailAddress: customer.emailAddress,
-        phoneNumber: customer.phoneNumber,
-        defaultAddress: customer.defaultAddress,
-        addresses: [],
-      };
-
-      const status = analyzeProfileCompletion(profile);
-      setProfileStatus(status);
-    }
+    fetchAndAnalyzeProfile();
   };
 
   return {
