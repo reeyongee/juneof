@@ -6,7 +6,6 @@ import { useAuth } from "@/context/AuthContext";
 import AddAddressOverlay from "@/app/components/AddAddressOverlay";
 import CustomerOrders from "@/components/CustomerOrders";
 import { ProfileCompletionFlow } from "@/components/ProfileCompletionFlow";
-import { ProfileCompletionBanner } from "@/components/ProfileCompletionBanner";
 import { useProfileCompletion } from "@/hooks/useProfileCompletion";
 import { toast } from "sonner";
 import { Package, MapPin, User } from "lucide-react";
@@ -16,7 +15,6 @@ import { Button } from "@/components/ui/button";
 export default function DashboardPage() {
   const [activeSection, setActiveSection] = useState("orders");
   const [isAddAddressOpen, setIsAddAddressOpen] = useState(false);
-  const [bannerDismissed, setBannerDismissed] = useState(false);
   const {
     addresses,
     selectedAddressId,
@@ -37,7 +35,6 @@ export default function DashboardPage() {
   } = useAuth();
   const {
     profileStatus,
-    shouldShowCompletion,
     showCompletionFlow,
     hideCompletionFlow,
     isCompletionFlowOpen,
@@ -353,10 +350,61 @@ export default function DashboardPage() {
         return renderAddresses();
       case "profile":
         return (
-          <div className="text-center py-12">
-            <p className="text-gray-600 lowercase tracking-wider">
-              edit profile section coming soon
-            </p>
+          <div className="space-y-6">
+            <h3 className="text-xl font-serif lowercase tracking-widest text-black mb-6">
+              profile settings
+            </h3>
+
+            {/* Profile completion status */}
+            {profileStatus && !profileStatus.isComplete && (
+              <Card className="bg-blue-50 border-blue-200">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="font-medium lowercase tracking-wider text-blue-900">
+                      complete your profile
+                    </h4>
+                    <span className="text-sm text-blue-700">
+                      {profileStatus.completionPercentage}% complete
+                    </span>
+                  </div>
+                  <p className="text-sm text-blue-800 mb-4">
+                    complete your profile to get personalized recommendations
+                    and faster checkout.
+                  </p>
+                  <Button
+                    onClick={showCompletionFlow}
+                    className="bg-blue-600 hover:bg-blue-700 text-white lowercase tracking-wider"
+                  >
+                    complete profile
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Profile completed status */}
+            {profileStatus && profileStatus.isComplete && (
+              <Card className="bg-green-50 border-green-200">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                      <span className="text-white text-xs">✓</span>
+                    </div>
+                    <h4 className="font-medium lowercase tracking-wider text-green-900">
+                      profile complete
+                    </h4>
+                  </div>
+                  <p className="text-sm text-green-800">
+                    your profile is complete! you can update it anytime.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
+            <div className="text-center py-8">
+              <p className="text-gray-600 lowercase tracking-wider">
+                additional profile settings coming soon
+              </p>
+            </div>
           </div>
         );
       default:
@@ -373,17 +421,6 @@ export default function DashboardPage() {
             hi, {userName}
           </h1>
         </div>
-
-        {/* Profile Completion Banner */}
-        {shouldShowCompletion && profileStatus && !bannerDismissed && (
-          <div className="mb-8">
-            <ProfileCompletionBanner
-              profileStatus={profileStatus}
-              onComplete={showCompletionFlow}
-              onDismiss={() => setBannerDismissed(true)}
-            />
-          </div>
-        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Sidebar Navigation */}
@@ -447,9 +484,10 @@ export default function DashboardPage() {
         onComplete={() => {
           refreshProfileStatus();
           hideCompletionFlow();
-          toast.success("Profile completed!", {
-            description: "Your profile has been successfully updated.",
-            duration: 3000,
+          toast.success("profile completed!", {
+            description:
+              "your profile has been successfully updated. you'll now get personalized recommendations and faster checkout.",
+            duration: 4000,
           });
         }}
       />

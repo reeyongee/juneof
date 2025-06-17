@@ -14,10 +14,9 @@ import {
 } from "@/lib/shopify-profile-api";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { User, MapPin, CheckCircle } from "lucide-react";
+import { User, MapPin } from "lucide-react";
 import { NameCompletionStep } from "./profile-completion/NameCompletionStep";
 import { AddressCompletionStep } from "./profile-completion/AddressCompletionStep";
-import { CompletionSuccessStep } from "./profile-completion/CompletionSuccessStep";
 
 interface ProfileCompletionFlowProps {
   isOpen: boolean;
@@ -31,9 +30,7 @@ export function ProfileCompletionFlow({
   onComplete,
 }: ProfileCompletionFlowProps) {
   const { apiClient, fetchCustomerData } = useAuth();
-  const [currentStep, setCurrentStep] = useState<
-    "name" | "address" | "complete"
-  >("name");
+  const [currentStep, setCurrentStep] = useState<"name" | "address">("name");
   const [profileStatus, setProfileStatus] =
     useState<ProfileCompletionStatus | null>(null);
   const [customerProfile, setCustomerProfile] =
@@ -76,9 +73,18 @@ export function ProfileCompletionFlow({
         setProfileStatus(status);
 
         if (status.isComplete) {
-          setCurrentStep("complete");
+          // Profile is complete, trigger completion callback and close
+          onComplete?.();
+          onClose();
         } else {
-          setCurrentStep(getNextCompletionStep(status));
+          const nextStep = getNextCompletionStep(status);
+          if (nextStep === "complete") {
+            // This shouldn't happen if status.isComplete is false, but handle it
+            onComplete?.();
+            onClose();
+          } else {
+            setCurrentStep(nextStep);
+          }
         }
       }
     } catch (err) {
@@ -87,7 +93,7 @@ export function ProfileCompletionFlow({
     } finally {
       setIsLoading(false);
     }
-  }, [apiClient]);
+  }, [apiClient, onComplete, onClose]);
 
   // Prevent ESC key from closing the dialog
   useEffect(() => {
@@ -121,10 +127,18 @@ export function ProfileCompletionFlow({
     await fetchCustomerData();
 
     if (profileStatus?.isComplete) {
-      setCurrentStep("complete");
+      // Profile is now complete, trigger completion callback and close
       onComplete?.();
+      onClose();
     } else if (profileStatus) {
-      setCurrentStep(getNextCompletionStep(profileStatus));
+      const nextStep = getNextCompletionStep(profileStatus);
+      if (nextStep === "complete") {
+        // This shouldn't happen if profileStatus.isComplete is false, but handle it
+        onComplete?.();
+        onClose();
+      } else {
+        setCurrentStep(nextStep);
+      }
     }
   };
 
@@ -134,8 +148,6 @@ export function ProfileCompletionFlow({
         return <User className="h-5 w-5" />;
       case "address":
         return <MapPin className="h-5 w-5" />;
-      case "complete":
-        return <CheckCircle className="h-5 w-5" />;
       default:
         return null;
     }
@@ -147,8 +159,6 @@ export function ProfileCompletionFlow({
         return "complete your name";
       case "address":
         return "add your address & phone";
-      case "complete":
-        return "profile complete!";
       default:
         return "complete your profile";
     }
@@ -160,8 +170,6 @@ export function ProfileCompletionFlow({
         return "help us personalize your experience by completing your name.";
       case "address":
         return "add your complete address and phone number for delivery and order updates.";
-      case "complete":
-        return "your profile is now complete! you can update it anytime.";
       default:
         return "complete your profile to get the best experience.";
     }
@@ -186,13 +194,6 @@ export function ProfileCompletionFlow({
             apiClient={apiClient}
             customerProfile={customerProfile}
             onComplete={handleStepComplete}
-          />
-        );
-      case "complete":
-        return (
-          <CompletionSuccessStep
-            customerProfile={customerProfile}
-            onClose={onClose}
           />
         );
       default:
@@ -222,7 +223,7 @@ export function ProfileCompletionFlow({
             {getStepDescription()}
           </p>
 
-          {profileStatus && currentStep !== "complete" && (
+          {profileStatus && (
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
                 <span className="lowercase tracking-wider text-gray-600">
