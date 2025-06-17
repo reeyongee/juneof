@@ -335,8 +335,8 @@ export async function createCustomerAddress(
 ): Promise<{ success: boolean; errors?: string[] }> {
   try {
     const mutation = `
-    mutation customerAddressCreate($address: CustomerAddressInput!) {
-      customerAddressCreate(address: $address) {
+    mutation customerAddressCreate($address: CustomerAddressInput!, $defaultAddress: Boolean) {
+      customerAddressCreate(address: $address, defaultAddress: $defaultAddress) {
         customerAddress {
           id
           address1
@@ -355,6 +355,7 @@ export async function createCustomerAddress(
 
     const variables = {
       address,
+      defaultAddress: false, // Don't make it default unless explicitly requested
     };
 
     const response = await apiClient.query<CustomerAddressCreateResponse>({

@@ -116,10 +116,13 @@ export const AddressProvider: React.FC<{ children: React.ReactNode }> = ({
     setIsLoading(true);
     setError(null);
     try {
-      // First, create the address
+      // Create the address with optional defaultAddress parameter
       const response = await apiClient.query<CreateCustomerAddressData>({
         query: CREATE_CUSTOMER_ADDRESS_MUTATION,
-        variables: { address: addressInput },
+        variables: {
+          address: addressInput,
+          defaultAddress: isDefault,
+        },
       });
 
       if (
@@ -135,11 +138,6 @@ export const AddressProvider: React.FC<{ children: React.ReactNode }> = ({
 
       const newShopifyAddress =
         response.data.customerAddressCreate.customerAddress;
-
-      // If the user wants this to be the default address, set it as default
-      if (isDefault && newShopifyAddress.id) {
-        await setShopifyDefaultAddress(newShopifyAddress.id);
-      }
 
       // Refetch all addresses to get the updated list and default status
       await fetchAddresses();

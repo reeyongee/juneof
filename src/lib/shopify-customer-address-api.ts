@@ -84,8 +84,11 @@ export const GET_CUSTOMER_ADDRESSES_QUERY = gql`
 
 // GraphQL Mutations
 export const CREATE_CUSTOMER_ADDRESS_MUTATION = gql`
-  mutation customerAddressCreate($address: CustomerAddressInput!) {
-    customerAddressCreate(address: $address) {
+  mutation customerAddressCreate(
+    $address: CustomerAddressInput!
+    $defaultAddress: Boolean
+  ) {
+    customerAddressCreate(address: $address, defaultAddress: $defaultAddress) {
       customerAddress {
         id
         address1
