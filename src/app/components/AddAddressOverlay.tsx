@@ -104,7 +104,7 @@ export default function AddAddressOverlay({
         zoneCode: formData.state.trim(),
         territoryCode: "IN", // Always India
         zip: formData.zip.trim(),
-        phone: e164PhoneNumber || null,
+        phoneNumber: e164PhoneNumber || null,
         company: formData.company.trim() || null,
       };
 

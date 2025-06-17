@@ -32,7 +32,7 @@ export interface CustomerAddressInput {
   company?: string | null;
   firstName?: string | null;
   lastName?: string | null;
-  phone?: string | null; // Note: For mutations, it's still 'phone' not 'phoneNumber'
+  phoneNumber?: string | null; // Customer Account API uses 'phoneNumber' not 'phone'
   territoryCode?: string | null; // Country code (e.g., "IN", "US")
   zip?: string | null;
   zoneCode?: string | null; // Province/state code (e.g., "MH", "CA")
@@ -84,11 +84,8 @@ export const GET_CUSTOMER_ADDRESSES_QUERY = gql`
 
 // GraphQL Mutations
 export const CREATE_CUSTOMER_ADDRESS_MUTATION = gql`
-  mutation customerAddressCreate(
-    $address: CustomerAddressInput!
-    $defaultAddress: Boolean
-  ) {
-    customerAddressCreate(address: $address, defaultAddress: $defaultAddress) {
+  mutation customerAddressCreate($address: CustomerAddressInput!) {
+    customerAddressCreate(address: $address) {
       customerAddress {
         id
         address1
