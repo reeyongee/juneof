@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
 import Image from "next/image";
 import {
   Card,
@@ -62,14 +68,22 @@ export default function CustomerOrders({ config }: CustomerOrdersProps) {
   const [orders, setOrders] = useState<OrderNode[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const hasFetchedRef = useRef(false);
 
   // Memoize config to prevent unnecessary re-renders
-  const memoizedConfig = useMemo(() => config, [config]);
+  const memoizedConfig = useMemo(
+    () => config,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [config.shopId, config.clientId, config.redirectUri]
+  );
 
   // Internal function to fetch customer orders
   const fetchCustomerOrdersInternal = useCallback(
     async (client: CustomerAccountApiClient, tokenData: TokenStorage) => {
+      if (hasFetchedRef.current) return;
+
       try {
+        hasFetchedRef.current = true;
         setLoading(true);
         setError(null);
 
@@ -118,6 +132,8 @@ export default function CustomerOrders({ config }: CustomerOrdersProps) {
                   pageInfo {
                     hasNextPage
                     hasPreviousPage
+                    startCursor
+                    endCursor
                   }
                 }
               }
@@ -153,6 +169,7 @@ export default function CustomerOrders({ config }: CustomerOrdersProps) {
         setError(
           err instanceof Error ? err.message : "Failed to fetch customer orders"
         );
+        hasFetchedRef.current = false; // Allow retry on error
       } finally {
         setLoading(false);
       }
@@ -162,6 +179,8 @@ export default function CustomerOrders({ config }: CustomerOrdersProps) {
 
   // Load stored tokens on component mount
   useEffect(() => {
+    if (hasFetchedRef.current) return;
+
     console.log("🔍 CustomerOrders: Checking for stored tokens...");
     const storedTokens = getStoredTokens();
 
@@ -172,15 +191,14 @@ export default function CustomerOrders({ config }: CustomerOrdersProps) {
         accessToken: storedTokens.accessToken,
       });
 
-      // Automatically fetch customer orders if we have tokens
-      setTimeout(() => {
-        console.log("🚀 Auto-fetching customer orders...");
-        fetchCustomerOrdersInternal(client, storedTokens);
-      }, 1000);
+      // Fetch customer orders immediately
+      console.log("🚀 Fetching customer orders...");
+      fetchCustomerOrdersInternal(client, storedTokens);
     } else {
       console.log("❌ No stored tokens found");
     }
-  }, [memoizedConfig.shopId, fetchCustomerOrdersInternal]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [memoizedConfig.shopId]);
 
   // Format price function
   const formatPrice = (amount: string, currencyCode: string): string => {

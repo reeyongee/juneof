@@ -96,6 +96,7 @@ export function ProfileCompletionFlow({
       setIsLoading(false);
       isLoadingRef.current = false;
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apiClient]);
 
   // Prevent ESC key from closing the dialog

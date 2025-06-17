@@ -74,6 +74,7 @@ export function useProfileCompletion(): UseProfileCompletionReturn {
       setProfileStatus(null);
       hasFetchedRef.current = false;
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, isLoading, apiClient]);
 
   // Auto-show completion flow for incomplete profiles (only once per session)

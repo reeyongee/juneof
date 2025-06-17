@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useAddress } from "@/context/AddressContext";
 import { useAuth } from "@/context/AuthContext";
 import AddAddressOverlay from "@/app/components/AddAddressOverlay";
@@ -56,6 +56,24 @@ export default function DashboardPage() {
     customerData?.customer.displayName ||
     "user";
 
+  // Memoize the config to prevent CustomerOrders from re-rendering
+  const shopifyConfig = useMemo(() => {
+    const getRedirectUri = () => {
+      if (typeof window !== "undefined") {
+        return window.location.origin + "/api/auth/shopify/callback";
+      }
+      // Fallback for server-side rendering
+      return "https://dev.juneof.com/api/auth/shopify/callback";
+    };
+
+    return {
+      shopId: process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_SHOP_ID || "",
+      clientId:
+        process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID || "",
+      redirectUri: getRedirectUri(),
+    };
+  }, []);
+
   // Effect to handle post-authentication data fetching
   useEffect(() => {
     // If user lands here and is authenticated but data isn't loaded yet
@@ -73,6 +91,7 @@ export default function DashboardPage() {
     } else if (!isAuthenticated) {
       hasFetchedCustomerDataRef.current = false;
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, customerData, authIsLoading, authError]);
 
   // Effect to fetch addresses when authenticated
@@ -81,6 +100,7 @@ export default function DashboardPage() {
       console.log("Dashboard: Fetching addresses...");
       fetchAddresses();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, addresses.length, addressLoading]);
 
   // Show loading state while checking authentication
@@ -160,23 +180,7 @@ export default function DashboardPage() {
   console.log("DashboardPage: Rendering authenticated content");
 
   const renderOrders = () => {
-    // Shopify auth configuration
-    const getRedirectUri = () => {
-      if (typeof window !== "undefined") {
-        return window.location.origin + "/api/auth/shopify/callback";
-      }
-      // Fallback for server-side rendering
-      return "https://dev.juneof.com/api/auth/shopify/callback";
-    };
-
-    const config = {
-      shopId: process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_SHOP_ID || "",
-      clientId:
-        process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID || "",
-      redirectUri: getRedirectUri(),
-    };
-
-    return <CustomerOrders config={config} />;
+    return <CustomerOrders config={shopifyConfig} />;
   };
 
   const renderAddresses = () => (
