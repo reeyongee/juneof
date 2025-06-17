@@ -11,23 +11,7 @@ import { createCustomerAddress } from "@/lib/shopify-profile-api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
-
-// Country options for the select
-const COUNTRIES = [
-  { value: "IN", label: "India" },
-  { value: "US", label: "United States" },
-  { value: "CA", label: "Canada" },
-  { value: "GB", label: "United Kingdom" },
-  { value: "AU", label: "Australia" },
-];
 
 interface AddressCompletionStepProps {
   apiClient: CustomerAccountApiClient;
@@ -46,7 +30,6 @@ export function AddressCompletionStep({
     city: "",
     province: "",
     zip: "",
-    country: "IN", // Default to India
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -71,7 +54,7 @@ export function AddressCompletionStep({
       city: formData.city,
       territoryCode: formData.province,
       zip: formData.zip,
-      zoneCode: formData.country,
+      zoneCode: "IN", // Always India
     });
 
     if (!addressValidation.isValid) {
@@ -80,10 +63,6 @@ export function AddressCompletionStep({
       if (mappedErrors.territoryCode) {
         mappedErrors.province = mappedErrors.territoryCode;
         delete mappedErrors.territoryCode;
-      }
-      if (mappedErrors.zoneCode) {
-        mappedErrors.country = mappedErrors.zoneCode;
-        delete mappedErrors.zoneCode;
       }
       Object.assign(newErrors, mappedErrors);
     }
@@ -110,7 +89,7 @@ export function AddressCompletionStep({
         address1: formData.address1.trim(),
         address2: formData.address2.trim() || undefined,
         city: formData.city.trim(),
-        territoryCode: formData.country,
+        territoryCode: "IN", // Always India
         zoneCode: formData.province.trim(),
         zip: formData.zip.trim(),
         phoneNumber: e164PhoneNumber,
@@ -142,32 +121,6 @@ export function AddressCompletionStep({
     }
   };
 
-  const getStateLabel = () => {
-    switch (formData.country) {
-      case "US":
-        return "state";
-      case "CA":
-        return "province";
-      case "GB":
-        return "county";
-      default:
-        return "state/province";
-    }
-  };
-
-  const getZipLabel = () => {
-    switch (formData.country) {
-      case "US":
-        return "zip code";
-      case "CA":
-        return "postal code";
-      case "GB":
-        return "postcode";
-      default:
-        return "postal/zip code";
-    }
-  };
-
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {/* Phone Number Section */}
@@ -178,9 +131,9 @@ export function AddressCompletionStep({
         >
           phone number
         </Label>
-        <div className="flex">
-          <div className="flex items-center px-3 py-2 border border-r-0 border-gray-300 bg-gray-50 rounded-l-md text-sm font-medium text-gray-700 h-10">
-            🇮🇳 +91
+        <div className="relative">
+          <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+            <span className="text-sm text-gray-600">🇮🇳 +91</span>
           </div>
           <Input
             id="phoneNumber"
@@ -191,7 +144,7 @@ export function AddressCompletionStep({
               handleInputChange("phoneNumber", value);
             }}
             placeholder="9876543210"
-            className={`rounded-l-none bg-white border-gray-300 text-black placeholder:text-gray-500 focus:border-black focus:ring-black/20 h-10 text-sm ${
+            className={`pl-20 bg-white border-gray-300 text-black placeholder:text-gray-500 focus:border-black focus:ring-black/20 h-10 text-sm ${
               errors.phoneNumber ? "border-red-500" : ""
             }`}
             required
@@ -200,38 +153,6 @@ export function AddressCompletionStep({
         </div>
         {errors.phoneNumber && (
           <p className="text-sm text-red-600">{errors.phoneNumber}</p>
-        )}
-      </div>
-
-      {/* Country Selection */}
-      <div className="space-y-2">
-        <Label
-          htmlFor="country"
-          className="text-sm lowercase tracking-widest text-black"
-        >
-          country
-        </Label>
-        <Select
-          value={formData.country}
-          onValueChange={(value) => handleInputChange("country", value)}
-        >
-          <SelectTrigger
-            className={`bg-white border-gray-300 text-black focus:border-black focus:ring-black/20 h-10 text-sm ${
-              errors.country ? "border-red-500" : ""
-            }`}
-          >
-            <SelectValue placeholder="select country" />
-          </SelectTrigger>
-          <SelectContent>
-            {COUNTRIES.map((country) => (
-              <SelectItem key={country.value} value={country.value}>
-                {country.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {errors.country && (
-          <p className="text-sm text-red-600">{errors.country}</p>
         )}
       </div>
 
@@ -279,7 +200,7 @@ export function AddressCompletionStep({
         />
       </div>
 
-      {/* City and State/Province */}
+      {/* City and State */}
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label
@@ -308,14 +229,14 @@ export function AddressCompletionStep({
             htmlFor="province"
             className="text-sm lowercase tracking-widest text-black"
           >
-            {getStateLabel()}
+            state
           </Label>
           <Input
             id="province"
             type="text"
             value={formData.province}
             onChange={(e) => handleInputChange("province", e.target.value)}
-            placeholder={getStateLabel()}
+            placeholder="state"
             className={`bg-white border-gray-300 text-black placeholder:text-gray-500 focus:border-black focus:ring-black/20 h-10 text-sm ${
               errors.province ? "border-red-500" : ""
             }`}
@@ -328,20 +249,20 @@ export function AddressCompletionStep({
         </div>
       </div>
 
-      {/* ZIP/Postal Code */}
+      {/* PIN Code */}
       <div className="space-y-2">
         <Label
           htmlFor="zip"
           className="text-sm lowercase tracking-widest text-black"
         >
-          {getZipLabel()}
+          pin code
         </Label>
         <Input
           id="zip"
           type="text"
           value={formData.zip}
           onChange={(e) => handleInputChange("zip", e.target.value)}
-          placeholder={getZipLabel()}
+          placeholder="pin code"
           className={`bg-white border-gray-300 text-black placeholder:text-gray-500 focus:border-black focus:ring-black/20 h-10 text-sm ${
             errors.zip ? "border-red-500" : ""
           }`}
