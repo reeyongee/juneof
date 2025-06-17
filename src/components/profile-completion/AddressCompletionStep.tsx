@@ -70,13 +70,23 @@ export function AddressCompletionStep({
       address1: formData.address1,
       address2: formData.address2,
       city: formData.city,
-      province: formData.province,
+      territoryCode: formData.province,
       zip: formData.zip,
-      country: formData.country,
+      zoneCode: formData.country,
     });
 
     if (!addressValidation.isValid) {
-      Object.assign(newErrors, addressValidation.errors);
+      // Map API field names back to form field names
+      const mappedErrors = { ...addressValidation.errors };
+      if (mappedErrors.territoryCode) {
+        mappedErrors.province = mappedErrors.territoryCode;
+        delete mappedErrors.territoryCode;
+      }
+      if (mappedErrors.zoneCode) {
+        mappedErrors.country = mappedErrors.zoneCode;
+        delete mappedErrors.zoneCode;
+      }
+      Object.assign(newErrors, mappedErrors);
     }
 
     setErrors(newErrors);

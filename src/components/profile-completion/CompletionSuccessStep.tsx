@@ -66,7 +66,7 @@ export function CompletionSuccessStep({
                     {[
                       customerProfile.defaultAddress.address1,
                       customerProfile.defaultAddress.city,
-                      customerProfile.defaultAddress.province,
+                      customerProfile.defaultAddress.territoryCode,
                     ]
                       .filter(Boolean)
                       .join(", ")}

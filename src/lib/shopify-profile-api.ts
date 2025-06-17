@@ -410,9 +410,10 @@ export async function fetchCustomerProfileForCompletion(
         address1?: string;
         address2?: string;
         city?: string;
-        province?: string;
-        country?: string;
+        territoryCode?: string;
+        zoneCode?: string;
         zip?: string;
+        phoneNumber?: string;
       };
       addresses: {
         nodes: Array<{
@@ -420,8 +421,8 @@ export async function fetchCustomerProfileForCompletion(
           address1?: string;
           address2?: string;
           city?: string;
-          province?: string;
-          country?: string;
+          territoryCode?: string;
+          zoneCode?: string;
           zip?: string;
           phoneNumber?: string;
         }>;
@@ -447,9 +448,10 @@ export async function fetchCustomerProfileForCompletion(
           address1
           address2
           city
-          province
-          country
+          territoryCode
+          zoneCode
           zip
+          phoneNumber
         }
         addresses(first: 10) {
           nodes {
@@ -457,8 +459,8 @@ export async function fetchCustomerProfileForCompletion(
             address1
             address2
             city
-            province
-            country
+            territoryCode
+            zoneCode
             zip
             phoneNumber
           }

@@ -13,17 +13,18 @@ export interface CustomerProfile {
     address1?: string;
     address2?: string;
     city?: string;
-    province?: string;
-    country?: string;
+    territoryCode?: string;
+    zoneCode?: string;
     zip?: string;
+    phoneNumber?: string;
   };
   addresses?: Array<{
     id: string;
     address1?: string;
     address2?: string;
     city?: string;
-    province?: string;
-    country?: string;
+    territoryCode?: string;
+    zoneCode?: string;
     zip?: string;
     phoneNumber?: string;
   }>;
@@ -57,7 +58,7 @@ export function validateAddress(
     return {
       isValid: false,
       isCompleteAddress: false,
-      missingFields: ["address1", "city", "province", "zip"],
+      missingFields: ["address1", "city", "territoryCode", "zip"],
     };
   }
 
@@ -65,7 +66,7 @@ export function validateAddress(
 
   if (!address.address1?.trim()) missingFields.push("address1");
   if (!address.city?.trim()) missingFields.push("city");
-  if (!address.province?.trim()) missingFields.push("province");
+  if (!address.territoryCode?.trim()) missingFields.push("territoryCode");
   if (!address.zip?.trim()) missingFields.push("zip");
 
   // Consider an address complete if it has more than just country
@@ -90,10 +91,12 @@ export function hasCompleteAddressWithPhone(
   // Check default address first
   if (customer.defaultAddress) {
     const defaultAddressValidation = validateAddress(customer.defaultAddress);
-    const hasPhoneInAddress =
-      customer.addresses?.some((addr) => addr.phoneNumber?.trim()) ||
-      customer.phoneNumber?.phoneNumber?.trim();
-    if (defaultAddressValidation.isCompleteAddress && hasPhoneInAddress) {
+    const hasPhoneInDefaultAddress =
+      customer.defaultAddress.phoneNumber?.trim();
+    if (
+      defaultAddressValidation.isCompleteAddress &&
+      hasPhoneInDefaultAddress
+    ) {
       return true;
     }
   }
@@ -106,7 +109,15 @@ export function hasCompleteAddressWithPhone(
     });
   }
 
-  return false;
+  // Fallback: check if customer has phone number at profile level AND has complete address
+  const hasProfileLevelPhone = customer.phoneNumber?.phoneNumber?.trim();
+  const hasCompleteAddress = customer.defaultAddress
+    ? validateAddress(customer.defaultAddress).isCompleteAddress
+    : customer.addresses?.some(
+        (addr) => validateAddress(addr).isCompleteAddress
+      );
+
+  return !!(hasProfileLevelPhone && hasCompleteAddress);
 }
 
 /**
@@ -262,9 +273,9 @@ export function validateAddressForm(address: {
   address1: string;
   address2?: string;
   city: string;
-  province: string;
+  territoryCode: string;
   zip: string;
-  country: string;
+  zoneCode: string;
 }): { isValid: boolean; errors: Record<string, string> } {
   const errors: Record<string, string> = {};
 
@@ -276,16 +287,16 @@ export function validateAddressForm(address: {
     errors.city = "City is required";
   }
 
-  if (!address.province?.trim()) {
-    errors.province = "State/Province is required";
+  if (!address.territoryCode?.trim()) {
+    errors.territoryCode = "Territory/State is required";
   }
 
   if (!address.zip?.trim()) {
     errors.zip = "Postal/ZIP code is required";
   }
 
-  if (!address.country?.trim()) {
-    errors.country = "Country is required";
+  if (!address.zoneCode?.trim()) {
+    errors.zoneCode = "Zone/Province is required";
   }
 
   return {
