@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAddress } from "@/context/AddressContext";
 import { useAuth } from "@/context/AuthContext";
 import AddAddressOverlay from "@/app/components/AddAddressOverlay";
@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 export default function DashboardPage() {
   const [activeSection, setActiveSection] = useState("orders");
   const [isAddAddressOpen, setIsAddAddressOpen] = useState(false);
+  const hasFetchedCustomerDataRef = useRef(false);
   const {
     addresses,
     selectedAddressId,
@@ -59,17 +60,20 @@ export default function DashboardPage() {
   useEffect(() => {
     // If user lands here and is authenticated but data isn't loaded yet
     // (e.g., after redirect from callback-handler), trigger a fetch.
-    if (isAuthenticated && !customerData && !authIsLoading && !authError) {
+    if (
+      isAuthenticated &&
+      !customerData &&
+      !authIsLoading &&
+      !authError &&
+      !hasFetchedCustomerDataRef.current
+    ) {
       console.log("Dashboard: Authenticated, no customer data. Fetching...");
+      hasFetchedCustomerDataRef.current = true;
       fetchCustomerData();
+    } else if (!isAuthenticated) {
+      hasFetchedCustomerDataRef.current = false;
     }
-  }, [
-    isAuthenticated,
-    customerData,
-    authIsLoading,
-    authError,
-    fetchCustomerData,
-  ]);
+  }, [isAuthenticated, customerData, authIsLoading, authError]);
 
   // Effect to fetch addresses when authenticated
   useEffect(() => {
@@ -77,7 +81,7 @@ export default function DashboardPage() {
       console.log("Dashboard: Fetching addresses...");
       fetchAddresses();
     }
-  }, [isAuthenticated, fetchAddresses, addresses.length, addressLoading]);
+  }, [isAuthenticated, addresses.length, addressLoading]);
 
   // Show loading state while checking authentication
   if (authIsLoading) {

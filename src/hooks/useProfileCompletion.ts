@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import {
   analyzeProfileCompletion,
@@ -27,6 +27,7 @@ export function useProfileCompletion(): UseProfileCompletionReturn {
     useState<ProfileCompletionStatus | null>(null);
   const [isCompletionFlowOpen, setIsCompletionFlowOpen] = useState(false);
   const [hasBeenPrompted, setHasBeenPrompted] = useState(false);
+  const hasFetchedRef = useRef(false);
 
   // Function to fetch complete profile data for analysis
   const fetchAndAnalyzeProfile = useCallback(async () => {
@@ -58,6 +59,7 @@ export function useProfileCompletion(): UseProfileCompletionReturn {
 
         const status = analyzeProfileCompletion(profile);
         setProfileStatus(status);
+        hasFetchedRef.current = true;
       }
     } catch (error) {
       console.error("Error analyzing profile completion:", error);
@@ -66,12 +68,13 @@ export function useProfileCompletion(): UseProfileCompletionReturn {
 
   // Analyze profile completion status when auth state changes
   useEffect(() => {
-    if (isAuthenticated && !isLoading && apiClient) {
+    if (isAuthenticated && !isLoading && apiClient && !hasFetchedRef.current) {
       fetchAndAnalyzeProfile();
-    } else {
+    } else if (!isAuthenticated) {
       setProfileStatus(null);
+      hasFetchedRef.current = false;
     }
-  }, [isAuthenticated, isLoading, apiClient, fetchAndAnalyzeProfile]);
+  }, [isAuthenticated, isLoading, apiClient]);
 
   // Auto-show completion flow for incomplete profiles (only once per session)
   useEffect(() => {
@@ -111,6 +114,7 @@ export function useProfileCompletion(): UseProfileCompletionReturn {
   };
 
   const refreshProfileStatus = () => {
+    hasFetchedRef.current = false;
     fetchAndAnalyzeProfile();
   };
 

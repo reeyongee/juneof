@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import {
   analyzeProfileCompletion,
@@ -37,10 +37,12 @@ export function ProfileCompletionFlow({
     useState<CustomerProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const isLoadingRef = useRef(false);
 
   const loadCustomerProfile = useCallback(async () => {
-    if (!apiClient) return;
+    if (!apiClient || isLoadingRef.current) return;
 
+    isLoadingRef.current = true;
     setIsLoading(true);
     setError(null);
 
@@ -92,8 +94,9 @@ export function ProfileCompletionFlow({
       setError(err instanceof Error ? err.message : "Failed to load profile");
     } finally {
       setIsLoading(false);
+      isLoadingRef.current = false;
     }
-  }, [apiClient, onComplete, onClose]);
+  }, [apiClient]);
 
   // Prevent ESC key from closing the dialog
   useEffect(() => {
@@ -114,7 +117,7 @@ export function ProfileCompletionFlow({
 
   // Fetch and analyze customer profile when dialog opens
   useEffect(() => {
-    if (isOpen && apiClient) {
+    if (isOpen && apiClient && !isLoadingRef.current) {
       loadCustomerProfile();
     }
   }, [isOpen, apiClient, loadCustomerProfile]);
