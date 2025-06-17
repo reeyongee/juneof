@@ -65,7 +65,7 @@ export default function AddAddressOverlay({
       newErrors.zip = "PIN code must be 6 digits";
     }
 
-    // Validate phone number
+    // Validate phone number if provided
     if (formData.phoneNumber.trim()) {
       const phoneValidation = validatePhoneNumber(
         `+91${formData.phoneNumber.replace(/\D/g, "")}`
@@ -203,15 +203,15 @@ export default function AddAddressOverlay({
                   onChange={(e) =>
                     handleInputChange("firstName", e.target.value)
                   }
-                  placeholder="first name"
-                  className={`bg-white border-gray-300 text-black placeholder:text-gray-500 focus:border-black focus:ring-black/20 h-10 text-sm ${
+                  className={`bg-white border-gray-300 text-black placeholder:text-gray-400 lowercase tracking-wider ${
                     errors.firstName ? "border-red-500" : ""
                   }`}
-                  required
-                  disabled={isSubmitting}
+                  placeholder="enter first name"
                 />
                 {errors.firstName && (
-                  <p className="text-sm text-red-600">{errors.firstName}</p>
+                  <p className="text-xs text-red-500 lowercase tracking-wider">
+                    {errors.firstName}
+                  </p>
                 )}
               </div>
 
@@ -229,15 +229,15 @@ export default function AddAddressOverlay({
                   onChange={(e) =>
                     handleInputChange("lastName", e.target.value)
                   }
-                  placeholder="last name"
-                  className={`bg-white border-gray-300 text-black placeholder:text-gray-500 focus:border-black focus:ring-black/20 h-10 text-sm ${
+                  className={`bg-white border-gray-300 text-black placeholder:text-gray-400 lowercase tracking-wider ${
                     errors.lastName ? "border-red-500" : ""
                   }`}
-                  required
-                  disabled={isSubmitting}
+                  placeholder="enter last name"
                 />
                 {errors.lastName && (
-                  <p className="text-sm text-red-600">{errors.lastName}</p>
+                  <p className="text-xs text-red-500 lowercase tracking-wider">
+                    {errors.lastName}
+                  </p>
                 )}
               </div>
             </div>
@@ -251,28 +251,29 @@ export default function AddAddressOverlay({
                 phone number (optional)
               </Label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                  <span className="text-sm text-gray-600">🇮🇳 +91</span>
+                <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-sm text-gray-600 lowercase tracking-wider">
+                  🇮🇳 +91
                 </div>
                 <Input
                   id="phoneNumber"
                   type="tel"
                   value={formData.phoneNumber}
                   onChange={(e) => {
-                    const value = e.target.value
-                      .replace(/\D/g, "")
-                      .slice(0, 10);
-                    handleInputChange("phoneNumber", value);
+                    const value = e.target.value.replace(/\D/g, "");
+                    if (value.length <= 10) {
+                      handleInputChange("phoneNumber", value);
+                    }
                   }}
-                  placeholder="9876543210"
-                  className={`pl-20 bg-white border-gray-300 text-black placeholder:text-gray-500 focus:border-black focus:ring-black/20 h-10 text-sm ${
+                  className={`bg-white border-gray-300 text-black placeholder:text-gray-400 lowercase tracking-wider pl-20 ${
                     errors.phoneNumber ? "border-red-500" : ""
                   }`}
-                  disabled={isSubmitting}
+                  placeholder="enter 10-digit number"
                 />
               </div>
               {errors.phoneNumber && (
-                <p className="text-sm text-red-600">{errors.phoneNumber}</p>
+                <p className="text-xs text-red-500 lowercase tracking-wider">
+                  {errors.phoneNumber}
+                </p>
               )}
             </div>
 
@@ -289,15 +290,15 @@ export default function AddAddressOverlay({
                 type="text"
                 value={formData.address1}
                 onChange={(e) => handleInputChange("address1", e.target.value)}
-                placeholder="house/flat number, street name"
-                className={`bg-white border-gray-300 text-black placeholder:text-gray-500 focus:border-black focus:ring-black/20 h-10 text-sm ${
+                className={`bg-white border-gray-300 text-black placeholder:text-gray-400 lowercase tracking-wider ${
                   errors.address1 ? "border-red-500" : ""
                 }`}
-                required
-                disabled={isSubmitting}
+                placeholder="house/flat no., building name"
               />
               {errors.address1 && (
-                <p className="text-sm text-red-600">{errors.address1}</p>
+                <p className="text-xs text-red-500 lowercase tracking-wider">
+                  {errors.address1}
+                </p>
               )}
             </div>
 
@@ -314,9 +315,8 @@ export default function AddAddressOverlay({
                 type="text"
                 value={formData.address2}
                 onChange={(e) => handleInputChange("address2", e.target.value)}
-                placeholder="area, landmark"
-                className="bg-white border-gray-300 text-black placeholder:text-gray-500 focus:border-black focus:ring-black/20 h-10 text-sm"
-                disabled={isSubmitting}
+                className="bg-white border-gray-300 text-black placeholder:text-gray-400 lowercase tracking-wider"
+                placeholder="street, landmark"
               />
             </div>
 
@@ -334,15 +334,15 @@ export default function AddAddressOverlay({
                   type="text"
                   value={formData.city}
                   onChange={(e) => handleInputChange("city", e.target.value)}
-                  placeholder="city"
-                  className={`bg-white border-gray-300 text-black placeholder:text-gray-500 focus:border-black focus:ring-black/20 h-10 text-sm ${
+                  className={`bg-white border-gray-300 text-black placeholder:text-gray-400 lowercase tracking-wider ${
                     errors.city ? "border-red-500" : ""
                   }`}
-                  required
-                  disabled={isSubmitting}
+                  placeholder="enter city"
                 />
                 {errors.city && (
-                  <p className="text-sm text-red-600">{errors.city}</p>
+                  <p className="text-xs text-red-500 lowercase tracking-wider">
+                    {errors.city}
+                  </p>
                 )}
               </div>
 
@@ -358,61 +358,66 @@ export default function AddAddressOverlay({
                   type="text"
                   value={formData.state}
                   onChange={(e) => handleInputChange("state", e.target.value)}
-                  placeholder="state"
-                  className={`bg-white border-gray-300 text-black placeholder:text-gray-500 focus:border-black focus:ring-black/20 h-10 text-sm ${
+                  className={`bg-white border-gray-300 text-black placeholder:text-gray-400 lowercase tracking-wider ${
                     errors.state ? "border-red-500" : ""
                   }`}
-                  required
-                  disabled={isSubmitting}
+                  placeholder="enter state"
                 />
                 {errors.state && (
-                  <p className="text-sm text-red-600">{errors.state}</p>
+                  <p className="text-xs text-red-500 lowercase tracking-wider">
+                    {errors.state}
+                  </p>
                 )}
               </div>
             </div>
 
-            {/* PIN Code */}
-            <div className="space-y-2">
-              <Label
-                htmlFor="zip"
-                className="text-sm lowercase tracking-widest text-black"
-              >
-                pin code
-              </Label>
-              <Input
-                id="zip"
-                type="text"
-                value={formData.zip}
-                onChange={(e) => handleInputChange("zip", e.target.value)}
-                placeholder="pin code"
-                className={`bg-white border-gray-300 text-black placeholder:text-gray-500 focus:border-black focus:ring-black/20 h-10 text-sm ${
-                  errors.zip ? "border-red-500" : ""
-                }`}
-                required
-                disabled={isSubmitting}
-              />
-              {errors.zip && (
-                <p className="text-sm text-red-600">{errors.zip}</p>
-              )}
-            </div>
+            {/* PIN Code and Company */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label
+                  htmlFor="zip"
+                  className="text-sm lowercase tracking-widest text-black"
+                >
+                  PIN code
+                </Label>
+                <Input
+                  id="zip"
+                  type="text"
+                  value={formData.zip}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, "");
+                    if (value.length <= 6) {
+                      handleInputChange("zip", value);
+                    }
+                  }}
+                  className={`bg-white border-gray-300 text-black placeholder:text-gray-400 lowercase tracking-wider ${
+                    errors.zip ? "border-red-500" : ""
+                  }`}
+                  placeholder="6-digit PIN"
+                />
+                {errors.zip && (
+                  <p className="text-xs text-red-500 lowercase tracking-wider">
+                    {errors.zip}
+                  </p>
+                )}
+              </div>
 
-            {/* Company (Optional) */}
-            <div className="space-y-2">
-              <Label
-                htmlFor="company"
-                className="text-sm lowercase tracking-widest text-black"
-              >
-                company (optional)
-              </Label>
-              <Input
-                id="company"
-                type="text"
-                value={formData.company}
-                onChange={(e) => handleInputChange("company", e.target.value)}
-                placeholder="company name"
-                className="bg-white border-gray-300 text-black placeholder:text-gray-500 focus:border-black focus:ring-black/20 h-10 text-sm"
-                disabled={isSubmitting}
-              />
+              <div className="space-y-2">
+                <Label
+                  htmlFor="company"
+                  className="text-sm lowercase tracking-widest text-black"
+                >
+                  company (optional)
+                </Label>
+                <Input
+                  id="company"
+                  type="text"
+                  value={formData.company}
+                  onChange={(e) => handleInputChange("company", e.target.value)}
+                  className="bg-white border-gray-300 text-black placeholder:text-gray-400 lowercase tracking-wider"
+                  placeholder="company name"
+                />
+              </div>
             </div>
 
             {/* Default Address Checkbox */}
@@ -421,14 +426,13 @@ export default function AddAddressOverlay({
                 id="isDefault"
                 checked={formData.isDefault}
                 onCheckedChange={(checked) =>
-                  handleInputChange("isDefault", checked as boolean)
+                  handleInputChange("isDefault", checked === true)
                 }
-                className="border-black data-[state=checked]:bg-black data-[state=checked]:border-black"
-                disabled={isSubmitting}
+                className="border-gray-300"
               />
               <Label
                 htmlFor="isDefault"
-                className="text-sm lowercase tracking-widest text-black cursor-pointer"
+                className="text-sm lowercase tracking-wider text-gray-700"
               >
                 set as default address
               </Label>
@@ -438,25 +442,25 @@ export default function AddAddressOverlay({
             <div className="flex gap-3 pt-4">
               <Button
                 type="button"
-                onClick={handleClose}
                 variant="outline"
-                className="flex-1 lowercase tracking-widest border-black text-black hover:bg-gray-100 h-10 text-sm transition-all duration-300 no-underline-effect"
+                onClick={handleClose}
+                className="flex-1 lowercase tracking-widest border-gray-300 text-black hover:bg-gray-50"
                 disabled={isSubmitting}
               >
                 cancel
               </Button>
               <Button
                 type="submit"
-                className="flex-1 lowercase tracking-widest border-black text-black hover:bg-black hover:text-white h-10 text-sm transition-all duration-300 no-underline-effect bg-white border"
+                className="flex-1 bg-black text-white hover:bg-gray-800 lowercase tracking-widest"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    saving...
+                    adding...
                   </>
                 ) : (
-                  "save address"
+                  "add address"
                 )}
               </Button>
             </div>
