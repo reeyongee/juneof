@@ -658,6 +658,17 @@ export default function DashboardPage() {
                     <User className="w-4 h-4 inline mr-3" />
                     edit profile
                   </button>
+
+                  {/* Spacer */}
+                  <div className="h-4"></div>
+
+                  {/* Logout Button */}
+                  <button
+                    onClick={logout}
+                    className="w-full text-left px-4 py-3 lowercase tracking-wider transition-colors no-underline-effect border border-red-600 text-red-600 bg-transparent hover:bg-red-600 hover:text-white"
+                  >
+                    logout
+                  </button>
                 </nav>
               </CardContent>
             </Card>
@@ -688,14 +699,6 @@ export default function DashboardPage() {
           });
         }}
       />
-
-      {/* Logout Button - Fixed position bottom right */}
-      <button
-        onClick={logout}
-        className="fixed bottom-6 right-6 bg-red-600 hover:bg-red-700 text-white px-6 py-3 text-sm lowercase tracking-widest transition-colors shadow-lg border border-red-700"
-      >
-        logout
-      </button>
     </div>
   );
 }
