@@ -823,7 +823,7 @@ export interface CartBuyerIdentityInput {
       zip?: string;
       phone?: string;
     };
-    oneTimeUse?: boolean;
+    deliveryAddressValidationStrategy?: string;
   }>;
 }
 
@@ -1095,7 +1095,7 @@ export async function createCartAndRedirect(
       buyerIdentity.deliveryAddressPreferences = [
         {
           deliveryAddress: deliveryAddress,
-          oneTimeUse: true, // Since this is a one-time checkout address
+          deliveryAddressValidationStrategy: "COUNTRY_CODE_ONLY",
         },
       ];
     }
