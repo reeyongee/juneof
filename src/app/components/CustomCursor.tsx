@@ -306,16 +306,64 @@ export default function CustomCursor() {
       return;
     }
 
-    // Check if this element should use enlarging circle instead of magnetic box
-    const shouldUseCircle =
-      target.closest('a[href="/"]') || // Logo link
-      target.classList.contains("clear-cart-btn") ||
-      target.textContent?.toLowerCase().includes("wash care") ||
-      target.textContent?.toLowerCase().includes("size chart") ||
-      target.textContent?.trim() === "+" || // Cart quantity increase
-      target.textContent?.trim() === "-" || // Cart quantity decrease
-      target.getAttribute("aria-label")?.includes("Remove") ||
-      (target as HTMLElement).querySelector(".h-6.w-6"); // Close button with icon
+    // Hybrid detection: explicit control + improved automatic detection
+    const explicitCursorType = target.getAttribute("data-cursor");
+
+    let shouldUseCircle = false;
+
+    if (explicitCursorType) {
+      // Explicit control via data-cursor attribute
+      shouldUseCircle = explicitCursorType === "circle";
+      console.log(`Explicit cursor type detected: ${explicitCursorType}`);
+    } else {
+      // Improved automatic detection for existing buttons
+      const rect = target.getBoundingClientRect();
+      const textContent = target.textContent?.trim() || "";
+      const hasIcon = !!(target as HTMLElement).querySelector(
+        "svg, .icon, [class*='icon'], .h-6.w-6"
+      );
+      const isIconButton = hasIcon && textContent.length < 3;
+      const isSmallButton = rect.width < 120 && rect.height < 60;
+      const isQuantityButton = textContent === "+" || textContent === "-";
+      const isCloseButton =
+        target.getAttribute("aria-label")?.toLowerCase().includes("close") ||
+        target.getAttribute("aria-label")?.toLowerCase().includes("remove");
+
+      shouldUseCircle =
+        // Original specific cases (keep existing behavior)
+        !!target.closest('a[href="/"]') || // Logo link
+        target.classList.contains("clear-cart-btn") ||
+        textContent.toLowerCase().includes("wash care") ||
+        textContent.toLowerCase().includes("size chart") ||
+        isQuantityButton ||
+        isCloseButton ||
+        // New automatic detection
+        isIconButton || // Buttons with icons and minimal text
+        (isSmallButton && textContent.length < 8) || // Small buttons with short text
+        // Common button patterns
+        !!textContent
+          .toLowerCase()
+          .match(/^(ok|yes|no|x|✕|×|close|done|save|edit|delete|copy|share)$/i);
+
+      if (shouldUseCircle) {
+        console.log(`Auto-detected circle cursor for button:`, {
+          text: textContent,
+          size: `${rect.width}x${rect.height}`,
+          hasIcon,
+          isIconButton,
+          isSmallButton,
+          reason: isIconButton
+            ? "icon-button"
+            : isSmallButton
+            ? "small-button"
+            : isQuantityButton
+            ? "quantity-button"
+            : isCloseButton
+            ? "close-button"
+            : "text-pattern",
+        });
+      }
+    }
 
     if (shouldUseCircle) {
       // Use enlarging circle effect
