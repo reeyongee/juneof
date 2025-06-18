@@ -44,13 +44,8 @@ export default function DashboardPage() {
     error: authError,
     fetchCustomerData,
   } = useAuth();
-  const {
-    profileStatus,
-    showCompletionFlow,
-    hideCompletionFlow,
-    isCompletionFlowOpen,
-    refreshProfileStatus,
-  } = useProfileCompletion();
+  const { hideCompletionFlow, isCompletionFlowOpen, refreshProfileStatus } =
+    useProfileCompletion();
 
   // Log the initial state from AuthContext IMMEDIATELY
   console.log("DashboardPage RENDER - AuthContext state:", {
@@ -423,51 +418,6 @@ export default function DashboardPage() {
             <h3 className="text-xl font-serif lowercase tracking-widest text-black mb-6">
               profile settings
             </h3>
-
-            {/* Profile completion status */}
-            {profileStatus && !profileStatus.isComplete && (
-              <Card className="bg-blue-50 border-blue-200">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h4 className="font-medium lowercase tracking-wider text-blue-900">
-                      complete your profile
-                    </h4>
-                    <span className="text-sm text-blue-700">
-                      {profileStatus.completionPercentage}% complete
-                    </span>
-                  </div>
-                  <p className="text-sm text-blue-800 mb-4">
-                    complete your profile to get personalized recommendations
-                    and faster checkout.
-                  </p>
-                  <Button
-                    onClick={showCompletionFlow}
-                    className="bg-blue-600 hover:bg-blue-700 text-white lowercase tracking-wider"
-                  >
-                    complete profile
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Profile completed status */}
-            {profileStatus && profileStatus.isComplete && (
-              <Card className="bg-green-50 border-green-200">
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
-                      <span className="text-white text-xs">✓</span>
-                    </div>
-                    <h4 className="font-medium lowercase tracking-wider text-green-900">
-                      profile complete
-                    </h4>
-                  </div>
-                  <p className="text-sm text-green-800">
-                    your profile is complete! you can update it anytime.
-                  </p>
-                </CardContent>
-              </Card>
-            )}
 
             {/* Editable Name Section */}
             <Card className="bg-white border-gray-300">
