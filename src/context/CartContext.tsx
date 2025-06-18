@@ -1,8 +1,15 @@
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  ReactNode,
+  useEffect,
+} from "react";
 import { createCheckoutAndRedirect } from "@/lib/shopify";
 import { toast } from "sonner";
+import { useAuth } from "./AuthContext";
 
 export interface CartItem {
   id: string; // Unique ID for the cart item (e.g., productID + size)
@@ -40,6 +47,14 @@ interface CartProviderProps {
 
 export const CartProvider = ({ children }: CartProviderProps) => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const { isAuthenticated } = useAuth();
+
+  // Clear cart when user logs out
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setCartItems([]);
+    }
+  }, [isAuthenticated]);
 
   const addItemToCart = (newItemData: Omit<CartItem, "id" | "quantity">) => {
     // Determine target quantity based on the state *before* this specific add action.

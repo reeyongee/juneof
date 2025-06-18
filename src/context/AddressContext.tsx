@@ -1,6 +1,12 @@
 "use client";
 
-import React, { createContext, useContext, useState, useCallback } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+} from "react";
 import {
   GET_CUSTOMER_ADDRESSES_QUERY,
   CREATE_CUSTOMER_ADDRESS_MUTATION,
@@ -57,6 +63,16 @@ export const AddressProvider: React.FC<{ children: React.ReactNode }> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { apiClient, isAuthenticated } = useAuth();
+
+  // Clear addresses when user logs out
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setAddresses([]);
+      setSelectedAddressId(null);
+      setError(null);
+      setIsLoading(false);
+    }
+  }, [isAuthenticated]);
 
   const fetchAddresses = useCallback(async () => {
     if (!apiClient || !isAuthenticated) {
