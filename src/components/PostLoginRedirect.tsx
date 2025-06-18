@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, Suspense } from "react";
+import { useEffect, useRef, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useProfileCompletion } from "@/hooks/useProfileCompletion";
@@ -12,6 +12,7 @@ function PostLoginRedirectContent() {
   const { isProfileComplete, profileStatus } = useProfileCompletion();
   const hasRedirectedRef = useRef(false);
   const isRedirectingRef = useRef(false);
+  const [isInRedirectPhase, setIsInRedirectPhase] = useState(false);
 
   useEffect(() => {
     // Only run redirect logic if:
@@ -32,6 +33,7 @@ function PostLoginRedirectContent() {
     ) {
       hasRedirectedRef.current = true;
       isRedirectingRef.current = true;
+      setIsInRedirectPhase(true);
 
       console.log("PostLoginRedirect: Determining redirect destination", {
         isProfileComplete,
@@ -39,8 +41,7 @@ function PostLoginRedirectContent() {
         missingFields: profileStatus.missingFields,
       });
 
-      // Use replace instead of push to avoid back button issues
-      // Add a small delay to ensure all state is settled
+      // Add a 1.2 second loading phase so users never see dashboard flash
       setTimeout(() => {
         if (isProfileComplete) {
           // Profile is complete -> redirect to homepage
@@ -56,7 +57,7 @@ function PostLoginRedirectContent() {
           // Redirect to clean dashboard URL without auth_completed params
           router.replace("/dashboard");
         }
-      }, 100);
+      }, 1200);
     }
   }, [
     searchParams,
@@ -68,7 +69,21 @@ function PostLoginRedirectContent() {
     router,
   ]);
 
-  // This component doesn't render anything
+  // Show loading screen during redirect phase to prevent dashboard flash
+  if (isInRedirectPhase) {
+    return (
+      <div className="min-h-screen bg-[#F8F4EC] flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
+          <p className="text-lg lowercase tracking-wider">
+            setting up your account...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // This component doesn't render anything when not in redirect phase
   return null;
 }
 
