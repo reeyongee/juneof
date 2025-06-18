@@ -20,6 +20,7 @@ export default function DashboardPage() {
   const [isAddAddressOpen, setIsAddAddressOpen] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
   const hasFetchedCustomerDataRef = useRef(false);
+  const hasFetchedAddressesRef = useRef(false);
 
   // Name editing state
   const [isEditingName, setIsEditingName] = useState(false);
@@ -158,9 +159,17 @@ export default function DashboardPage() {
 
   // Effect to fetch addresses when authenticated
   useEffect(() => {
-    if (isAuthenticated && addresses.length === 0 && !addressLoading) {
+    if (
+      isAuthenticated &&
+      addresses.length === 0 &&
+      !addressLoading &&
+      !hasFetchedAddressesRef.current
+    ) {
       console.log("Dashboard: Fetching addresses...");
+      hasFetchedAddressesRef.current = true;
       fetchAddresses();
+    } else if (!isAuthenticated) {
+      hasFetchedAddressesRef.current = false;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, addresses.length, addressLoading]);
@@ -176,24 +185,24 @@ export default function DashboardPage() {
       !authIsLoading &&
       isProfileComplete
     ) {
-      // User has complete profile but was redirected to dashboard, this shouldn't happen
-      // Set redirecting state to show loading instead of dashboard content
+      // User has complete profile but was redirected to dashboard, redirect them to homepage
+      console.log(
+        "Dashboard: Complete profile detected with auth_completed, redirecting to homepage"
+      );
       setIsRedirecting(true);
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 500);
     }
   }, [isAuthenticated, authIsLoading, isProfileComplete]);
 
   // Effect to show profile completion flow for incomplete profiles
   useEffect(() => {
-    // Only show completion flow if we're not in the middle of a post-login redirect
-    const urlParams = new URLSearchParams(window.location.search);
-    const isPostLoginRedirect = urlParams.get("auth_completed") === "true";
-
     if (
       isAuthenticated &&
       !authIsLoading &&
       !isProfileComplete &&
-      !isCompletionFlowOpen &&
-      !isPostLoginRedirect
+      !isCompletionFlowOpen
     ) {
       console.log("Dashboard: Profile incomplete, showing completion flow...");
       showCompletionFlow();

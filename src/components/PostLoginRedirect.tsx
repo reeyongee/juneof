@@ -53,6 +53,7 @@ function PostLoginRedirectContent() {
           console.log(
             "PostLoginRedirect: Profile incomplete, redirecting to dashboard"
           );
+          // Redirect to clean dashboard URL without auth_completed params
           router.replace("/dashboard");
         }
       }, 100);
