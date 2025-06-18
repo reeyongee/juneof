@@ -262,6 +262,21 @@ export const CART_CREATE_MUTATION = gql`
             firstName
             lastName
           }
+          deliveryAddressPreferences {
+            ... on MailingAddress {
+              id
+              firstName
+              lastName
+              company
+              address1
+              address2
+              city
+              province
+              country
+              zip
+              phone
+            }
+          }
         }
       }
       userErrors {
@@ -795,16 +810,20 @@ export interface CartBuyerIdentityInput {
   customerAccessToken?: string;
   countryCode?: string;
   deliveryAddressPreferences?: Array<{
-    firstName?: string;
-    lastName?: string;
-    company?: string;
-    address1?: string;
-    address2?: string;
-    city?: string;
-    province?: string;
-    country?: string;
-    zip?: string;
-    phone?: string;
+    customerAddressId?: string;
+    deliveryAddress?: {
+      firstName?: string;
+      lastName?: string;
+      company?: string;
+      address1?: string;
+      address2?: string;
+      city?: string;
+      province?: string;
+      country?: string;
+      zip?: string;
+      phone?: string;
+    };
+    oneTimeUse?: boolean;
   }>;
 }
 
@@ -1073,7 +1092,12 @@ export async function createCartAndRedirect(
     }
 
     if (deliveryAddress) {
-      buyerIdentity.deliveryAddressPreferences = [deliveryAddress];
+      buyerIdentity.deliveryAddressPreferences = [
+        {
+          deliveryAddress: deliveryAddress,
+          oneTimeUse: true, // Since this is a one-time checkout address
+        },
+      ];
     }
 
     const cart = await createCart(lines, buyerIdentity);
