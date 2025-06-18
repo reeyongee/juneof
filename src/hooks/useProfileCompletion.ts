@@ -19,6 +19,7 @@ interface UseProfileCompletionReturn {
   hideCompletionFlow: () => void;
   isCompletionFlowOpen: boolean;
   refreshProfileStatus: () => void;
+  isProfileComplete: boolean;
 }
 
 export function useProfileCompletion(): UseProfileCompletionReturn {
@@ -26,7 +27,6 @@ export function useProfileCompletion(): UseProfileCompletionReturn {
   const [profileStatus, setProfileStatus] =
     useState<ProfileCompletionStatus | null>(null);
   const [isCompletionFlowOpen, setIsCompletionFlowOpen] = useState(false);
-  const [hasBeenPrompted, setHasBeenPrompted] = useState(false);
   const hasFetchedRef = useRef(false);
 
   // Function to fetch complete profile data for analysis
@@ -78,28 +78,29 @@ export function useProfileCompletion(): UseProfileCompletionReturn {
   }, [isAuthenticated, isLoading, apiClient]);
 
   // Auto-show completion flow for incomplete profiles (only once per session)
-  useEffect(() => {
-    if (
-      isAuthenticated &&
-      !isLoading &&
-      profileStatus &&
-      !profileStatus.isComplete &&
-      !hasBeenPrompted &&
-      !isCompletionFlowOpen
-    ) {
-      // Only auto-show if completion is significantly low (less than 50%)
-      if (profileStatus.completionPercentage < 50) {
-        setIsCompletionFlowOpen(true);
-        setHasBeenPrompted(true);
-      }
-    }
-  }, [
-    isAuthenticated,
-    isLoading,
-    profileStatus,
-    hasBeenPrompted,
-    isCompletionFlowOpen,
-  ]);
+  // Disabled auto-show since we now handle this manually in dashboard and post-login redirect
+  // useEffect(() => {
+  //   if (
+  //     isAuthenticated &&
+  //     !isLoading &&
+  //     profileStatus &&
+  //     !profileStatus.isComplete &&
+  //     !hasBeenPrompted &&
+  //     !isCompletionFlowOpen
+  //   ) {
+  //     // Only auto-show if completion is significantly low (less than 50%)
+  //     if (profileStatus.completionPercentage < 50) {
+  //       setIsCompletionFlowOpen(true);
+  //       setHasBeenPrompted(true);
+  //     }
+  //   }
+  // }, [
+  //   isAuthenticated,
+  //   isLoading,
+  //   profileStatus,
+  //   hasBeenPrompted,
+  //   isCompletionFlowOpen,
+  // ]);
 
   const shouldShowCompletion = Boolean(
     isAuthenticated && !isLoading && profileStatus && !profileStatus.isComplete
@@ -107,7 +108,6 @@ export function useProfileCompletion(): UseProfileCompletionReturn {
 
   const showCompletionFlow = () => {
     setIsCompletionFlowOpen(true);
-    setHasBeenPrompted(true);
   };
 
   const hideCompletionFlow = () => {
@@ -119,6 +119,8 @@ export function useProfileCompletion(): UseProfileCompletionReturn {
     fetchAndAnalyzeProfile();
   };
 
+  const isProfileComplete = Boolean(profileStatus?.isComplete);
+
   return {
     profileStatus,
     shouldShowCompletion,
@@ -126,5 +128,6 @@ export function useProfileCompletion(): UseProfileCompletionReturn {
     hideCompletionFlow,
     isCompletionFlowOpen,
     refreshProfileStatus,
+    isProfileComplete,
   };
 }

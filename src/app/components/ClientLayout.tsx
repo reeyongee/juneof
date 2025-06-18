@@ -8,6 +8,7 @@ import CustomCursor from "./CustomCursor";
 import { useSplash } from "@/context/SplashContext";
 import { AddressProvider } from "@/context/AddressContext";
 import { Toaster } from "@/components/ui/sonner";
+import PostLoginRedirect from "@/components/PostLoginRedirect";
 
 interface ClientLayoutProps {
   children: React.ReactNode;
@@ -46,6 +47,7 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
   return (
     <AddressProvider>
       <CustomCursor />
+      <PostLoginRedirect />
       {showSplash && <SplashScreen onLoadComplete={handleLoadComplete} />}
 
       <div

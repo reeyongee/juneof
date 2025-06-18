@@ -7,6 +7,8 @@ import Image from "next/image";
 import { useCart } from "@/context/CartContext";
 import { useAddress } from "@/context/AddressContext";
 import { useAuth } from "@/context/AuthContext";
+import { useProfileCompletion } from "@/hooks/useProfileCompletion";
+import { useRouter } from "next/navigation";
 import AddressSelectionOverlay from "./AddressSelectionOverlay";
 import { ShoppingBagIcon, XMarkIcon } from "@heroicons/react/24/outline";
 
@@ -46,6 +48,12 @@ export default function CartOverlay({ isOpen, onClose }: CartOverlayProps) {
 
   // Use auth from context
   const { isAuthenticated, login } = useAuth();
+
+  // Use profile completion from hook
+  const { isProfileComplete } = useProfileCompletion();
+
+  // Use router for navigation
+  const router = useRouter();
 
   const [isCheckingOut, setIsCheckingOut] = useState(false);
 
@@ -140,6 +148,14 @@ export default function CartOverlay({ isOpen, onClose }: CartOverlayProps) {
     // Check if user is authenticated
     if (!isAuthenticated) {
       login();
+      return;
+    }
+
+    // Check if profile is complete
+    if (!isProfileComplete) {
+      // Redirect to dashboard with profile completion flow
+      router.push("/dashboard");
+      handleCloseStart(); // Close cart overlay
       return;
     }
 
@@ -337,6 +353,8 @@ export default function CartOverlay({ isOpen, onClose }: CartOverlayProps) {
                 ? "Processing..."
                 : !isAuthenticated
                 ? "sign in to checkout"
+                : !isProfileComplete
+                ? "complete profile to checkout"
                 : "checkout"}
             </button>
           </div>

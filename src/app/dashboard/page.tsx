@@ -44,8 +44,13 @@ export default function DashboardPage() {
     error: authError,
     fetchCustomerData,
   } = useAuth();
-  const { hideCompletionFlow, isCompletionFlowOpen, refreshProfileStatus } =
-    useProfileCompletion();
+  const {
+    hideCompletionFlow,
+    isCompletionFlowOpen,
+    refreshProfileStatus,
+    showCompletionFlow,
+    isProfileComplete,
+  } = useProfileCompletion();
 
   // Log the initial state from AuthContext IMMEDIATELY
   console.log("DashboardPage RENDER - AuthContext state:", {
@@ -158,6 +163,20 @@ export default function DashboardPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, addresses.length, addressLoading]);
+
+  // Effect to show profile completion flow for incomplete profiles
+  useEffect(() => {
+    if (
+      isAuthenticated &&
+      !authIsLoading &&
+      !isProfileComplete &&
+      !isCompletionFlowOpen
+    ) {
+      console.log("Dashboard: Profile incomplete, showing completion flow...");
+      showCompletionFlow();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, authIsLoading, isProfileComplete, isCompletionFlowOpen]);
 
   // Show loading state while checking authentication
   if (authIsLoading) {
