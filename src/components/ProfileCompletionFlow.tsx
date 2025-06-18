@@ -218,7 +218,7 @@ export function ProfileCompletionFlow({
       <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" />
 
       {/* Overlay Content */}
-      <div className="relative bg-[#F8F4EC] w-full max-w-md mx-4 max-h-[calc(100vh-10rem)] overflow-y-auto border border-gray-300 mt-20">
+      <div className="relative bg-[#F8F4EC] w-full max-w-md mx-4 max-h-[calc(100vh-12rem)] overflow-y-auto border border-gray-300 mt-24">
         {/* Header */}
         <div className="p-6 border-b border-gray-300">
           <div className="flex items-center gap-3 mb-3">
