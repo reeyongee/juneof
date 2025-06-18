@@ -90,7 +90,7 @@ export default function CustomCursor() {
       magneticTweenRef.current = null;
     }
 
-    // Force reset all cursor properties
+    // Force reset all cursor properties with explicit values
     if (outerCursorRef.current) {
       gsap.set(outerCursorRef.current, {
         width: cursorOriginals.current.width,
@@ -103,8 +103,14 @@ export default function CustomCursor() {
         scaleX: 1,
         scaleY: 1,
         rotation: 0,
+        skewX: 0,
+        skewY: 0,
         // Clear any transform-origin changes
         transformOrigin: "50% 50%",
+        // Reset any potential CSS transforms
+        transform: "none",
+        // Ensure no flex distortion
+        flexShrink: 0,
       });
     }
 
@@ -114,6 +120,9 @@ export default function CustomCursor() {
         opacity: 1,
         scaleX: 1,
         scaleY: 1,
+        rotation: 0,
+        skewX: 0,
+        skewY: 0,
       });
     }
 
@@ -123,7 +132,78 @@ export default function CustomCursor() {
         autoAlpha: 1,
         scaleX: 1,
         scaleY: 1,
+        rotation: 0,
       });
+    }
+  }, []);
+
+  // Shape validation and correction function
+  const validateAndCorrectCursorShape = useCallback(() => {
+    if (!outerCursorRef.current) return;
+
+    const element = outerCursorRef.current;
+    const computedStyle = window.getComputedStyle(element);
+
+    // Get current dimensions
+    const currentWidth = parseFloat(computedStyle.width);
+    const currentHeight = parseFloat(computedStyle.height);
+    const currentBorderRadius = computedStyle.borderRadius;
+
+    // Check if cursor is in normal (circular) state
+    const shouldBeCircular = !isStuckRef.current;
+
+    if (shouldBeCircular) {
+      // Validate circular shape
+      const expectedSize = cursorOriginals.current.width;
+      const tolerance = 1; // 1px tolerance
+
+      const isWrongSize =
+        Math.abs(currentWidth - expectedSize) > tolerance ||
+        Math.abs(currentHeight - expectedSize) > tolerance;
+      const isNotCircular = !currentBorderRadius.includes("50%");
+
+      if (isWrongSize || isNotCircular) {
+        console.warn("Cursor shape validation failed, correcting:", {
+          currentWidth,
+          currentHeight,
+          expectedSize,
+          currentBorderRadius,
+          isWrongSize,
+          isNotCircular,
+        });
+
+        // Force correction
+        gsap.set(element, {
+          width: expectedSize,
+          height: expectedSize,
+          borderRadius: "50%",
+          scaleX: 1,
+          scaleY: 1,
+        });
+      }
+    }
+  }, []);
+
+  // Periodic shape monitoring
+  const shapeMonitorRef = useRef<NodeJS.Timeout | null>(null);
+
+  const startShapeMonitoring = useCallback(() => {
+    if (shapeMonitorRef.current) return; // Already monitoring
+
+    const monitorShape = () => {
+      validateAndCorrectCursorShape();
+      shapeMonitorRef.current = setTimeout(monitorShape, 500); // Check every 500ms
+    };
+
+    monitorShape();
+    console.log("Started cursor shape monitoring");
+  }, [validateAndCorrectCursorShape]);
+
+  const stopShapeMonitoring = useCallback(() => {
+    if (shapeMonitorRef.current) {
+      clearTimeout(shapeMonitorRef.current);
+      shapeMonitorRef.current = null;
+      console.log("Stopped cursor shape monitoring");
     }
   }, []);
 
@@ -385,6 +465,8 @@ export default function CustomCursor() {
             scaleY: 1,
           });
         }
+        // Validate shape after transition
+        setTimeout(validateAndCorrectCursorShape, 50);
       },
       // Add error handling
       onInterrupt: () => {
@@ -401,9 +483,11 @@ export default function CustomCursor() {
             scaleY: 1,
           });
         }
+        // Validate shape after forced reset
+        setTimeout(validateAndCorrectCursorShape, 50);
       },
     });
-  }, []);
+  }, [validateAndCorrectCursorShape]);
 
   // Initialize cursor and animations
   const initializeCursor = useCallback(() => {
@@ -568,6 +652,8 @@ export default function CustomCursor() {
     // Start render loop only if not showing splash - NO DELAY
     if (!showSplash) {
       startRenderLoop();
+      // Start shape monitoring for robustness
+      startShapeMonitoring();
     }
 
     // Mark as initialized
@@ -582,6 +668,9 @@ export default function CustomCursor() {
 
       // Stop render loop
       stopRenderLoop();
+
+      // Stop shape monitoring
+      stopShapeMonitoring();
 
       // Reset state
       isStuckRef.current = false;
@@ -628,6 +717,8 @@ export default function CustomCursor() {
     easing,
     showSplash,
     pathname,
+    startShapeMonitoring,
+    stopShapeMonitoring,
   ]);
 
   // Initialize on mount and pathname changes - but be smarter about it
@@ -712,15 +803,28 @@ export default function CustomCursor() {
         // Start render loop after splash screen
         startRenderLoop();
 
+        // Start shape monitoring after splash
+        startShapeMonitoring();
+
         // Initialize cursor if not already initialized
         if (!isInitializedRef.current) {
           setTimeout(() => {
             initializeCursor();
           }, 100);
         }
+
+        // Validate cursor shape after splash transition
+        setTimeout(validateAndCorrectCursorShape, 200);
       }
     }
-  }, [showSplash, startRenderLoop, stopRenderLoop, initializeCursor]);
+  }, [
+    showSplash,
+    startRenderLoop,
+    stopRenderLoop,
+    initializeCursor,
+    startShapeMonitoring,
+    validateAndCorrectCursorShape,
+  ]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -732,6 +836,9 @@ export default function CustomCursor() {
 
       // Stop render loop
       stopRenderLoop();
+
+      // Stop shape monitoring
+      stopShapeMonitoring();
 
       if (isCursorActiveRef.current) {
         document.body.classList.remove("custom-cursor-active");
@@ -745,7 +852,7 @@ export default function CustomCursor() {
         magneticTweenRef.current.kill();
       }
     };
-  }, [stopRenderLoop]);
+  }, [stopRenderLoop, stopShapeMonitoring]);
 
   return (
     <div
