@@ -43,6 +43,7 @@ export default function DashboardPage() {
     customerData,
     apiClient,
     login,
+    logout,
     isLoading: authIsLoading, // Rename to avoid conflict with local isLoading if any
     error: authError,
     fetchCustomerData,
@@ -687,6 +688,14 @@ export default function DashboardPage() {
           });
         }}
       />
+
+      {/* Logout Button - Fixed position bottom right */}
+      <button
+        onClick={logout}
+        className="fixed bottom-6 right-6 bg-red-600 hover:bg-red-700 text-white px-6 py-3 text-sm lowercase tracking-widest transition-colors shadow-lg border border-red-700"
+      >
+        logout
+      </button>
     </div>
   );
 }
