@@ -287,58 +287,49 @@ export default function CartOverlay({ isOpen, onClose }: CartOverlayProps) {
         {cartItems.length > 0 && (
           <div className="p-6 border-t border-gray-300 space-y-4">
             {/* Address Selection */}
-            <div>
-              {!isAuthenticated ? (
-                <div className="bg-[#F8F4EC] border border-gray-300 p-3 text-xs">
-                  <div className="flex justify-center">
-                    <button
-                      onClick={login}
-                      className="text-xs tracking-widest lowercase hover:text-gray-600 transition-colors underline"
-                    >
-                      sign in to view addresses
-                    </button>
+            {isAuthenticated && isProfileComplete && (
+              <div>
+                {selectedAddress ? (
+                  <div className="bg-[#F8F4EC] border border-gray-300 p-3 text-xs">
+                    <div className="space-y-3">
+                      <div>
+                        <p className="font-medium text-black lowercase tracking-wider truncate">
+                          {selectedAddress.name ||
+                            `${selectedAddress.firstName} ${selectedAddress.lastName}`.trim()}
+                        </p>
+                      </div>
+                      <div className="text-gray-600 lowercase tracking-wider">
+                        <p className="truncate">{selectedAddress.address1}</p>
+                        <p className="truncate">
+                          {selectedAddress.city},{" "}
+                          {selectedAddress.province || selectedAddress.zoneCode}{" "}
+                          {selectedAddress.zip}
+                        </p>
+                      </div>
+                      <div className="flex justify-center">
+                        <button
+                          onClick={() => setIsAddressSelectionOpen(true)}
+                          className="text-xs tracking-widest lowercase hover:text-gray-600 transition-colors underline"
+                        >
+                          change address
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ) : selectedAddress ? (
-                <div className="bg-[#F8F4EC] border border-gray-300 p-3 text-xs">
-                  <div className="space-y-3">
-                    <div>
-                      <p className="font-medium text-black lowercase tracking-wider truncate">
-                        {selectedAddress.name ||
-                          `${selectedAddress.firstName} ${selectedAddress.lastName}`.trim()}
-                      </p>
-                    </div>
-                    <div className="text-gray-600 lowercase tracking-wider">
-                      <p className="truncate">{selectedAddress.address1}</p>
-                      <p className="truncate">
-                        {selectedAddress.city},{" "}
-                        {selectedAddress.province || selectedAddress.zoneCode}{" "}
-                        {selectedAddress.zip}
-                      </p>
-                    </div>
+                ) : (
+                  <div className="bg-[#F8F4EC] border border-gray-300 p-3 text-xs">
                     <div className="flex justify-center">
                       <button
                         onClick={() => setIsAddressSelectionOpen(true)}
                         className="text-xs tracking-widest lowercase hover:text-gray-600 transition-colors underline"
                       >
-                        change address
+                        select address
                       </button>
                     </div>
                   </div>
-                </div>
-              ) : (
-                <div className="bg-[#F8F4EC] border border-gray-300 p-3 text-xs">
-                  <div className="flex justify-center">
-                    <button
-                      onClick={() => setIsAddressSelectionOpen(true)}
-                      className="text-xs tracking-widest lowercase hover:text-gray-600 transition-colors underline"
-                    >
-                      select address
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
 
             <div className="flex justify-between items-center">
               <p className="text-lg font-serif lowercase">Subtotal</p>

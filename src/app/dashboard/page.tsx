@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label";
 export default function DashboardPage() {
   const [activeSection, setActiveSection] = useState("orders");
   const [isAddAddressOpen, setIsAddAddressOpen] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
   const hasFetchedCustomerDataRef = useRef(false);
 
   // Name editing state
@@ -164,13 +165,35 @@ export default function DashboardPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, addresses.length, addressLoading]);
 
+  // Effect to handle post-login redirect check
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const isPostLoginRedirect = urlParams.get("auth_completed") === "true";
+
+    if (
+      isPostLoginRedirect &&
+      isAuthenticated &&
+      !authIsLoading &&
+      isProfileComplete
+    ) {
+      // User has complete profile but was redirected to dashboard, this shouldn't happen
+      // Set redirecting state to show loading instead of dashboard content
+      setIsRedirecting(true);
+    }
+  }, [isAuthenticated, authIsLoading, isProfileComplete]);
+
   // Effect to show profile completion flow for incomplete profiles
   useEffect(() => {
+    // Only show completion flow if we're not in the middle of a post-login redirect
+    const urlParams = new URLSearchParams(window.location.search);
+    const isPostLoginRedirect = urlParams.get("auth_completed") === "true";
+
     if (
       isAuthenticated &&
       !authIsLoading &&
       !isProfileComplete &&
-      !isCompletionFlowOpen
+      !isCompletionFlowOpen &&
+      !isPostLoginRedirect
     ) {
       console.log("Dashboard: Profile incomplete, showing completion flow...");
       showCompletionFlow();
@@ -178,17 +201,17 @@ export default function DashboardPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, authIsLoading, isProfileComplete, isCompletionFlowOpen]);
 
-  // Show loading state while checking authentication
-  if (authIsLoading) {
+  // Show loading state while checking authentication or redirecting
+  if (authIsLoading || isRedirecting) {
     console.log(
-      "DashboardPage: Rendering loading state (authIsLoading is true)"
+      "DashboardPage: Rendering loading state (authIsLoading is true or redirecting)"
     );
     return (
       <div className="min-h-screen bg-[#F8F4EC] flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
           <p className="text-lg lowercase tracking-wider">
-            loading dashboard...
+            {isRedirecting ? "redirecting..." : "loading dashboard..."}
           </p>
         </div>
       </div>
@@ -633,11 +656,14 @@ export default function DashboardPage() {
         onComplete={() => {
           refreshProfileStatus();
           hideCompletionFlow();
-          toast.success("profile completed!", {
-            description:
-              "your profile has been successfully updated. you'll now get personalized recommendations and faster checkout.",
-            duration: 4000,
-          });
+          // Only show success toast if profile was actually incomplete when flow started
+          if (!isProfileComplete) {
+            toast.success("profile completed!", {
+              description:
+                "your profile has been successfully updated. you'll now get personalized recommendations and faster checkout.",
+              duration: 4000,
+            });
+          }
         }}
       />
     </div>

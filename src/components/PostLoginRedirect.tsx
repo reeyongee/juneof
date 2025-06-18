@@ -11,6 +11,7 @@ function PostLoginRedirectContent() {
   const { isAuthenticated, isLoading: authLoading, customerData } = useAuth();
   const { isProfileComplete, profileStatus } = useProfileCompletion();
   const hasRedirectedRef = useRef(false);
+  const isRedirectingRef = useRef(false);
 
   useEffect(() => {
     // Only run redirect logic if:
@@ -26,9 +27,11 @@ function PostLoginRedirectContent() {
       !authLoading &&
       customerData &&
       profileStatus &&
-      !hasRedirectedRef.current
+      !hasRedirectedRef.current &&
+      !isRedirectingRef.current
     ) {
       hasRedirectedRef.current = true;
+      isRedirectingRef.current = true;
 
       console.log("PostLoginRedirect: Determining redirect destination", {
         isProfileComplete,
@@ -36,19 +39,23 @@ function PostLoginRedirectContent() {
         missingFields: profileStatus.missingFields,
       });
 
-      if (isProfileComplete) {
-        // Profile is complete -> redirect to homepage
-        console.log(
-          "PostLoginRedirect: Profile complete, redirecting to homepage"
-        );
-        router.push("/");
-      } else {
-        // Profile is incomplete -> redirect to dashboard (completion flow will show)
-        console.log(
-          "PostLoginRedirect: Profile incomplete, redirecting to dashboard"
-        );
-        router.push("/dashboard");
-      }
+      // Use replace instead of push to avoid back button issues
+      // Add a small delay to ensure all state is settled
+      setTimeout(() => {
+        if (isProfileComplete) {
+          // Profile is complete -> redirect to homepage
+          console.log(
+            "PostLoginRedirect: Profile complete, redirecting to homepage"
+          );
+          router.replace("/");
+        } else {
+          // Profile is incomplete -> redirect to dashboard (completion flow will show)
+          console.log(
+            "PostLoginRedirect: Profile incomplete, redirecting to dashboard"
+          );
+          router.replace("/dashboard");
+        }
+      }, 100);
     }
   }, [
     searchParams,
