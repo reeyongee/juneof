@@ -149,9 +149,9 @@ export const UPDATE_CUSTOMER_ADDRESS_MUTATION = gql`
 `;
 
 export const DELETE_CUSTOMER_ADDRESS_MUTATION = gql`
-  mutation customerAddressDelete($id: ID!) {
-    customerAddressDelete(id: $id) {
-      deletedCustomerAddressId
+  mutation customerAddressDelete($addressId: ID!) {
+    customerAddressDelete(addressId: $addressId) {
+      deletedAddressId
       userErrors {
         field
         message
@@ -216,7 +216,7 @@ export interface UpdateCustomerAddressData {
 
 export interface DeleteCustomerAddressData {
   customerAddressDelete: {
-    deletedCustomerAddressId: string | null;
+    deletedAddressId: string | null;
     userErrors: Array<{ field: string[] | null; message: string }>;
   };
 }

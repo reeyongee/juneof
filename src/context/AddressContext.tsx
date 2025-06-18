@@ -265,12 +265,12 @@ export const AddressProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       const response = await apiClient.query<DeleteCustomerAddressData>({
         query: DELETE_CUSTOMER_ADDRESS_MUTATION,
-        variables: { id: addressId },
+        variables: { addressId },
       });
 
       if (
         response.errors ||
-        !response.data?.customerAddressDelete?.deletedCustomerAddressId
+        !response.data?.customerAddressDelete?.deletedAddressId
       ) {
         const errMessage =
           response.data?.customerAddressDelete?.userErrors?.[0]?.message ||
@@ -279,8 +279,7 @@ export const AddressProvider: React.FC<{ children: React.ReactNode }> = ({
         throw new Error(errMessage);
       }
 
-      const deletedId =
-        response.data.customerAddressDelete.deletedCustomerAddressId;
+      const deletedId = response.data.customerAddressDelete.deletedAddressId;
 
       // Refetch all addresses to update list
       await fetchAddresses();
