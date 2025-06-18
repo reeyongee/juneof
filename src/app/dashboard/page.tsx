@@ -10,7 +10,16 @@ import { ProfileCompletionFlow } from "@/components/ProfileCompletionFlow";
 import { useProfileCompletion } from "@/hooks/useProfileCompletion";
 import { updateCustomerProfile } from "@/lib/shopify-profile-api";
 import { toast } from "sonner";
-import { Package, MapPin, User, Edit3, Check, X, Loader2 } from "lucide-react";
+import {
+  Package,
+  MapPin,
+  User,
+  Edit3,
+  Check,
+  X,
+  Loader2,
+  LogOut,
+} from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -660,13 +669,14 @@ export default function DashboardPage() {
                   </button>
 
                   {/* Spacer */}
-                  <div className="h-4"></div>
+                  <div className="h-8"></div>
 
                   {/* Logout Button */}
                   <button
                     onClick={logout}
                     className="w-full text-left px-4 py-3 lowercase tracking-wider transition-colors no-underline-effect border border-red-600 text-red-600 bg-transparent hover:bg-red-600 hover:text-white"
                   >
+                    <LogOut className="w-4 h-4 inline mr-3" />
                     logout
                   </button>
                 </nav>
