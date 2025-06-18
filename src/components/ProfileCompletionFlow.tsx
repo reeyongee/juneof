@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useAddress } from "@/context/AddressContext";
-import { useRequestTracker } from "@/hooks/useRequestTracker";
 import {
   analyzeProfileCompletion,
   getNextCompletionStep,
@@ -33,7 +32,6 @@ export function ProfileCompletionFlow({
 }: ProfileCompletionFlowProps) {
   const { apiClient, fetchCustomerData } = useAuth();
   const { fetchAddresses } = useAddress();
-  const { trackRequest } = useRequestTracker();
   const [currentStep, setCurrentStep] = useState<"name" | "address">("name");
   const [profileStatus, setProfileStatus] =
     useState<ProfileCompletionStatus | null>(null);
@@ -51,9 +49,7 @@ export function ProfileCompletionFlow({
     setError(null);
 
     try {
-      const response = await trackRequest("profile-completion-fetch", () =>
-        fetchCustomerProfileForCompletion(apiClient)
-      );
+      const response = await fetchCustomerProfileForCompletion(apiClient);
       const errors = handleGraphQLErrors(response);
 
       if (errors.length > 0) {

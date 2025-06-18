@@ -7,7 +7,6 @@ import { useLoading } from "@/context/LoadingContext";
 import AddAddressOverlay from "@/app/components/AddAddressOverlay";
 import CustomerOrders from "@/components/CustomerOrders";
 import { ProfileCompletionFlow } from "@/components/ProfileCompletionFlow";
-import { RequestLoadingDemo } from "@/components/RequestLoadingDemo";
 import { useProfileCompletion } from "@/hooks/useProfileCompletion";
 import { updateCustomerProfile } from "@/lib/shopify-profile-api";
 import { toast } from "sonner";
@@ -604,12 +603,6 @@ export default function DashboardPage() {
             </Card>
           </div>
         );
-      case "loading-demo":
-        return (
-          <div className="space-y-6">
-            <RequestLoadingDemo />
-          </div>
-        );
       default:
         return renderOrders();
     }
@@ -663,17 +656,6 @@ export default function DashboardPage() {
                   >
                     <User className="w-4 h-4 inline mr-3" />
                     edit profile
-                  </button>
-                  <button
-                    onClick={() => setActiveSection("loading-demo")}
-                    className={`w-full text-left px-4 py-3 lowercase tracking-wider transition-colors no-underline-effect ${
-                      activeSection === "loading-demo"
-                        ? "bg-black text-white"
-                        : "text-black hover:bg-gray-100"
-                    }`}
-                  >
-                    <Loader2 className="w-4 h-4 inline mr-3" />
-                    loading demo
                   </button>
                 </nav>
               </CardContent>

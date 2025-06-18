@@ -22,7 +22,6 @@ import {
   CustomerAddressInput,
 } from "@/lib/shopify-customer-address-api";
 import { useAuth } from "./AuthContext";
-import { useRequestTracker } from "@/hooks/useRequestTracker";
 
 interface AddressContextType {
   addresses: AppAddress[];
@@ -64,7 +63,6 @@ export const AddressProvider: React.FC<{ children: React.ReactNode }> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { apiClient, isAuthenticated } = useAuth();
-  const { trackRequest } = useRequestTracker();
 
   // Clear addresses when user logs out
   useEffect(() => {
@@ -81,52 +79,47 @@ export const AddressProvider: React.FC<{ children: React.ReactNode }> = ({
       setError("Not authenticated. Cannot fetch addresses.");
       return;
     }
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await apiClient.query<CustomerAddressesData>({
+        query: GET_CUSTOMER_ADDRESSES_QUERY,
+      });
 
-    await trackRequest("address-fetch", async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const response = await apiClient.query<CustomerAddressesData>({
-          query: GET_CUSTOMER_ADDRESSES_QUERY,
-        });
-
-        if (response.errors || !response.data?.customer) {
-          throw new Error(
-            response.errors?.[0]?.message ||
-              "Failed to fetch addresses data from Shopify."
-          );
-        }
-
-        const shopifyAddresses = response.data.customer.addresses.edges.map(
-          (edge) => edge.node
+      if (response.errors || !response.data?.customer) {
+        throw new Error(
+          response.errors?.[0]?.message ||
+            "Failed to fetch addresses data from Shopify."
         );
-        const defaultShopifyAddressId =
-          response.data.customer.defaultAddress?.id;
-
-        const appAddresses: AppAddress[] = shopifyAddresses.map((addr) => ({
-          ...addr,
-          isDefaultShopify: addr.id === defaultShopifyAddressId,
-        }));
-
-        setAddresses(appAddresses);
-
-        // Set selected address (default or first one)
-        if (appAddresses.length > 0) {
-          setSelectedAddressId(defaultShopifyAddressId || appAddresses[0].id);
-        } else {
-          setSelectedAddressId(null);
-        }
-      } catch (e: unknown) {
-        const errorMessage =
-          e instanceof Error ? e.message : "Unknown error occurred";
-        setError(errorMessage);
-        console.error("Failed to fetch Shopify addresses:", e);
-        throw e; // Re-throw for trackRequest to handle
-      } finally {
-        setIsLoading(false);
       }
-    });
-  }, [apiClient, isAuthenticated, trackRequest]);
+
+      const shopifyAddresses = response.data.customer.addresses.edges.map(
+        (edge) => edge.node
+      );
+      const defaultShopifyAddressId = response.data.customer.defaultAddress?.id;
+
+      const appAddresses: AppAddress[] = shopifyAddresses.map((addr) => ({
+        ...addr,
+        isDefaultShopify: addr.id === defaultShopifyAddressId,
+      }));
+
+      setAddresses(appAddresses);
+
+      // Set selected address (default or first one)
+      if (appAddresses.length > 0) {
+        setSelectedAddressId(defaultShopifyAddressId || appAddresses[0].id);
+      } else {
+        setSelectedAddressId(null);
+      }
+    } catch (e: unknown) {
+      const errorMessage =
+        e instanceof Error ? e.message : "Unknown error occurred";
+      setError(errorMessage);
+      console.error("Failed to fetch Shopify addresses:", e);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [apiClient, isAuthenticated]);
 
   const addShopifyAddress = async (
     addressInput: CustomerAddressInput,
@@ -136,51 +129,48 @@ export const AddressProvider: React.FC<{ children: React.ReactNode }> = ({
       setError("Not authenticated. Cannot add address.");
       return null;
     }
+    setIsLoading(true);
+    setError(null);
+    try {
+      // Create the address with optional defaultAddress parameter
+      const response = await apiClient.query<CreateCustomerAddressData>({
+        query: CREATE_CUSTOMER_ADDRESS_MUTATION,
+        variables: {
+          address: addressInput,
+          defaultAddress: isDefault,
+        },
+      });
 
-    return await trackRequest("address-create", async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        // Create the address with optional defaultAddress parameter
-        const response = await apiClient.query<CreateCustomerAddressData>({
-          query: CREATE_CUSTOMER_ADDRESS_MUTATION,
-          variables: {
-            address: addressInput,
-            defaultAddress: isDefault,
-          },
-        });
-
-        if (
-          response.errors ||
-          !response.data?.customerAddressCreate?.customerAddress
-        ) {
-          const errMessage =
-            response.data?.customerAddressCreate?.userErrors?.[0]?.message ||
-            response.errors?.[0]?.message ||
-            "Failed to create address.";
-          throw new Error(errMessage);
-        }
-
-        const newShopifyAddress =
-          response.data.customerAddressCreate.customerAddress;
-
-        // Refetch all addresses to get the updated list and default status
-        await fetchAddresses();
-
-        return {
-          ...newShopifyAddress,
-          isDefaultShopify: isDefault,
-        } as AppAddress;
-      } catch (e: unknown) {
-        const errorMessage =
-          e instanceof Error ? e.message : "Unknown error occurred";
-        setError(errorMessage);
-        console.error("Failed to add Shopify address:", e);
-        throw e; // Re-throw for trackRequest to handle
-      } finally {
-        setIsLoading(false);
+      if (
+        response.errors ||
+        !response.data?.customerAddressCreate?.customerAddress
+      ) {
+        const errMessage =
+          response.data?.customerAddressCreate?.userErrors?.[0]?.message ||
+          response.errors?.[0]?.message ||
+          "Failed to create address.";
+        throw new Error(errMessage);
       }
-    });
+
+      const newShopifyAddress =
+        response.data.customerAddressCreate.customerAddress;
+
+      // Refetch all addresses to get the updated list and default status
+      await fetchAddresses();
+
+      return {
+        ...newShopifyAddress,
+        isDefaultShopify: isDefault,
+      } as AppAddress;
+    } catch (e: unknown) {
+      const errorMessage =
+        e instanceof Error ? e.message : "Unknown error occurred";
+      setError(errorMessage);
+      console.error("Failed to add Shopify address:", e);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const updateShopifyAddress = async (

@@ -9,18 +9,10 @@ import React, {
   useEffect,
 } from "react";
 
-interface RequestTracker {
-  source: string;
-  startTime: number;
-  isActive: boolean;
-}
-
 interface LoadingContextType {
   isGlobalLoading: boolean;
-  startRequest: (source: string) => void;
-  endRequest: (source: string) => void;
-  startLoading: (source: string, minDuration?: number) => void; // Legacy support
-  stopLoading: (source: string) => void; // Legacy support
+  startLoading: (source: string, minDuration?: number) => void;
+  stopLoading: (source: string) => void;
   setLoadingMessage: (message: string) => void;
   loadingMessage: string;
 }
@@ -44,146 +36,66 @@ export const LoadingProvider: React.FC<LoadingProviderProps> = ({
 }) => {
   const [isGlobalLoading, setIsGlobalLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("");
-  const activeRequestsRef = useRef<Map<string, RequestTracker>>(new Map());
-  const gracePeriodTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const minimumDisplayTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const loadingStartTimeRef = useRef<number | null>(null);
-  const legacyTimersRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
+  const activeLoadersRef = useRef<Set<string>>(new Set());
+  const timersRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
 
-  // New request-aware loading functions
-  const startRequest = useCallback(
-    (source: string) => {
-      console.log(`LoadingManager: Starting request for ${source}`);
-
-      const now = Date.now();
-
-      // Add request to active requests
-      activeRequestsRef.current.set(source, {
-        source,
-        startTime: now,
-        isActive: true,
-      });
-
-      // Clear grace period timer if it exists
-      if (gracePeriodTimerRef.current) {
-        clearTimeout(gracePeriodTimerRef.current);
-        gracePeriodTimerRef.current = null;
-      }
-
-      // Start loading if not already loading
-      if (!isGlobalLoading) {
-        console.log("LoadingManager: Starting global loading (first request)");
-        setIsGlobalLoading(true);
-        loadingStartTimeRef.current = now;
-      }
-    },
-    [isGlobalLoading]
-  );
-
-  const endRequest = useCallback((source: string) => {
-    console.log(`LoadingManager: Ending request for ${source}`);
-
-    // Remove request from active requests
-    activeRequestsRef.current.delete(source);
-
-    console.log(
-      `LoadingManager: Active requests remaining:`,
-      Array.from(activeRequestsRef.current.keys())
-    );
-
-    // If no more active requests, start grace period
-    if (activeRequestsRef.current.size === 0) {
-      console.log(
-        "LoadingManager: All requests complete, starting grace period"
-      );
-
-      // Clear any existing grace period timer
-      if (gracePeriodTimerRef.current) {
-        clearTimeout(gracePeriodTimerRef.current);
-      }
-
-      // Start grace period (200ms after last request)
-      gracePeriodTimerRef.current = setTimeout(() => {
-        console.log(
-          "LoadingManager: Grace period expired, checking minimum display time"
-        );
-
-        const now = Date.now();
-        const loadingDuration = loadingStartTimeRef.current
-          ? now - loadingStartTimeRef.current
-          : 0;
-        const minimumDisplayTime = 500; // 0.5s minimum display time
-
-        if (loadingDuration >= minimumDisplayTime) {
-          // Minimum time has passed, hide loading immediately
-          console.log(
-            `LoadingManager: Minimum display time met (${loadingDuration}ms), hiding loading`
-          );
-          setIsGlobalLoading(false);
-          setLoadingMessage("");
-          loadingStartTimeRef.current = null;
-        } else {
-          // Wait for minimum display time
-          const remainingTime = minimumDisplayTime - loadingDuration;
-          console.log(
-            `LoadingManager: Waiting ${remainingTime}ms more for minimum display time`
-          );
-
-          minimumDisplayTimerRef.current = setTimeout(() => {
-            console.log(
-              "LoadingManager: Minimum display time reached, hiding loading"
-            );
-            setIsGlobalLoading(false);
-            setLoadingMessage("");
-            loadingStartTimeRef.current = null;
-          }, remainingTime);
-        }
-      }, 200); // 200ms grace period
-    }
-  }, []);
-
-  // Legacy functions for backward compatibility
   const startLoading = useCallback((source: string, minDuration = 1000) => {
     console.log(
-      `LoadingManager: Legacy startLoading for ${source} with min duration ${minDuration}ms`
+      `LoadingManager: Starting loading for ${source} with min duration ${minDuration}ms`
     );
 
-    // Use legacy timer system for existing code
-    const paddedMinDuration = minDuration + 1000;
-
+    activeLoadersRef.current.add(source);
     setIsGlobalLoading(true);
 
-    const timer = setTimeout(() => {
-      console.log(`LoadingManager: Legacy timer expired for ${source}`);
-      legacyTimersRef.current.delete(source);
+    // Clear any existing timer for this source
+    const existingTimer = timersRef.current.get(source);
+    if (existingTimer) {
+      clearTimeout(existingTimer);
+    }
 
-      // Check if any legacy timers are still active
-      if (
-        legacyTimersRef.current.size === 0 &&
-        activeRequestsRef.current.size === 0
-      ) {
+    // Set minimum duration timer - auto-stop after min duration + 1s padding
+    const paddedMinDuration = minDuration + 1000; // 0.5s start + actual duration + 0.5s end
+    const timer = setTimeout(() => {
+      console.log(
+        `LoadingManager: Auto-stopping ${source} after ${paddedMinDuration}ms`
+      );
+
+      activeLoadersRef.current.delete(source);
+      timersRef.current.delete(source);
+
+      // Only stop global loading if no active loaders
+      if (activeLoadersRef.current.size === 0) {
+        console.log(
+          "LoadingManager: All loaders stopped, hiding global loading"
+        );
         setIsGlobalLoading(false);
         setLoadingMessage("");
       }
     }, paddedMinDuration);
 
-    legacyTimersRef.current.set(source, timer);
+    timersRef.current.set(source, timer);
   }, []);
 
   const stopLoading = useCallback((source: string) => {
-    console.log(`LoadingManager: Legacy stopLoading for ${source}`);
+    console.log(`LoadingManager: Manually stopping loading for ${source}`);
 
-    const timer = legacyTimersRef.current.get(source);
+    // Clear timer and remove from active loaders
+    const timer = timersRef.current.get(source);
     if (timer) {
       clearTimeout(timer);
-      legacyTimersRef.current.delete(source);
     }
 
-    // Check if any legacy timers or requests are still active
-    if (
-      legacyTimersRef.current.size === 0 &&
-      activeRequestsRef.current.size === 0
-    ) {
+    activeLoadersRef.current.delete(source);
+    timersRef.current.delete(source);
+
+    console.log(
+      `LoadingManager: Stopped loading for ${source}. Active loaders:`,
+      Array.from(activeLoadersRef.current)
+    );
+
+    // Only stop global loading if no active loaders
+    if (activeLoadersRef.current.size === 0) {
+      console.log("LoadingManager: All loaders stopped, hiding global loading");
       setIsGlobalLoading(false);
       setLoadingMessage("");
     }
@@ -191,15 +103,10 @@ export const LoadingProvider: React.FC<LoadingProviderProps> = ({
 
   // Cleanup on unmount
   useEffect(() => {
-    const legacyTimers = legacyTimersRef.current;
-    const gracePeriodTimer = gracePeriodTimerRef.current;
-    const minimumDisplayTimer = minimumDisplayTimerRef.current;
-
+    const timers = timersRef.current;
     return () => {
-      legacyTimers.forEach((timer) => clearTimeout(timer));
-      legacyTimers.clear();
-      if (gracePeriodTimer) clearTimeout(gracePeriodTimer);
-      if (minimumDisplayTimer) clearTimeout(minimumDisplayTimer);
+      timers.forEach((timer) => clearTimeout(timer));
+      timers.clear();
     };
   }, []);
 
@@ -207,8 +114,6 @@ export const LoadingProvider: React.FC<LoadingProviderProps> = ({
     <LoadingContext.Provider
       value={{
         isGlobalLoading,
-        startRequest,
-        endRequest,
         startLoading,
         stopLoading,
         setLoadingMessage,
