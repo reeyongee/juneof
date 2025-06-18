@@ -14,6 +14,8 @@ export default function CustomCursor() {
   const isCursorActiveRef = useRef(false);
   const isStuckRef = useRef(false);
   const stuckToRef = useRef<Element | null>(null);
+  const renderLoopRef = useRef<number | null>(null); // Track render loop RAF ID
+  const isInitializedRef = useRef(false); // Track initialization state
 
   const pathname = usePathname();
   const { showSplash } = useSplash();
@@ -24,9 +26,15 @@ export default function CustomCursor() {
   const lerpAmount = 0.15; // Normal mouse following smoothness
   const stuckLerpAmount = 0.2; // Magnetic snap smoothness - reduced for smoother movement
 
-  // Mouse position tracking
-  const mousePos = useRef({ x: 0, y: 0 });
-  const currentPos = useRef({ x: 0, y: 0 });
+  // Mouse position tracking - Initialize with center of screen as fallback
+  const mousePos = useRef({
+    x: typeof window !== "undefined" ? window.innerWidth / 2 : 0,
+    y: typeof window !== "undefined" ? window.innerHeight / 2 : 0,
+  });
+  const currentPos = useRef({
+    x: typeof window !== "undefined" ? window.innerWidth / 2 : 0,
+    y: typeof window !== "undefined" ? window.innerHeight / 2 : 0,
+  });
 
   // Store original cursor properties
   const cursorOriginals = useRef({
@@ -37,13 +45,38 @@ export default function CustomCursor() {
     borderRadius: "50%", // Store original border radius
   });
 
+  // Capture initial mouse position immediately when component mounts
+  const captureInitialMousePosition = useCallback(() => {
+    const handleInitialMouseMove = (e: MouseEvent) => {
+      mousePos.current = { x: e.clientX, y: e.clientY };
+      currentPos.current = { x: e.clientX, y: e.clientY };
+      console.log("Initial mouse position captured:", e.clientX, e.clientY);
+
+      // Remove this one-time listener after capturing initial position
+      document.removeEventListener("mousemove", handleInitialMouseMove);
+    };
+
+    // Add temporary listener to capture first mouse movement
+    document.addEventListener("mousemove", handleInitialMouseMove, {
+      once: true,
+    });
+
+    // Fallback: If no mouse movement detected within 100ms, use current cursor position
+    setTimeout(() => {
+      document.removeEventListener("mousemove", handleInitialMouseMove);
+    }, 100);
+  }, []);
+
   const updateMousePosition = useCallback((e: MouseEvent) => {
     mousePos.current = { x: e.clientX, y: e.clientY };
   }, []);
 
   // Render loop for smooth cursor movement
   const render = useCallback(() => {
-    if (!cursorWrapperRef.current) return;
+    if (!cursorWrapperRef.current || !isCursorActiveRef.current) {
+      renderLoopRef.current = requestAnimationFrame(render);
+      return;
+    }
 
     let targetX, targetY, currentLerpAmount;
 
@@ -53,7 +86,6 @@ export default function CustomCursor() {
       targetX = targetRect.left + targetRect.width / 2;
       targetY = targetRect.top + targetRect.height / 2;
       currentLerpAmount = stuckLerpAmount;
-      console.log("Magnetic mode - targeting:", targetX, targetY); // Debug log
     } else {
       // Normal mode: follow mouse
       targetX = mousePos.current.x;
@@ -73,13 +105,28 @@ export default function CustomCursor() {
       y: currentPos.current.y,
     });
 
-    requestAnimationFrame(render);
+    renderLoopRef.current = requestAnimationFrame(render);
   }, [lerpAmount, stuckLerpAmount]);
 
   const startRenderLoop = useCallback(() => {
-    console.log("Starting render loop"); // Debug log
-    render();
+    console.log("Starting render loop");
+
+    // Stop any existing render loop
+    if (renderLoopRef.current) {
+      cancelAnimationFrame(renderLoopRef.current);
+    }
+
+    // Start new render loop immediately
+    renderLoopRef.current = requestAnimationFrame(render);
   }, [render]);
+
+  const stopRenderLoop = useCallback(() => {
+    console.log("Stopping render loop");
+    if (renderLoopRef.current) {
+      cancelAnimationFrame(renderLoopRef.current);
+      renderLoopRef.current = null;
+    }
+  }, []);
 
   // Magnetic hover handlers for buttons
   const handleMagneticEnter = useCallback((e: Event) => {
@@ -188,13 +235,24 @@ export default function CustomCursor() {
   const initializeCursor = useCallback(() => {
     if (!outerCursorRef.current || !cursorWrapperRef.current) return;
 
+    console.log("Initializing cursor, pathname:", pathname);
+
     // Check if device has fine pointer (mouse/trackpad)
     const hasFinePointer = window.matchMedia("(pointer: fine)").matches;
     if (!hasFinePointer) return;
 
+    // Prevent multiple initializations
+    if (isInitializedRef.current) {
+      console.log("Cursor already initialized, skipping...");
+      return;
+    }
+
     // Reset cursor state to prevent phantom element issues
     isStuckRef.current = false;
     stuckToRef.current = null;
+
+    // Capture initial mouse position immediately
+    captureInitialMousePosition();
 
     // Show custom cursor only if splash screen is not showing
     if (cursorWrapperRef.current) {
@@ -362,13 +420,24 @@ export default function CustomCursor() {
       handleCursorReset as EventListener
     );
 
-    // Start render loop only if not showing splash
+    // Start render loop only if not showing splash - NO DELAY
     if (!showSplash) {
       startRenderLoop();
     }
 
+    // Mark as initialized
+    isInitializedRef.current = true;
+
     // Cleanup function
     return () => {
+      console.log("Cleaning up cursor initialization");
+
+      // Mark as not initialized
+      isInitializedRef.current = false;
+
+      // Stop render loop
+      stopRenderLoop();
+
       // Reset state
       isStuckRef.current = false;
       stuckToRef.current = null;
@@ -407,16 +476,69 @@ export default function CustomCursor() {
     handleMagneticLeave,
     updateMousePosition,
     startRenderLoop,
+    stopRenderLoop,
+    captureInitialMousePosition,
     fullCursorSize,
     easing,
     showSplash,
+    pathname,
   ]);
 
-  // Initialize on mount and pathname changes
+  // Initialize on mount and pathname changes - but be smarter about it
   useEffect(() => {
+    console.log(
+      "Cursor useEffect triggered - pathname:",
+      pathname,
+      "showSplash:",
+      showSplash
+    );
+
+    // Don't initialize during splash screen
+    if (showSplash) {
+      console.log("Skipping cursor initialization during splash screen");
+      return;
+    }
+
+    // For route changes, we don't need to completely reinitialize
+    // Just refresh the magnetic listeners and ensure cursor is active
+    if (isInitializedRef.current) {
+      console.log("Cursor already initialized, refreshing for route change");
+
+      // Refresh magnetic listeners for new page content
+      setTimeout(() => {
+        const existingMagneticElements = document.querySelectorAll(
+          "[data-magnetic-attached]"
+        );
+        existingMagneticElements.forEach((element) => {
+          element.removeEventListener("mouseenter", handleMagneticEnter);
+          element.removeEventListener("mouseleave", handleMagneticLeave);
+          element.removeAttribute("data-magnetic-attached");
+        });
+
+        // Reattach to new elements
+        const magneticElements = document.querySelectorAll("button, a");
+        magneticElements.forEach((element) => {
+          if (!element.hasAttribute("data-magnetic-attached")) {
+            element.addEventListener("mouseenter", handleMagneticEnter);
+            element.addEventListener("mouseleave", handleMagneticLeave);
+            element.setAttribute("data-magnetic-attached", "true");
+          }
+        });
+      }, 100);
+
+      return;
+    }
+
+    // Full initialization only if not initialized yet
     const cleanup = initializeCursor();
     return cleanup;
-  }, [initializeCursor, pathname]);
+  }, [
+    initializeCursor,
+    pathname,
+    showSplash,
+    handleMagneticEnter,
+    handleMagneticLeave,
+  ]);
 
   // Handle splash screen visibility changes
   useEffect(() => {
@@ -424,11 +546,16 @@ export default function CustomCursor() {
 
     if (showSplash) {
       // Hide cursor during splash screen
+      console.log("Hiding cursor for splash screen");
       cursorWrapperRef.current.style.display = "none";
       document.body.classList.remove("custom-cursor-active");
       isCursorActiveRef.current = false;
+
+      // Stop render loop during splash
+      stopRenderLoop();
     } else {
       // Show cursor after splash screen
+      console.log("Showing cursor after splash screen");
       const hasFinePointer = window.matchMedia("(pointer: fine)").matches;
       if (hasFinePointer) {
         cursorWrapperRef.current.style.display = "block";
@@ -436,22 +563,35 @@ export default function CustomCursor() {
         document.body.classList.add("custom-cursor-active");
         isCursorActiveRef.current = true;
 
-        // Start render loop and attach listeners after splash
+        // Start render loop after splash screen
         startRenderLoop();
-        setTimeout(() => {
-          // Re-initialize listeners after splash screen
-          initializeCursor();
-        }, 100);
+
+        // Initialize cursor if not already initialized
+        if (!isInitializedRef.current) {
+          setTimeout(() => {
+            initializeCursor();
+          }, 100);
+        }
       }
     }
-  }, [showSplash, startRenderLoop, initializeCursor]);
+  }, [showSplash, startRenderLoop, stopRenderLoop, initializeCursor]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
+      console.log("CustomCursor component unmounting");
+
+      // Mark as not initialized
+      isInitializedRef.current = false;
+
+      // Stop render loop
+      stopRenderLoop();
+
       if (isCursorActiveRef.current) {
         document.body.classList.remove("custom-cursor-active");
+        isCursorActiveRef.current = false;
       }
+
       if (enlargeCursorTweenRef.current) {
         enlargeCursorTweenRef.current.kill();
       }
@@ -459,7 +599,7 @@ export default function CustomCursor() {
         magneticTweenRef.current.kill();
       }
     };
-  }, []);
+  }, [stopRenderLoop]);
 
   return (
     <div
