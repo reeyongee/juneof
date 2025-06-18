@@ -9,6 +9,7 @@ import React, {
   useMemo,
 } from "react";
 import { useRouter } from "next/navigation";
+import { useRequestTracker } from "@/hooks/useRequestTracker";
 
 import {
   getStoredTokens,
@@ -74,6 +75,7 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const router = useRouter();
+  const { trackRequest } = useRequestTracker();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true); // Key: Start true
   const [customerData, setCustomerData] = useState<CustomerProfileData | null>(
@@ -488,42 +490,47 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       "tokens:",
       !!tokens
     );
-    if (!isAuthenticated || !apiClient || !tokens) {
-      console.warn(
-        "AuthContext: fetchCustomerData - Not ready or not authenticated. Attempting initializeAuth."
-      );
-      await initializeAuth(); // Re-check everything
-      // After initializeAuth, if tokens were found, data would have been fetched.
-      // If still not ready, the subsequent check will prevent API call.
-      // Need to re-check state after initializeAuth finishes.
-      if (!apiClient || !tokens) {
-        // Check again after initializeAuth
-        console.warn(
-          "AuthContext: fetchCustomerData - Still not ready after re-init. Aborting fetch."
-        );
-        return;
-      }
-    }
 
-    setIsLoading(true); // Set loading for this specific fetch operation
-    try {
-      await _internalFetchAndSetCustomerData(apiClient!, tokens!); // Use non-null assertion if confident from above check
-    } catch (e) {
-      // Error is logged and handled in _internalFetchAndSetCustomerData
-      console.error(
-        "AuthContext: fetchCustomerData - Error caught from _internalFetch:",
-        e
-      );
-    } finally {
-      setIsLoading(false);
-      console.log("AuthContext: fetchCustomerData - END");
-    }
+    await trackRequest("auth-fetch-customer", async () => {
+      if (!isAuthenticated || !apiClient || !tokens) {
+        console.warn(
+          "AuthContext: fetchCustomerData - Not ready or not authenticated. Attempting initializeAuth."
+        );
+        await initializeAuth(); // Re-check everything
+        // After initializeAuth, if tokens were found, data would have been fetched.
+        // If still not ready, the subsequent check will prevent API call.
+        // Need to re-check state after initializeAuth finishes.
+        if (!apiClient || !tokens) {
+          // Check again after initializeAuth
+          console.warn(
+            "AuthContext: fetchCustomerData - Still not ready after re-init. Aborting fetch."
+          );
+          return;
+        }
+      }
+
+      setIsLoading(true); // Set loading for this specific fetch operation
+      try {
+        await _internalFetchAndSetCustomerData(apiClient!, tokens!); // Use non-null assertion if confident from above check
+      } catch (e) {
+        // Error is logged and handled in _internalFetchAndSetCustomerData
+        console.error(
+          "AuthContext: fetchCustomerData - Error caught from _internalFetch:",
+          e
+        );
+        throw e; // Re-throw for trackRequest to handle
+      } finally {
+        setIsLoading(false);
+        console.log("AuthContext: fetchCustomerData - END");
+      }
+    });
   }, [
     isAuthenticated,
     apiClient,
     tokens,
     initializeAuth,
     _internalFetchAndSetCustomerData,
+    trackRequest,
   ]);
 
   // Alias for backward compatibility
