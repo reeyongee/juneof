@@ -306,68 +306,122 @@ export default function CustomCursor() {
       return;
     }
 
-    // Hybrid detection: explicit control + improved automatic detection
-    const explicitCursorType = target.getAttribute("data-cursor");
-
-    let shouldUseCircle = false;
-
-    if (explicitCursorType) {
-      // Explicit control via data-cursor attribute
-      shouldUseCircle = explicitCursorType === "circle";
-      console.log(`Explicit cursor type detected: ${explicitCursorType}`);
-    } else {
-      // Improved automatic detection for existing buttons
-      const rect = target.getBoundingClientRect();
-      const textContent = target.textContent?.trim() || "";
-      const hasIcon = !!(target as HTMLElement).querySelector(
-        "svg, .icon, [class*='icon'], .h-6.w-6"
-      );
-      const isIconButton = hasIcon && textContent.length < 3;
-      const isSmallButton = rect.width < 120 && rect.height < 60;
-      const isQuantityButton = textContent === "+" || textContent === "-";
-      const isCloseButton =
-        target.getAttribute("aria-label")?.toLowerCase().includes("close") ||
-        target.getAttribute("aria-label")?.toLowerCase().includes("remove");
-
-      shouldUseCircle =
-        // Original specific cases (keep existing behavior)
-        !!target.closest('a[href="/"]') || // Logo link
-        target.classList.contains("clear-cart-btn") ||
-        textContent.toLowerCase().includes("wash care") ||
-        textContent.toLowerCase().includes("size chart") ||
-        isQuantityButton ||
-        isCloseButton ||
-        // New automatic detection
-        isIconButton || // Buttons with icons and minimal text
-        (isSmallButton && textContent.length < 8) || // Small buttons with short text
-        // Common button patterns
-        !!textContent
-          .toLowerCase()
-          .match(/^(ok|yes|no|x|✕|×|close|done|save|edit|delete|copy|share)$/i);
-
-      if (shouldUseCircle) {
-        console.log(`Auto-detected circle cursor for button:`, {
-          text: textContent,
-          size: `${rect.width}x${rect.height}`,
-          hasIcon,
-          isIconButton,
-          isSmallButton,
-          reason: isIconButton
-            ? "icon-button"
-            : isSmallButton
-            ? "small-button"
-            : isQuantityButton
-            ? "quantity-button"
-            : isCloseButton
-            ? "close-button"
-            : "text-pattern",
-        });
+    // Check if this element should use enlarging circle instead of magnetic box
+    const shouldUseCircle = (() => {
+      // Logo link detection (improved)
+      if (target.closest('a[href="/"]') || target.closest('a[href="#"]')) {
+        return true;
       }
-    }
+
+      // CSS class detection (more flexible)
+      if (
+        target.classList.contains("clear-cart-btn") ||
+        target.closest(".clear-cart-btn")
+      ) {
+        return true;
+      }
+
+      // Text content detection (improved with normalization)
+      const textContent = target.textContent?.toLowerCase().trim() || "";
+      const allText =
+        (target as HTMLElement).innerText?.toLowerCase().trim() || "";
+
+      // Check both textContent and innerText for better coverage
+      const hasWashCare =
+        textContent.includes("wash care") ||
+        allText.includes("wash care") ||
+        textContent.includes("washcare") ||
+        allText.includes("washcare");
+
+      const hasSizeChart =
+        textContent.includes("size chart") ||
+        allText.includes("size chart") ||
+        textContent.includes("sizechart") ||
+        allText.includes("sizechart");
+
+      if (hasWashCare || hasSizeChart) {
+        return true;
+      }
+
+      // Quantity buttons (improved detection)
+      const trimmedText = textContent.replace(/\s+/g, "");
+      const trimmedInnerText = allText.replace(/\s+/g, "");
+
+      if (
+        trimmedText === "+" ||
+        trimmedText === "-" ||
+        trimmedInnerText === "+" ||
+        trimmedInnerText === "-"
+      ) {
+        return true;
+      }
+
+      // Remove/delete button detection (improved)
+      const ariaLabel = target.getAttribute("aria-label")?.toLowerCase() || "";
+      const title = target.getAttribute("title")?.toLowerCase() || "";
+
+      if (
+        ariaLabel.includes("remove") ||
+        ariaLabel.includes("delete") ||
+        title.includes("remove") ||
+        title.includes("delete") ||
+        textContent.includes("remove") ||
+        allText.includes("remove")
+      ) {
+        return true;
+      }
+
+      // Icon button detection (improved - check for various icon patterns)
+      const hasIcon =
+        target.querySelector(".h-6.w-6") || // Existing pattern
+        target.querySelector("svg") || // SVG icons
+        target.querySelector(".icon") || // Generic icon class
+        target.querySelector("[class*='icon']") || // Any class containing 'icon'
+        target.querySelector("i") || // Font icons (i tags)
+        target.classList.contains("icon-btn") || // Icon button class
+        target.closest(".icon-btn");
+
+      if (hasIcon) {
+        return true;
+      }
+
+      // Small button detection (fallback for very small buttons)
+      const rect = target.getBoundingClientRect();
+      const isVerySmall = rect.width <= 40 && rect.height <= 40;
+
+      if (isVerySmall && (textContent.length <= 3 || allText.length <= 3)) {
+        return true;
+      }
+
+      // Additional fallback: check if button is nested inside known circle containers
+      const circleContainer =
+        target.closest(".cart-controls") ||
+        target.closest(".quantity-controls") ||
+        target.closest(".icon-buttons") ||
+        target.closest("[data-cursor='circle']");
+
+      if (circleContainer) {
+        return true;
+      }
+
+      // Final fallback: very specific button patterns
+      const hasOnlySymbols = /^[\+\-\×\÷\=\<\>\!\?\*\#\@\&\%\$]*$/.test(
+        textContent.trim()
+      );
+      if (hasOnlySymbols && textContent.trim().length <= 2) {
+        return true;
+      }
+
+      return false;
+    })();
 
     if (shouldUseCircle) {
       // Use enlarging circle effect
-      console.log("Using circle effect for:", target);
+      console.log(
+        "Using circle effect for:",
+        target,
+        "- Detected as circle button"
+      );
 
       // Kill any existing magnetic tween before starting circle effect
       if (magneticTweenRef.current) {
@@ -385,7 +439,11 @@ export default function CustomCursor() {
       return;
     }
 
-    console.log("Using magnetic effect for:", target);
+    console.log(
+      "Using magnetic effect for:",
+      target,
+      "- Detected as magnetic button"
+    );
 
     // Kill ALL existing tweens before starting magnetic effect
     if (enlargeCursorTweenRef.current) {
