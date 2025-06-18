@@ -127,27 +127,44 @@ const Navbar: React.FC = () => {
       }
     }
 
-    // Create the bottom intersection observer (for hiding)
+    // Robust page height and scroll position checker
+    const checkNavbarVisibility = () => {
+      const scrollY = window.scrollY;
+      const windowHeight = window.innerHeight;
+      const documentHeight = Math.max(
+        document.body.scrollHeight,
+        document.body.offsetHeight,
+        document.documentElement.clientHeight,
+        document.documentElement.scrollHeight,
+        document.documentElement.offsetHeight
+      );
+
+      const isPageScrollable = documentHeight > windowHeight;
+      const hasScrolledDown = scrollY > 100;
+      const isNearBottom = scrollY + windowHeight >= documentHeight - 50; // 50px threshold
+
+      // Show navbar if:
+      // 1. Page is not scrollable, OR
+      // 2. We haven't scrolled down much, OR
+      // 3. We're not near the bottom
+      const shouldShowNavbar =
+        !isPageScrollable || !hasScrolledDown || !isNearBottom;
+
+      setVisible(shouldShowNavbar);
+    };
+
+    // Create the bottom intersection observer (for hiding) - now with more robust logic
     const bottomObserver = new IntersectionObserver(
       (entries) => {
-        entries.forEach((entry) => {
-          // Only hide navbar if we've actually scrolled down AND reached the bottom
-          // Check if the page is tall enough to scroll
-          const isPageScrollable =
-            document.body.scrollHeight > window.innerHeight;
-          const hasScrolledDown = window.scrollY > 100; // Only hide if scrolled down at least 100px
-
-          // When bottomSentinel enters viewport (scrolled to bottom), hide navbar
-          // But only if the page is scrollable and we've scrolled down
-          if (entry.isIntersecting && isPageScrollable && hasScrolledDown) {
-            setVisible(false);
-          } else if (!entry.isIntersecting) {
-            setVisible(true);
-          }
+        entries.forEach(() => {
+          // Use the robust checker instead of simple intersection logic
+          checkNavbarVisibility();
         });
       },
       {
-        threshold: 0, // Trigger as soon as any part becomes visible
+        threshold: 0,
+        // Add some margin to trigger earlier
+        rootMargin: "50px 0px 50px 0px",
       }
     );
 
@@ -167,6 +184,17 @@ const Navbar: React.FC = () => {
       }
     );
 
+    // Add scroll listener for more responsive navbar visibility
+    const handleScroll = () => {
+      checkNavbarVisibility();
+    };
+
+    // Add mutation observer to detect content changes
+    const mutationObserver = new MutationObserver(() => {
+      // Debounce the check to avoid excessive calls
+      setTimeout(checkNavbarVisibility, 100);
+    });
+
     // Start observing
     if (bottomSentinel) {
       bottomObserver.observe(bottomSentinel);
@@ -176,17 +204,22 @@ const Navbar: React.FC = () => {
       topObserver.observe(topSentinel);
     }
 
-    // Ensure navbar is visible on short pages that don't require scrolling
-    const checkPageHeight = () => {
-      const isPageScrollable = document.body.scrollHeight > window.innerHeight;
-      if (!isPageScrollable) {
-        setVisible(true); // Always show navbar on short pages
-      }
-    };
+    // Add scroll listener
+    window.addEventListener("scroll", handleScroll, { passive: true });
 
-    // Check immediately and on resize
-    checkPageHeight();
-    window.addEventListener("resize", checkPageHeight);
+    // Observe changes to main content
+    const main = document.querySelector("main");
+    if (main) {
+      mutationObserver.observe(main, {
+        childList: true,
+        subtree: true,
+        attributes: false,
+      });
+    }
+
+    // Initial check and setup resize listener
+    checkNavbarVisibility();
+    window.addEventListener("resize", checkNavbarVisibility);
 
     // Cleanup on unmount
     return () => {
@@ -200,7 +233,9 @@ const Navbar: React.FC = () => {
         topSentinel.remove();
       }
 
-      window.removeEventListener("resize", checkPageHeight);
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", checkNavbarVisibility);
+      mutationObserver.disconnect();
 
       if (hoverTimeoutRef.current) {
         clearTimeout(hoverTimeoutRef.current);
