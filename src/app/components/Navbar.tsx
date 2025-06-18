@@ -22,7 +22,11 @@ const Navbar: React.FC = () => {
 
   // Determine if transparency is allowed on current page
   const isTransparencyAllowed =
-    pathname === "/" || pathname === "/privacy-policy";
+    pathname === "/" ||
+    pathname === "/privacy-policy" ||
+    pathname === "/terms-of-use" ||
+    pathname === "/about-us" ||
+    pathname === "/contact-us";
 
   const totalCartItems = cartItems.reduce(
     (sum, item) => sum + item.quantity,
