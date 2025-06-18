@@ -7,15 +7,24 @@ import AddAddressOverlay from "@/app/components/AddAddressOverlay";
 import CustomerOrders from "@/components/CustomerOrders";
 import { ProfileCompletionFlow } from "@/components/ProfileCompletionFlow";
 import { useProfileCompletion } from "@/hooks/useProfileCompletion";
+import { updateCustomerProfile } from "@/lib/shopify-profile-api";
 import { toast } from "sonner";
-import { Package, MapPin, User } from "lucide-react";
+import { Package, MapPin, User, Edit3, Check, X, Loader2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function DashboardPage() {
   const [activeSection, setActiveSection] = useState("orders");
   const [isAddAddressOpen, setIsAddAddressOpen] = useState(false);
   const hasFetchedCustomerDataRef = useRef(false);
+
+  // Name editing state
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editedFirstName, setEditedFirstName] = useState("");
+  const [editedLastName, setEditedLastName] = useState("");
+  const [isSavingName, setIsSavingName] = useState(false);
   const {
     addresses,
     selectedAddressId,
@@ -29,6 +38,7 @@ export default function DashboardPage() {
   const {
     isAuthenticated,
     customerData,
+    apiClient,
     login,
     isLoading: authIsLoading, // Rename to avoid conflict with local isLoading if any
     error: authError,
@@ -55,6 +65,57 @@ export default function DashboardPage() {
     customerData?.customer.firstName ||
     customerData?.customer.displayName ||
     "user";
+
+  // Name editing functions
+  const handleEditName = () => {
+    setEditedFirstName(customerData?.customer.firstName || "");
+    setEditedLastName(customerData?.customer.lastName || "");
+    setIsEditingName(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditingName(false);
+    setEditedFirstName("");
+    setEditedLastName("");
+  };
+
+  const handleSaveName = async () => {
+    if (!apiClient) {
+      toast.error("not authenticated. please refresh and try again.");
+      return;
+    }
+
+    if (!editedFirstName.trim() || !editedLastName.trim()) {
+      toast.error("both first name and last name are required.");
+      return;
+    }
+
+    setIsSavingName(true);
+
+    try {
+      const result = await updateCustomerProfile(apiClient, {
+        firstName: editedFirstName.trim(),
+        lastName: editedLastName.trim(),
+      });
+
+      if (result.success) {
+        // Refresh customer data to reflect changes everywhere
+        await fetchCustomerData();
+        setIsEditingName(false);
+        toast.success("name updated successfully!", {
+          description: "your name has been updated across your profile.",
+          duration: 3000,
+        });
+      } else {
+        throw new Error(result.errors?.join(", ") || "failed to update name");
+      }
+    } catch (error) {
+      console.error("Error updating name:", error);
+      toast.error("failed to update name. please try again.");
+    } finally {
+      setIsSavingName(false);
+    }
+  };
 
   // Memoize the config to prevent CustomerOrders from re-rendering
   const shopifyConfig = useMemo(() => {
@@ -407,6 +468,123 @@ export default function DashboardPage() {
                 </CardContent>
               </Card>
             )}
+
+            {/* Editable Name Section */}
+            <Card className="bg-white border-gray-300">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="font-medium lowercase tracking-wider text-black">
+                    personal information
+                  </h4>
+                  {!isEditingName && (
+                    <Button
+                      onClick={handleEditName}
+                      variant="ghost"
+                      size="sm"
+                      className="p-2 h-8 w-8 hover:bg-gray-100"
+                    >
+                      <Edit3 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+
+                {!isEditingName ? (
+                  // Display mode
+                  <div className="space-y-3">
+                    <div>
+                      <Label className="text-sm lowercase tracking-widest text-gray-600">
+                        first name
+                      </Label>
+                      <div className="mt-1 p-3 bg-gray-50 border border-gray-200 rounded-md text-sm">
+                        {customerData?.customer.firstName || "not set"}
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-sm lowercase tracking-widest text-gray-600">
+                        last name
+                      </Label>
+                      <div className="mt-1 p-3 bg-gray-50 border border-gray-200 rounded-md text-sm">
+                        {customerData?.customer.lastName || "not set"}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  // Edit mode
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label
+                          htmlFor="editFirstName"
+                          className="text-sm lowercase tracking-widest text-black"
+                        >
+                          first name
+                        </Label>
+                        <Input
+                          id="editFirstName"
+                          type="text"
+                          value={editedFirstName}
+                          onChange={(e) => setEditedFirstName(e.target.value)}
+                          placeholder="first name"
+                          className="mt-1 bg-white border-gray-300 text-black placeholder:text-gray-500 focus:border-black focus:ring-black/20 h-10 text-sm"
+                          disabled={isSavingName}
+                        />
+                      </div>
+                      <div>
+                        <Label
+                          htmlFor="editLastName"
+                          className="text-sm lowercase tracking-widest text-black"
+                        >
+                          last name
+                        </Label>
+                        <Input
+                          id="editLastName"
+                          type="text"
+                          value={editedLastName}
+                          onChange={(e) => setEditedLastName(e.target.value)}
+                          placeholder="last name"
+                          className="mt-1 bg-white border-gray-300 text-black placeholder:text-gray-500 focus:border-black focus:ring-black/20 h-10 text-sm"
+                          disabled={isSavingName}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Save/Cancel buttons */}
+                    <div className="flex gap-3 pt-2">
+                      <Button
+                        onClick={handleSaveName}
+                        disabled={
+                          isSavingName ||
+                          !editedFirstName.trim() ||
+                          !editedLastName.trim()
+                        }
+                        className="bg-black text-white hover:bg-gray-800 h-9 px-4 text-sm lowercase tracking-wider"
+                      >
+                        {isSavingName ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            saving...
+                          </>
+                        ) : (
+                          <>
+                            <Check className="mr-2 h-4 w-4" />
+                            save
+                          </>
+                        )}
+                      </Button>
+                      <Button
+                        onClick={handleCancelEdit}
+                        variant="outline"
+                        disabled={isSavingName}
+                        className="border-gray-300 text-gray-700 hover:bg-gray-50 h-9 px-4 text-sm lowercase tracking-wider"
+                      >
+                        <X className="mr-2 h-4 w-4" />
+                        cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
             <div className="text-center py-8">
               <p className="text-gray-600 lowercase tracking-wider">
