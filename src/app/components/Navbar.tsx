@@ -28,37 +28,17 @@ const InstagramIcon = () => (
   </svg>
 );
 
-const UserIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className="h-6 w-6"
-  >
-    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-    <circle cx="12" cy="7" r="4" />
-  </svg>
-);
-
 const Navbar: React.FC = () => {
   const [visible, setVisible] = useState(true);
   const [transparent, setTransparent] = useState(false);
   const [isNavItemHovered, setIsNavItemHovered] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const profileDropdownTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const HOVER_DELAY_MS = 300;
 
   const pathname = usePathname();
   const { cartItems } = useCart();
-  const { isAuthenticated, customerData, login, logout, isLoading } = useAuth();
+  const { isAuthenticated, customerData, login, isLoading } = useAuth();
 
   // Determine if transparency is allowed on current page
   const isTransparencyAllowed =
@@ -240,9 +220,6 @@ const Navbar: React.FC = () => {
       if (hoverTimeoutRef.current) {
         clearTimeout(hoverTimeoutRef.current);
       }
-      if (profileDropdownTimeoutRef.current) {
-        clearTimeout(profileDropdownTimeoutRef.current);
-      }
     };
   }, [isTransparencyAllowed]);
 
@@ -340,69 +317,31 @@ const Navbar: React.FC = () => {
                   </span>
                 )}
               </div>
-              {/* Profile Dropdown */}
-              <div
-                className="relative"
-                onMouseEnter={() => {
-                  if (profileDropdownTimeoutRef.current) {
-                    clearTimeout(profileDropdownTimeoutRef.current);
-                  }
-                  setIsProfileDropdownOpen(true);
-                }}
-                onMouseLeave={() => {
-                  profileDropdownTimeoutRef.current = setTimeout(() => {
-                    setIsProfileDropdownOpen(false);
-                  }, 150);
-                }}
-              >
-                <button
-                  className={`${getLinkItemClasses(
+              {/* Profile/Login Button */}
+              {isAuthenticated && customerData ? (
+                <Link
+                  href="/dashboard"
+                  className={`${navLinkBaseClasses} ${getLinkItemClasses(
                     isEffectivelyTransparent
-                  )} hover:opacity-75 transition-opacity`}
+                  )}`}
                   data-underline-button-effect
                 >
-                  <UserIcon />
+                  {customerData.customer.firstName ||
+                    customerData.customer.displayName ||
+                    "dashboard"}
+                </Link>
+              ) : (
+                <button
+                  onClick={login}
+                  disabled={isLoading}
+                  className={`${navLinkBaseClasses} ${getLinkItemClasses(
+                    isEffectivelyTransparent
+                  )} disabled:opacity-50`}
+                  data-underline-button-effect
+                >
+                  {isLoading ? "logging in..." : "login"}
                 </button>
-                {isProfileDropdownOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-48 bg-[#F8F4EC] border border-gray-200 shadow-lg z-50">
-                    <div className="py-1">
-                      {isAuthenticated ? (
-                        <>
-                          {customerData && (
-                            <div className="px-4 py-2 border-b border-gray-200">
-                              <p className="text-sm lowercase tracking-wider text-gray-600">
-                                hello,{" "}
-                                {customerData.customer.firstName ||
-                                  customerData.customer.displayName}
-                              </p>
-                            </div>
-                          )}
-                          <Link
-                            href="/dashboard"
-                            className="block px-4 py-2 text-lg lowercase tracking-wider hover:opacity-75 hover:bg-gray-100 transition-colors text-center"
-                          >
-                            dashboard
-                          </Link>
-                          <button
-                            onClick={logout}
-                            className="block w-full px-4 py-2 text-lg lowercase tracking-wider hover:opacity-75 hover:bg-gray-100 transition-colors text-center"
-                          >
-                            logout
-                          </button>
-                        </>
-                      ) : (
-                        <button
-                          onClick={login}
-                          disabled={isLoading}
-                          className="block w-full px-4 py-2 text-lg lowercase tracking-wider hover:opacity-75 hover:bg-gray-100 transition-colors text-center disabled:opacity-50"
-                        >
-                          {isLoading ? "logging in..." : "login"}
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
+              )}
               <Link
                 href="https://www.instagram.com/juneofofficial/"
                 target="_blank"
