@@ -33,7 +33,6 @@ function PostLoginRedirectContent() {
     ) {
       hasRedirectedRef.current = true;
       isRedirectingRef.current = true;
-      setIsInRedirectPhase(true);
 
       console.log("PostLoginRedirect: Determining redirect destination", {
         isProfileComplete,
@@ -41,23 +40,22 @@ function PostLoginRedirectContent() {
         missingFields: profileStatus.missingFields,
       });
 
-      // Add a 1.2 second loading phase so users never see dashboard flash
-      setTimeout(() => {
-        if (isProfileComplete) {
-          // Profile is complete -> redirect to homepage
-          console.log(
-            "PostLoginRedirect: Profile complete, redirecting to homepage"
-          );
+      if (isProfileComplete) {
+        // Profile is complete -> show loading then redirect to homepage
+        setIsInRedirectPhase(true);
+        console.log(
+          "PostLoginRedirect: Profile complete, showing loading then redirecting to homepage"
+        );
+        setTimeout(() => {
           router.replace("/");
-        } else {
-          // Profile is incomplete -> redirect to dashboard (completion flow will show)
-          console.log(
-            "PostLoginRedirect: Profile incomplete, redirecting to dashboard"
-          );
-          // Redirect to clean dashboard URL without auth_completed params
-          router.replace("/dashboard");
-        }
-      }, 1200);
+        }, 1200);
+      } else {
+        // Profile is incomplete -> redirect immediately to dashboard (no loading screen)
+        console.log(
+          "PostLoginRedirect: Profile incomplete, redirecting to dashboard immediately"
+        );
+        router.replace("/dashboard");
+      }
     }
   }, [
     searchParams,

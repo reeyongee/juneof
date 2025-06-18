@@ -179,20 +179,27 @@ export default function DashboardPage() {
     const urlParams = new URLSearchParams(window.location.search);
     const isPostLoginRedirect = urlParams.get("auth_completed") === "true";
 
-    if (
-      isPostLoginRedirect &&
-      isAuthenticated &&
-      !authIsLoading &&
-      isProfileComplete
-    ) {
-      // User has complete profile but was redirected to dashboard, redirect them to homepage
+    if (isPostLoginRedirect && isAuthenticated && !authIsLoading) {
+      // If this is a post-login redirect, always show loading to prevent content flash
       console.log(
-        "Dashboard: Complete profile detected with auth_completed, redirecting to homepage"
+        "Dashboard: Post-login redirect detected, showing loading state"
       );
       setIsRedirecting(true);
-      setTimeout(() => {
-        window.location.href = "/";
-      }, 500);
+
+      if (isProfileComplete) {
+        // Complete profile should not be here, redirect to homepage
+        console.log(
+          "Dashboard: Complete profile detected with auth_completed, redirecting to homepage"
+        );
+        setTimeout(() => {
+          window.location.href = "/";
+        }, 500);
+      } else {
+        // Incomplete profile - stop redirecting state after a brief moment to show dashboard
+        setTimeout(() => {
+          setIsRedirecting(false);
+        }, 300);
+      }
     }
   }, [isAuthenticated, authIsLoading, isProfileComplete]);
 
