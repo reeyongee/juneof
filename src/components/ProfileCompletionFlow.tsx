@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useAddress } from "@/context/AddressContext";
 import {
   analyzeProfileCompletion,
   getNextCompletionStep,
@@ -30,6 +31,7 @@ export function ProfileCompletionFlow({
   onComplete,
 }: ProfileCompletionFlowProps) {
   const { apiClient, fetchCustomerData } = useAuth();
+  const { fetchAddresses } = useAddress();
   const [currentStep, setCurrentStep] = useState<"name" | "address">("name");
   const [profileStatus, setProfileStatus] =
     useState<ProfileCompletionStatus | null>(null);
@@ -129,6 +131,9 @@ export function ProfileCompletionFlow({
 
     // Refresh the auth context customer data as well
     await fetchCustomerData();
+
+    // Refresh addresses to show newly added addresses
+    await fetchAddresses();
 
     if (profileStatus?.isComplete) {
       // Profile is now complete, trigger completion callback and close

@@ -47,7 +47,7 @@ export default function DashboardPage() {
     error: authError,
     fetchCustomerData,
   } = useAuth();
-  const { startLoading, stopLoading } = useLoading();
+  const { startLoading, stopLoading, isGlobalLoading } = useLoading();
   const {
     hideCompletionFlow,
     isCompletionFlowOpen,
@@ -229,11 +229,15 @@ export default function DashboardPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, authIsLoading, isProfileComplete, isCompletionFlowOpen]);
 
-  // Show loading state while checking authentication or redirecting
-  if (authIsLoading || isRedirecting) {
+  // Show loading state while checking authentication or redirecting, or if global loading is active
+  if (authIsLoading || isRedirecting || isGlobalLoading) {
     console.log(
-      "DashboardPage: Rendering loading state (authIsLoading is true or redirecting)"
+      "DashboardPage: Rendering loading state (authIsLoading, redirecting, or global loading active)"
     );
+    // Don't render anything if global loading is active - let LoadingProvider handle it
+    if (isGlobalLoading) {
+      return null;
+    }
     return (
       <div className="min-h-screen bg-[#F8F4EC] flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
@@ -676,14 +680,11 @@ export default function DashboardPage() {
         onComplete={() => {
           refreshProfileStatus();
           hideCompletionFlow();
-          // Only show success toast if profile was actually incomplete when flow started
-          if (!isProfileComplete) {
-            toast.success("profile completed!", {
-              description:
-                "your profile has been successfully updated. you'll now get personalized recommendations and faster checkout.",
-              duration: 4000,
-            });
-          }
+          toast.success("profile completed!", {
+            description:
+              "your profile has been successfully updated. you'll now get personalized recommendations and faster checkout.",
+            duration: 4000,
+          });
         }}
       />
     </div>

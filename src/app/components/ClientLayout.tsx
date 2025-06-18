@@ -6,6 +6,7 @@ import Navbar from "./Navbar";
 import Footer from "./Footer";
 import CustomCursor from "./CustomCursor";
 import { useSplash } from "@/context/SplashContext";
+import { useLoading } from "@/context/LoadingContext";
 import { AddressProvider } from "@/context/AddressContext";
 import { Toaster } from "@/components/ui/sonner";
 import PostLoginRedirect from "@/components/PostLoginRedirect";
@@ -16,6 +17,7 @@ interface ClientLayoutProps {
 
 export default function ClientLayout({ children }: ClientLayoutProps) {
   const { showSplash, setShowSplash } = useSplash();
+  const { isGlobalLoading } = useLoading();
 
   const handleLoadComplete = () => {
     setShowSplash(false);
@@ -52,8 +54,9 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
 
       <div
         className={`transition-opacity duration-500 ${
-          !showSplash ? "opacity-100" : "opacity-0"
+          !showSplash && !isGlobalLoading ? "opacity-100" : "opacity-0"
         }`}
+        style={{ display: isGlobalLoading ? "none" : "block" }}
       >
         <Navbar />
         <main className="flex-grow bg-[#F8F4EC] relative z-[1]">
