@@ -121,6 +121,13 @@ export const AddressProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [apiClient, isAuthenticated]);
 
+  // Auto-fetch addresses when user becomes authenticated
+  useEffect(() => {
+    if (isAuthenticated && apiClient) {
+      fetchAddresses();
+    }
+  }, [isAuthenticated, apiClient, fetchAddresses]);
+
   const addShopifyAddress = async (
     addressInput: CustomerAddressInput,
     isDefault: boolean = false
