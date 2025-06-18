@@ -71,6 +71,62 @@ export default function CustomCursor() {
     mousePos.current = { x: e.clientX, y: e.clientY };
   }, []);
 
+  // Comprehensive cursor reset function for edge cases
+  const resetCursorToDefault = useCallback((reason: string = "unknown") => {
+    console.log(`Resetting cursor to default state. Reason: ${reason}`);
+
+    // Clear all state
+    isStuckRef.current = false;
+    stuckToRef.current = null;
+
+    // Kill all tweens
+    if (enlargeCursorTweenRef.current) {
+      enlargeCursorTweenRef.current.kill();
+      enlargeCursorTweenRef.current = null;
+    }
+
+    if (magneticTweenRef.current) {
+      magneticTweenRef.current.kill();
+      magneticTweenRef.current = null;
+    }
+
+    // Force reset all cursor properties
+    if (outerCursorRef.current) {
+      gsap.set(outerCursorRef.current, {
+        width: cursorOriginals.current.width,
+        height: cursorOriginals.current.height,
+        backgroundColor: cursorOriginals.current.backgroundColor,
+        borderColor: cursorOriginals.current.borderColor,
+        borderWidth: "2px",
+        borderRadius: "50%",
+        opacity: 1,
+        scaleX: 1,
+        scaleY: 1,
+        rotation: 0,
+        // Clear any transform-origin changes
+        transformOrigin: "50% 50%",
+      });
+    }
+
+    // Reset inner cursor
+    if (innerCursorRef.current) {
+      gsap.set(innerCursorRef.current, {
+        opacity: 1,
+        scaleX: 1,
+        scaleY: 1,
+      });
+    }
+
+    // Ensure cursor wrapper is properly positioned
+    if (cursorWrapperRef.current) {
+      gsap.set(cursorWrapperRef.current, {
+        autoAlpha: 1,
+        scaleX: 1,
+        scaleY: 1,
+      });
+    }
+  }, []);
+
   // Render loop for smooth cursor movement
   const render = useCallback(() => {
     if (!cursorWrapperRef.current || !isCursorActiveRef.current) {
@@ -81,11 +137,34 @@ export default function CustomCursor() {
     let targetX, targetY, currentLerpAmount;
 
     if (isStuckRef.current && stuckToRef.current) {
-      // Magnetic mode: target the center of the stuck element
-      const targetRect = stuckToRef.current.getBoundingClientRect();
-      targetX = targetRect.left + targetRect.width / 2;
-      targetY = targetRect.top + targetRect.height / 2;
-      currentLerpAmount = stuckLerpAmount;
+      // Check if the stuck element still exists in DOM
+      if (!document.contains(stuckToRef.current)) {
+        console.warn("Stuck element removed from DOM, resetting cursor");
+        resetCursorToDefault("stuck-element-removed");
+
+        // Continue with normal mouse following
+        targetX = mousePos.current.x;
+        targetY = mousePos.current.y;
+        currentLerpAmount = lerpAmount;
+      } else {
+        // Magnetic mode: target the center of the stuck element
+        const targetRect = stuckToRef.current.getBoundingClientRect();
+
+        // Check if element has valid dimensions (not hidden or collapsed)
+        if (targetRect.width === 0 || targetRect.height === 0) {
+          console.warn("Stuck element has no dimensions, resetting cursor");
+          resetCursorToDefault("stuck-element-no-dimensions");
+
+          // Force reset and continue with mouse following
+          targetX = mousePos.current.x;
+          targetY = mousePos.current.y;
+          currentLerpAmount = lerpAmount;
+        } else {
+          targetX = targetRect.left + targetRect.width / 2;
+          targetY = targetRect.top + targetRect.height / 2;
+          currentLerpAmount = stuckLerpAmount;
+        }
+      }
     } else {
       // Normal mode: follow mouse
       targetX = mousePos.current.x;
@@ -106,7 +185,7 @@ export default function CustomCursor() {
     });
 
     renderLoopRef.current = requestAnimationFrame(render);
-  }, [lerpAmount, stuckLerpAmount]);
+  }, [lerpAmount, stuckLerpAmount, resetCursorToDefault]);
 
   const startRenderLoop = useCallback(() => {
     console.log("Starting render loop");
@@ -131,8 +210,14 @@ export default function CustomCursor() {
   // Magnetic hover handlers for buttons
   const handleMagneticEnter = useCallback((e: Event) => {
     const target = e.currentTarget as Element;
-    console.log("Magnetic enter triggered on:", target); // Debug log
+    console.log("Magnetic enter triggered on:", target);
     if (!outerCursorRef.current || !target) return;
+
+    // Ensure target element still exists in DOM
+    if (!document.contains(target)) {
+      console.warn("Magnetic target no longer in DOM, aborting");
+      return;
+    }
 
     // Check if this element should use enlarging circle instead of magnetic box
     const shouldUseCircle =
@@ -147,35 +232,64 @@ export default function CustomCursor() {
 
     if (shouldUseCircle) {
       // Use enlarging circle effect
+      console.log("Using circle effect for:", target);
+
+      // Kill any existing magnetic tween before starting circle effect
+      if (magneticTweenRef.current) {
+        magneticTweenRef.current.kill();
+        magneticTweenRef.current = null;
+      }
+
+      // Ensure we're not in stuck state for circle effects
+      isStuckRef.current = false;
+      stuckToRef.current = null;
+
       if (enlargeCursorTweenRef.current) {
         enlargeCursorTweenRef.current.play();
       }
       return;
     }
 
+    console.log("Using magnetic effect for:", target);
+
+    // Kill ALL existing tweens before starting magnetic effect
+    if (enlargeCursorTweenRef.current) {
+      enlargeCursorTweenRef.current.kill();
+      // Reset any circle effect properties
+      gsap.set(outerCursorRef.current, {
+        backgroundColor: cursorOriginals.current.backgroundColor,
+        borderColor: cursorOriginals.current.borderColor,
+        opacity: 1,
+      });
+    }
+
+    if (magneticTweenRef.current) {
+      magneticTweenRef.current.kill();
+      magneticTweenRef.current = null;
+    }
+
+    // Set magnetic state
     isStuckRef.current = true;
     stuckToRef.current = target;
 
     const targetRect = target.getBoundingClientRect();
-    console.log("Target rect:", targetRect); // Debug log
+    console.log("Target rect:", targetRect);
 
-    // Kill any existing magnetic tween
-    if (magneticTweenRef.current) {
-      magneticTweenRef.current.kill();
-    }
+    // Add transition state to prevent jarring changes
+    const transitionDuration = 0.15; // Shorter for snappier feel
 
     // Fade out the inner cursor dot when magnetic effect happens
     if (innerCursorRef.current) {
       gsap.to(innerCursorRef.current, {
-        duration: 0.2,
+        duration: transitionDuration,
         opacity: 0,
-        ease: "power3.out",
+        ease: "power2.out",
       });
     }
 
     // Create magnetic effect: rounded rectangular border only (no background)
     magneticTweenRef.current = gsap.to(outerCursorRef.current, {
-      duration: 0.2,
+      duration: transitionDuration,
       width: targetRect.width + 16,
       height: targetRect.height + 24,
       backgroundColor: "transparent",
@@ -183,43 +297,71 @@ export default function CustomCursor() {
       borderWidth: "2px",
       borderRadius: "8px",
       opacity: 1,
-      ease: "power3.out",
+      ease: "power2.out",
+      // Add completion callback to ensure state is properly set
+      onComplete: () => {
+        console.log("Magnetic enter animation completed");
+      },
+      // Add error handling
+      onInterrupt: () => {
+        console.log("Magnetic enter animation interrupted");
+      },
     });
   }, []);
 
   const handleMagneticLeave = useCallback(() => {
-    console.log("Magnetic leave triggered"); // Debug log
+    console.log("Magnetic leave triggered");
     if (!outerCursorRef.current) return;
 
     // Check if we were using circle effect
     if (!isStuckRef.current) {
       // We were using circle effect, reverse it
+      console.log("Reversing circle effect");
       if (enlargeCursorTweenRef.current) {
         enlargeCursorTweenRef.current.reverse();
       }
       return;
     }
 
+    console.log("Reversing magnetic effect");
+
+    // Clear magnetic state immediately to prevent race conditions
+    const wasStuck = isStuckRef.current;
+
     isStuckRef.current = false;
     stuckToRef.current = null;
 
-    // Kill any existing magnetic tween
+    // Validate that we actually had a magnetic state
+    if (!wasStuck) {
+      console.warn("handleMagneticLeave called but cursor wasn't stuck");
+      return;
+    }
+
+    // Kill any existing tweens with proper cleanup
     if (magneticTweenRef.current) {
       magneticTweenRef.current.kill();
+      magneticTweenRef.current = null;
     }
+
+    // Also kill any enlarging cursor tweens to prevent conflicts
+    if (enlargeCursorTweenRef.current) {
+      enlargeCursorTweenRef.current.kill();
+    }
+
+    const transitionDuration = 0.2; // Slightly longer for smoother exit
 
     // Fade the inner cursor dot back in
     if (innerCursorRef.current) {
       gsap.to(innerCursorRef.current, {
-        duration: 0.2,
+        duration: transitionDuration,
         opacity: 1,
-        ease: "power3.out",
+        ease: "power2.out",
       });
     }
 
-    // Revert to original appearance - ensure circular shape
+    // Revert to original appearance - ensure ALL properties are reset
     magneticTweenRef.current = gsap.to(outerCursorRef.current, {
-      duration: 0.2,
+      duration: transitionDuration,
       width: cursorOriginals.current.width,
       height: cursorOriginals.current.height,
       backgroundColor: cursorOriginals.current.backgroundColor,
@@ -227,7 +369,39 @@ export default function CustomCursor() {
       borderWidth: "2px",
       borderRadius: "50%", // Explicitly ensure circular shape
       opacity: 1,
-      ease: "power3.out",
+      ease: "power2.out",
+      // Force these properties to prevent shape distortion
+      scaleX: 1,
+      scaleY: 1,
+      rotation: 0,
+      // Add completion callback
+      onComplete: () => {
+        console.log("Magnetic leave animation completed");
+        // Double-check that we're back to circular state
+        if (outerCursorRef.current) {
+          gsap.set(outerCursorRef.current, {
+            borderRadius: "50%",
+            scaleX: 1,
+            scaleY: 1,
+          });
+        }
+      },
+      // Add error handling
+      onInterrupt: () => {
+        console.log("Magnetic leave animation interrupted");
+        // Force reset to original state if interrupted
+        if (outerCursorRef.current) {
+          gsap.set(outerCursorRef.current, {
+            width: cursorOriginals.current.width,
+            height: cursorOriginals.current.height,
+            backgroundColor: cursorOriginals.current.backgroundColor,
+            borderColor: cursorOriginals.current.borderColor,
+            borderRadius: "50%",
+            scaleX: 1,
+            scaleY: 1,
+          });
+        }
+      },
     });
   }, []);
 
@@ -377,36 +551,7 @@ export default function CustomCursor() {
     // Add cursor reset event listener
     const handleCursorReset = (e: CustomEvent) => {
       console.log("Cursor reset triggered:", e.detail);
-      // Reset cursor state
-      isStuckRef.current = false;
-      stuckToRef.current = null;
-
-      // Kill any existing tweens
-      if (enlargeCursorTweenRef.current) {
-        enlargeCursorTweenRef.current.kill();
-      }
-      if (magneticTweenRef.current) {
-        magneticTweenRef.current.kill();
-      }
-
-      // Reset cursor to original state
-      if (outerCursorRef.current) {
-        gsap.set(outerCursorRef.current, {
-          width: cursorOriginals.current.width,
-          height: cursorOriginals.current.height,
-          backgroundColor: cursorOriginals.current.backgroundColor,
-          borderColor: cursorOriginals.current.borderColor,
-          borderRadius: "50%",
-          opacity: 1,
-        });
-      }
-
-      // Reset inner cursor
-      if (innerCursorRef.current) {
-        gsap.set(innerCursorRef.current, {
-          opacity: 1,
-        });
-      }
+      resetCursorToDefault(`event-reset-${e.detail?.reason || "unknown"}`);
 
       // Ensure cursor wrapper is visible
       if (cursorWrapperRef.current) {
@@ -478,6 +623,7 @@ export default function CustomCursor() {
     startRenderLoop,
     stopRenderLoop,
     captureInitialMousePosition,
+    resetCursorToDefault,
     fullCursorSize,
     easing,
     showSplash,
