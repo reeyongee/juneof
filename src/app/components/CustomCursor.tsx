@@ -307,121 +307,19 @@ export default function CustomCursor() {
     }
 
     // Check if this element should use enlarging circle instead of magnetic box
-    const shouldUseCircle = (() => {
-      // Logo link detection (improved)
-      if (target.closest('a[href="/"]') || target.closest('a[href="#"]')) {
-        return true;
-      }
-
-      // CSS class detection (more flexible)
-      if (
-        target.classList.contains("clear-cart-btn") ||
-        target.closest(".clear-cart-btn")
-      ) {
-        return true;
-      }
-
-      // Text content detection (improved with normalization)
-      const textContent = target.textContent?.toLowerCase().trim() || "";
-      const allText =
-        (target as HTMLElement).innerText?.toLowerCase().trim() || "";
-
-      // Check both textContent and innerText for better coverage
-      const hasWashCare =
-        textContent.includes("wash care") ||
-        allText.includes("wash care") ||
-        textContent.includes("washcare") ||
-        allText.includes("washcare");
-
-      const hasSizeChart =
-        textContent.includes("size chart") ||
-        allText.includes("size chart") ||
-        textContent.includes("sizechart") ||
-        allText.includes("sizechart");
-
-      if (hasWashCare || hasSizeChart) {
-        return true;
-      }
-
-      // Quantity buttons (improved detection)
-      const trimmedText = textContent.replace(/\s+/g, "");
-      const trimmedInnerText = allText.replace(/\s+/g, "");
-
-      if (
-        trimmedText === "+" ||
-        trimmedText === "-" ||
-        trimmedInnerText === "+" ||
-        trimmedInnerText === "-"
-      ) {
-        return true;
-      }
-
-      // Remove/delete button detection (improved)
-      const ariaLabel = target.getAttribute("aria-label")?.toLowerCase() || "";
-      const title = target.getAttribute("title")?.toLowerCase() || "";
-
-      if (
-        ariaLabel.includes("remove") ||
-        ariaLabel.includes("delete") ||
-        title.includes("remove") ||
-        title.includes("delete") ||
-        textContent.includes("remove") ||
-        allText.includes("remove")
-      ) {
-        return true;
-      }
-
-      // Icon button detection (improved - check for various icon patterns)
-      const hasIcon =
-        target.querySelector(".h-6.w-6") || // Existing pattern
-        target.querySelector("svg") || // SVG icons
-        target.querySelector(".icon") || // Generic icon class
-        target.querySelector("[class*='icon']") || // Any class containing 'icon'
-        target.querySelector("i") || // Font icons (i tags)
-        target.classList.contains("icon-btn") || // Icon button class
-        target.closest(".icon-btn");
-
-      if (hasIcon) {
-        return true;
-      }
-
-      // Small button detection (fallback for very small buttons)
-      const rect = target.getBoundingClientRect();
-      const isVerySmall = rect.width <= 40 && rect.height <= 40;
-
-      if (isVerySmall && (textContent.length <= 3 || allText.length <= 3)) {
-        return true;
-      }
-
-      // Additional fallback: check if button is nested inside known circle containers
-      const circleContainer =
-        target.closest(".cart-controls") ||
-        target.closest(".quantity-controls") ||
-        target.closest(".icon-buttons") ||
-        target.closest("[data-cursor='circle']");
-
-      if (circleContainer) {
-        return true;
-      }
-
-      // Final fallback: very specific button patterns
-      const hasOnlySymbols = /^[\+\-\×\÷\=\<\>\!\?\*\#\@\&\%\$]*$/.test(
-        textContent.trim()
-      );
-      if (hasOnlySymbols && textContent.trim().length <= 2) {
-        return true;
-      }
-
-      return false;
-    })();
+    const shouldUseCircle =
+      target.closest('a[href="/"]') || // Logo link
+      target.classList.contains("clear-cart-btn") ||
+      target.textContent?.toLowerCase().includes("wash care") ||
+      target.textContent?.toLowerCase().includes("size chart") ||
+      target.textContent?.trim() === "+" || // Cart quantity increase
+      target.textContent?.trim() === "-" || // Cart quantity decrease
+      target.getAttribute("aria-label")?.includes("Remove") ||
+      (target as HTMLElement).querySelector(".h-6.w-6"); // Close button with icon
 
     if (shouldUseCircle) {
       // Use enlarging circle effect
-      console.log(
-        "Using circle effect for:",
-        target,
-        "- Detected as circle button"
-      );
+      console.log("Using circle effect for:", target);
 
       // Kill any existing magnetic tween before starting circle effect
       if (magneticTweenRef.current) {
@@ -439,11 +337,7 @@ export default function CustomCursor() {
       return;
     }
 
-    console.log(
-      "Using magnetic effect for:",
-      target,
-      "- Detected as magnetic button"
-    );
+    console.log("Using magnetic effect for:", target);
 
     // Kill ALL existing tweens before starting magnetic effect
     if (enlargeCursorTweenRef.current) {
