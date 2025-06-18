@@ -213,12 +213,12 @@ export function ProfileCompletionFlow({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-20">
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" />
 
       {/* Overlay Content */}
-      <div className="relative bg-[#F8F4EC] w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto border border-gray-300">
+      <div className="relative bg-[#F8F4EC] w-full max-w-md mx-4 max-h-[calc(100vh-6rem)] overflow-y-auto border border-gray-300">
         {/* Header */}
         <div className="p-6 border-b border-gray-300">
           <div className="flex items-center gap-3 mb-3">

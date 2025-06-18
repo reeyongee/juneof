@@ -295,8 +295,6 @@ button:not(.add-to-cart-btn):not(.clear-cart-btn):not(.checkout-btn):not(.size-b
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
-  /* Navbar height CSS custom property */
-  --navbar-height: 80px; /* Approximate height - will be updated by JS */
 }
 
 .dark {
@@ -446,15 +444,4 @@ input[type="text"]:invalid:not(:focus):not(:placeholder-shown) {
   border-radius: 0;
   margin-top: 4px;
   position: relative;
-}
-
-/* Apply navbar spacing to main content */
-main {
-  padding-top: var(--navbar-height);
-  transition: padding-top 0.3s ease-in-out;
-}
-
-/* Adjust for when navbar is hidden (translated up) */
-.navbar-hidden main {
-  padding-top: 0;
 }

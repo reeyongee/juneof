@@ -53,7 +53,6 @@ const Navbar: React.FC = () => {
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const profileDropdownTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const navbarRef = useRef<HTMLElement>(null);
   const HOVER_DELAY_MS = 300;
 
   const { cartItems } = useCart();
@@ -69,21 +68,6 @@ const Navbar: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    // Function to measure and update navbar height
-    const updateNavbarHeight = () => {
-      if (navbarRef.current) {
-        const height = navbarRef.current.offsetHeight;
-        document.documentElement.style.setProperty(
-          "--navbar-height",
-          `${height}px`
-        );
-      }
-    };
-
-    // Update height on mount and resize
-    updateNavbarHeight();
-    window.addEventListener("resize", updateNavbarHeight);
-
     // --- Bottom Observer (for hiding navbar) ---
     const bottomSentinelId = "navbar-bottom-sentinel";
     let bottomSentinel = document.getElementById(bottomSentinelId);
@@ -203,7 +187,6 @@ const Navbar: React.FC = () => {
       }
 
       window.removeEventListener("resize", checkPageHeight);
-      window.removeEventListener("resize", updateNavbarHeight);
 
       if (hoverTimeoutRef.current) {
         clearTimeout(hoverTimeoutRef.current);
@@ -213,15 +196,6 @@ const Navbar: React.FC = () => {
       }
     };
   }, []);
-
-  // Effect to manage navbar-hidden class on body
-  useEffect(() => {
-    if (visible) {
-      document.body.classList.remove("navbar-hidden");
-    } else {
-      document.body.classList.add("navbar-hidden");
-    }
-  }, [visible]);
 
   const handleMouseEnter = () => {
     if (hoverTimeoutRef.current) {
@@ -258,7 +232,7 @@ const Navbar: React.FC = () => {
 
   return (
     <>
-      <header ref={navbarRef} className={dynamicHeaderClasses}>
+      <header className={dynamicHeaderClasses}>
         <div className="container mx-auto flex justify-between items-center">
           {/* Logo */}
           <Link
