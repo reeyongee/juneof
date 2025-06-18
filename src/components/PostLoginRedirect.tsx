@@ -1,18 +1,19 @@
 "use client";
 
-import { useEffect, useRef, useState, Suspense } from "react";
+import { useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useProfileCompletion } from "@/hooks/useProfileCompletion";
+import { useLoading } from "@/context/LoadingContext";
 
 function PostLoginRedirectContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isAuthenticated, isLoading: authLoading, customerData } = useAuth();
   const { isProfileComplete, profileStatus } = useProfileCompletion();
+  const { startLoading, stopLoading } = useLoading();
   const hasRedirectedRef = useRef(false);
   const isRedirectingRef = useRef(false);
-  const [isInRedirectPhase, setIsInRedirectPhase] = useState(false);
 
   useEffect(() => {
     // Only run redirect logic if:
@@ -41,20 +42,25 @@ function PostLoginRedirectContent() {
       });
 
       if (isProfileComplete) {
-        // Profile is complete -> show loading then redirect to homepage
-        setIsInRedirectPhase(true);
+        // Profile is complete -> start global loading then redirect to homepage
         console.log(
-          "PostLoginRedirect: Profile complete, showing loading then redirecting to homepage"
+          "PostLoginRedirect: Profile complete, starting global loading then redirecting to homepage"
         );
+        startLoading("post-login-complete", 1200);
         setTimeout(() => {
+          stopLoading("post-login-complete");
           router.replace("/");
         }, 1200);
       } else {
-        // Profile is incomplete -> redirect immediately to dashboard (no loading screen)
+        // Profile is incomplete -> start brief loading then redirect to dashboard
         console.log(
-          "PostLoginRedirect: Profile incomplete, redirecting to dashboard immediately"
+          "PostLoginRedirect: Profile incomplete, starting brief loading then redirecting to dashboard"
         );
-        router.replace("/dashboard");
+        startLoading("post-login-incomplete", 800);
+        setTimeout(() => {
+          stopLoading("post-login-incomplete");
+          router.replace("/dashboard");
+        }, 800);
       }
     }
   }, [
@@ -65,23 +71,11 @@ function PostLoginRedirectContent() {
     profileStatus,
     isProfileComplete,
     router,
+    startLoading,
+    stopLoading,
   ]);
 
-  // Show loading screen during redirect phase to prevent dashboard flash
-  if (isInRedirectPhase) {
-    return (
-      <div className="min-h-screen bg-[#F8F4EC] flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
-          <p className="text-lg lowercase tracking-wider">
-            setting up your account...
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  // This component doesn't render anything when not in redirect phase
+  // This component doesn't render anything - loading is handled by LoadingProvider
   return null;
 }
 

@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { useLoading } from "@/context/LoadingContext";
 import {
   validateCallback,
   completeAuthentication,
@@ -12,12 +13,13 @@ import {
 function CallbackHandlerContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const [message, setMessage] = useState(
-    "Processing Shopify authentication..."
-  ); // User-facing message
+  const { startLoading, stopLoading } = useLoading();
 
   useEffect(() => {
     const processCallback = async () => {
+      // Start global loading for the entire callback process
+      startLoading("callback-handler", 2000);
+
       const code = searchParams.get("code");
       const state = searchParams.get("state");
 
@@ -26,6 +28,7 @@ function CallbackHandlerContent() {
         const errorMsg =
           "Essential authentication parameters (code or state) are missing from Shopify's callback.";
         console.error("ClientCallbackHandler:", errorMsg);
+        stopLoading("callback-handler");
         router.push(
           `/auth/error?error=missing_parameters&description=${encodeURIComponent(
             errorMsg
@@ -35,7 +38,6 @@ function CallbackHandlerContent() {
       }
 
       // --- State Validation ---
-      setMessage("Validating authentication state...");
       const validation = validateCallback(window.location.href);
       if (!validation.isValid || !validation.code) {
         const errorMsg =
@@ -45,6 +47,7 @@ function CallbackHandlerContent() {
           "ClientCallbackHandler: State validation failed -",
           errorMsg
         );
+        stopLoading("callback-handler");
         router.push(
           `/auth/error?error=${
             validation.error || "invalid_state"
@@ -54,7 +57,6 @@ function CallbackHandlerContent() {
       }
 
       // --- Configuration Check ---
-      setMessage("Configuration check...");
       // On Vercel, NEXTAUTH_URL might not be available on client side since it's not NEXT_PUBLIC_
       // Use window.location.origin as fallback for client-side operations
       const appBaseUrl =
@@ -81,6 +83,7 @@ function CallbackHandlerContent() {
           shopId: shopId ? "✓" : "✗",
           clientId: clientId ? "✓" : "✗",
         });
+        stopLoading("callback-handler");
         router.push(
           `/auth/error?error=server_configuration&description=${encodeURIComponent(
             errorMsg
@@ -97,7 +100,6 @@ function CallbackHandlerContent() {
 
       // --- Token Exchange ---
       try {
-        setMessage("Exchanging authorization code for tokens...");
         // `completeAuthentication` internally retrieves 'shopify-auth-code-verifier' from localStorage
         const tokens = await completeAuthentication(
           authConfig,
@@ -107,9 +109,6 @@ function CallbackHandlerContent() {
 
         console.log(
           "✅ ClientCallbackHandler: Token exchange successful. Tokens stored."
-        );
-        setMessage(
-          "Authentication successful! Redirecting to your dashboard..."
         );
 
         // Dispatch custom event to notify AuthContext immediately
@@ -136,7 +135,8 @@ function CallbackHandlerContent() {
           cleanCurrentUrl.pathname
         ); // Clean current URL
 
-        // Redirect to dashboard with the signal and timestamp
+        // Stop loading and redirect to dashboard with the signal and timestamp
+        stopLoading("callback-handler");
         router.push(dashboardUrl.pathname + dashboardUrl.search); // Pushes /dashboard?auth_completed=true&t=timestamp
       } catch (err) {
         const errorMessage =
@@ -147,6 +147,7 @@ function CallbackHandlerContent() {
           "ClientCallbackHandler: Token exchange failed -",
           errorMessage
         );
+        stopLoading("callback-handler");
         router.push(
           `/auth/error?error=invalid_grant&description=${encodeURIComponent(
             errorMessage
@@ -156,37 +157,15 @@ function CallbackHandlerContent() {
     };
 
     processCallback();
-  }, [searchParams, router]);
+  }, [searchParams, router, startLoading, stopLoading]);
 
-  return (
-    <div className="min-h-screen bg-[#F8F4EC] flex items-center justify-center">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
-        <h2 className="text-xl font-serif lowercase tracking-widest text-black mb-2">
-          completing authentication
-        </h2>
-        <p className="text-lg lowercase tracking-wider text-gray-600">
-          {message}
-        </p>
-      </div>
-    </div>
-  );
+  // This component doesn't render anything - loading is handled by LoadingProvider
+  return null;
 }
 
 export default function CallbackHandlerPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen bg-[#F8F4EC] flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
-            <h2 className="text-xl font-serif lowercase tracking-widest text-black mb-2">
-              loading authentication callback...
-            </h2>
-          </div>
-        </div>
-      }
-    >
+    <Suspense fallback={null}>
       <CallbackHandlerContent />
     </Suspense>
   );

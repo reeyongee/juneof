@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useAddress } from "@/context/AddressContext";
 import { useAuth } from "@/context/AuthContext";
+import { useLoading } from "@/context/LoadingContext";
 import AddAddressOverlay from "@/app/components/AddAddressOverlay";
 import CustomerOrders from "@/components/CustomerOrders";
 import { ProfileCompletionFlow } from "@/components/ProfileCompletionFlow";
@@ -46,6 +47,7 @@ export default function DashboardPage() {
     error: authError,
     fetchCustomerData,
   } = useAuth();
+  const { startLoading, stopLoading } = useLoading();
   const {
     hideCompletionFlow,
     isCompletionFlowOpen,
@@ -182,7 +184,7 @@ export default function DashboardPage() {
     if (isPostLoginRedirect && isAuthenticated && !authIsLoading) {
       // If this is a post-login redirect, always show loading to prevent content flash
       console.log(
-        "Dashboard: Post-login redirect detected, showing loading state"
+        "Dashboard: Post-login redirect detected, starting loading state"
       );
       setIsRedirecting(true);
 
@@ -191,17 +193,27 @@ export default function DashboardPage() {
         console.log(
           "Dashboard: Complete profile detected with auth_completed, redirecting to homepage"
         );
+        startLoading("dashboard-redirect-complete", 500);
         setTimeout(() => {
+          stopLoading("dashboard-redirect-complete");
           window.location.href = "/";
         }, 500);
       } else {
-        // Incomplete profile - stop redirecting state after a brief moment to show dashboard
+        // Incomplete profile - brief loading then show dashboard
+        startLoading("dashboard-redirect-incomplete", 300);
         setTimeout(() => {
+          stopLoading("dashboard-redirect-incomplete");
           setIsRedirecting(false);
         }, 300);
       }
     }
-  }, [isAuthenticated, authIsLoading, isProfileComplete]);
+  }, [
+    isAuthenticated,
+    authIsLoading,
+    isProfileComplete,
+    startLoading,
+    stopLoading,
+  ]);
 
   // Effect to show profile completion flow for incomplete profiles
   useEffect(() => {
@@ -224,12 +236,7 @@ export default function DashboardPage() {
     );
     return (
       <div className="min-h-screen bg-[#F8F4EC] flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
-          <p className="text-lg lowercase tracking-wider">
-            {isRedirecting ? "redirecting..." : "loading dashboard..."}
-          </p>
-        </div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
       </div>
     );
   }
@@ -306,10 +313,7 @@ export default function DashboardPage() {
       {/* Show address loading state */}
       {addressLoading && (
         <div className="text-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto mb-4"></div>
-          <p className="text-sm lowercase tracking-wider text-gray-600">
-            loading addresses...
-          </p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto"></div>
         </div>
       )}
 
