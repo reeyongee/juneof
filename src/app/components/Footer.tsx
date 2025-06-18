@@ -34,7 +34,7 @@ const Footer = () => {
           {/* Column 3: Legal */}
           <div className="w-full sm:w-auto md:w-1/4 mb-6 md:mb-0 flex flex-col items-start md:items-center">
             <Link
-              href="#"
+              href="/terms-of-use"
               className="hover:opacity-75 mb-1"
               data-underline-button-effect
             >
@@ -52,14 +52,14 @@ const Footer = () => {
           {/* Column 4: Company */}
           <div className="w-full sm:w-auto md:w-1/4 mb-6 md:mb-0 flex flex-col items-start md:items-end">
             <Link
-              href="#"
+              href="/about-us"
               className="hover:opacity-75 mb-1"
               data-underline-button-effect
             >
               about us
             </Link>
             <Link
-              href="#"
+              href="/contact-us"
               className="hover:opacity-75 mb-1"
               data-underline-button-effect
             >
