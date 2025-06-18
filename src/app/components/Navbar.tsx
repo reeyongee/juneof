@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import React, { useEffect, useState, useRef, useCallback } from "react";
+import { usePathname } from "next/navigation";
 import CartOverlay from "./CartOverlay";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
@@ -55,8 +56,13 @@ const Navbar: React.FC = () => {
   const profileDropdownTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const HOVER_DELAY_MS = 300;
 
+  const pathname = usePathname();
   const { cartItems } = useCart();
   const { isAuthenticated, customerData, login, logout, isLoading } = useAuth();
+
+  // Determine if transparency is allowed on current page
+  const isTransparencyAllowed =
+    pathname === "/" || pathname === "/privacy-policy";
 
   const totalCartItems = cartItems.reduce(
     (sum, item) => sum + item.quantity,
@@ -66,6 +72,13 @@ const Navbar: React.FC = () => {
   const handleCloseCart = useCallback(() => {
     setIsCartOpen(false);
   }, []);
+
+  // Reset transparency when navigating to pages where it's not allowed
+  useEffect(() => {
+    if (!isTransparencyAllowed) {
+      setTransparent(false);
+    }
+  }, [pathname, isTransparencyAllowed]);
 
   useEffect(() => {
     // --- Bottom Observer (for hiding navbar) ---
@@ -142,9 +155,10 @@ const Navbar: React.FC = () => {
     const topObserver = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
+          // Only set transparent if transparency is allowed on current page
           // When the top of main is NOT intersecting with viewport,
           // make navbar transparent (meaning we've scrolled down to main content)
-          setTransparent(!entry.isIntersecting);
+          setTransparent(isTransparencyAllowed && !entry.isIntersecting);
         });
       },
       {
@@ -195,7 +209,7 @@ const Navbar: React.FC = () => {
         clearTimeout(profileDropdownTimeoutRef.current);
       }
     };
-  }, []);
+  }, [isTransparencyAllowed]);
 
   const handleMouseEnter = () => {
     if (hoverTimeoutRef.current) {
