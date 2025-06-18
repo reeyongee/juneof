@@ -7,9 +7,10 @@ import React, {
   ReactNode,
   useEffect,
 } from "react";
-import { createCheckoutAndRedirect } from "@/lib/shopify";
+import { createCartAndRedirect } from "@/lib/shopify";
 import { toast } from "sonner";
 import { useAuth } from "./AuthContext";
+import { useAddress } from "./AddressContext";
 
 export interface CartItem {
   id: string; // Unique ID for the cart item (e.g., productID + size)
@@ -47,7 +48,8 @@ interface CartProviderProps {
 
 export const CartProvider = ({ children }: CartProviderProps) => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, customerData, tokens } = useAuth();
+  const { selectedAddressId, addresses } = useAddress();
 
   // Clear cart when user logs out
   useEffect(() => {
@@ -182,9 +184,41 @@ export const CartProvider = ({ children }: CartProviderProps) => {
     }, 150);
   };
 
-  const proceedToCheckout = async (email?: string) => {
+  const proceedToCheckout = async () => {
     try {
-      await createCheckoutAndRedirect(cartItems, email);
+      // Use customer email if available
+      const email = customerData?.customer?.emailAddress?.emailAddress;
+
+      // Get customer access token from tokens if available
+      const customerAccessToken = tokens?.accessToken;
+
+      // Get selected delivery address
+      const selectedAddress = addresses.find(
+        (addr) => addr.id === selectedAddressId
+      );
+      const deliveryAddress = selectedAddress
+        ? {
+            firstName: selectedAddress.firstName || undefined,
+            lastName: selectedAddress.lastName || undefined,
+            company: selectedAddress.company || undefined,
+            address1: selectedAddress.address1 || undefined,
+            address2: selectedAddress.address2 || undefined,
+            city: selectedAddress.city || undefined,
+            province:
+              selectedAddress.province || selectedAddress.zoneCode || undefined,
+            country: selectedAddress.territoryCode || "IN", // Default to India
+            zip: selectedAddress.zip || undefined,
+            phone: selectedAddress.phoneNumber || undefined,
+          }
+        : undefined;
+
+      await createCartAndRedirect(
+        cartItems,
+        customerAccessToken || undefined,
+        email || undefined,
+        deliveryAddress
+      );
+
       // Clear cart after successful checkout initiation
       clearCart();
     } catch (error) {

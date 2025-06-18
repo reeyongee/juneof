@@ -1,7 +1,7 @@
 import { Old_Standard_TT } from "next/font/google";
 import "./globals.css";
 import type { Metadata } from "next";
-import { CartProvider } from "@/context/CartContext";
+
 import { SplashProvider } from "@/context/SplashContext";
 import { AuthProvider } from "@/context/AuthContext";
 import { LoadingProvider } from "@/context/LoadingContext";
@@ -29,9 +29,7 @@ export default function RootLayout({
         <LoadingProvider>
           <SplashProvider>
             <AuthProvider>
-              <CartProvider>
-                <ClientLayout>{children}</ClientLayout>
-              </CartProvider>
+              <ClientLayout>{children}</ClientLayout>
             </AuthProvider>
           </SplashProvider>
         </LoadingProvider>

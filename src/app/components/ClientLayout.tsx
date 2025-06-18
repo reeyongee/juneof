@@ -8,6 +8,7 @@ import CustomCursor from "./CustomCursor";
 import { useSplash } from "@/context/SplashContext";
 import { useLoading } from "@/context/LoadingContext";
 import { AddressProvider } from "@/context/AddressContext";
+import { CartProvider } from "@/context/CartContext";
 import { Toaster } from "@/components/ui/sonner";
 import PostLoginRedirect from "@/components/PostLoginRedirect";
 
@@ -48,23 +49,25 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
 
   return (
     <AddressProvider>
-      <CustomCursor />
-      <PostLoginRedirect />
-      {showSplash && <SplashScreen onLoadComplete={handleLoadComplete} />}
+      <CartProvider>
+        <CustomCursor />
+        <PostLoginRedirect />
+        {showSplash && <SplashScreen onLoadComplete={handleLoadComplete} />}
 
-      <div
-        className={`transition-opacity duration-500 ${
-          !showSplash && !isGlobalLoading ? "opacity-100" : "opacity-0"
-        }`}
-        style={{ display: isGlobalLoading ? "none" : "block" }}
-      >
-        <Navbar />
-        <main className="flex-grow bg-[#F8F4EC] relative z-[1]">
-          {children}
-        </main>
-        <Footer />
-      </div>
-      <Toaster position="bottom-left" />
+        <div
+          className={`transition-opacity duration-500 ${
+            !showSplash && !isGlobalLoading ? "opacity-100" : "opacity-0"
+          }`}
+          style={{ display: isGlobalLoading ? "none" : "block" }}
+        >
+          <Navbar />
+          <main className="flex-grow bg-[#F8F4EC] relative z-[1]">
+            {children}
+          </main>
+          <Footer />
+        </div>
+        <Toaster position="bottom-left" />
+      </CartProvider>
     </AddressProvider>
   );
 }

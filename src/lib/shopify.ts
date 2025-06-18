@@ -203,49 +203,68 @@ export const GET_PRODUCT_BY_HANDLE_QUERY = gql`
   }
 `;
 
-// --- Mutation to create a checkout ---
-export const CREATE_CHECKOUT_MUTATION = gql`
-  mutation CreateCheckout($input: CheckoutCreateInput!) {
-    checkoutCreate(input: $input) {
-      checkout {
+// --- Modern Cart API Mutations ---
+
+// Create a new cart
+export const CART_CREATE_MUTATION = gql`
+  mutation CartCreate($input: CartInput!) {
+    cartCreate(input: $input) {
+      cart {
         id
-        webUrl
-        totalTaxV2 {
-          amount
-          currencyCode
+        checkoutUrl
+        cost {
+          totalAmount {
+            amount
+            currencyCode
+          }
+          subtotalAmount {
+            amount
+            currencyCode
+          }
+          totalTaxAmount {
+            amount
+            currencyCode
+          }
         }
-        totalPriceV2 {
-          amount
-          currencyCode
-        }
-        subtotalPriceV2 {
-          amount
-          currencyCode
-        }
-        lineItems(first: 250) {
+        lines(first: 250) {
           edges {
             node {
               id
-              title
               quantity
-              variant {
-                id
-                title
-                price {
+              cost {
+                totalAmount {
                   amount
                   currencyCode
                 }
-                product {
+              }
+              merchandise {
+                ... on ProductVariant {
                   id
                   title
-                  handle
+                  price {
+                    amount
+                    currencyCode
+                  }
+                  product {
+                    id
+                    title
+                    handle
+                  }
                 }
               }
             }
           }
         }
+        buyerIdentity {
+          email
+          customer {
+            id
+            firstName
+            lastName
+          }
+        }
       }
-      checkoutUserErrors {
+      userErrors {
         field
         message
       }
@@ -253,35 +272,272 @@ export const CREATE_CHECKOUT_MUTATION = gql`
   }
 `;
 
-// --- Mutation to add line items to existing checkout ---
-export const CHECKOUT_LINE_ITEMS_ADD_MUTATION = gql`
-  mutation CheckoutLineItemsAdd(
-    $checkoutId: ID!
-    $lineItems: [CheckoutLineItemInput!]!
-  ) {
-    checkoutLineItemsAdd(checkoutId: $checkoutId, lineItems: $lineItems) {
-      checkout {
+// Add lines to existing cart
+export const CART_LINES_ADD_MUTATION = gql`
+  mutation CartLinesAdd($cartId: ID!, $lines: [CartLineInput!]!) {
+    cartLinesAdd(cartId: $cartId, lines: $lines) {
+      cart {
         id
-        webUrl
-        totalTaxV2 {
-          amount
-          currencyCode
+        checkoutUrl
+        cost {
+          totalAmount {
+            amount
+            currencyCode
+          }
+          subtotalAmount {
+            amount
+            currencyCode
+          }
+          totalTaxAmount {
+            amount
+            currencyCode
+          }
         }
-        totalPriceV2 {
-          amount
-          currencyCode
-        }
-        subtotalPriceV2 {
-          amount
-          currencyCode
-        }
-        lineItems(first: 250) {
+        lines(first: 250) {
           edges {
             node {
               id
-              title
               quantity
-              variant {
+              cost {
+                totalAmount {
+                  amount
+                  currencyCode
+                }
+              }
+              merchandise {
+                ... on ProductVariant {
+                  id
+                  title
+                  price {
+                    amount
+                    currencyCode
+                  }
+                  product {
+                    id
+                    title
+                    handle
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      userErrors {
+        field
+        message
+      }
+    }
+  }
+`;
+
+// Update cart lines
+export const CART_LINES_UPDATE_MUTATION = gql`
+  mutation CartLinesUpdate($cartId: ID!, $lines: [CartLineUpdateInput!]!) {
+    cartLinesUpdate(cartId: $cartId, lines: $lines) {
+      cart {
+        id
+        checkoutUrl
+        cost {
+          totalAmount {
+            amount
+            currencyCode
+          }
+          subtotalAmount {
+            amount
+            currencyCode
+          }
+          totalTaxAmount {
+            amount
+            currencyCode
+          }
+        }
+        lines(first: 250) {
+          edges {
+            node {
+              id
+              quantity
+              cost {
+                totalAmount {
+                  amount
+                  currencyCode
+                }
+              }
+              merchandise {
+                ... on ProductVariant {
+                  id
+                  title
+                  price {
+                    amount
+                    currencyCode
+                  }
+                  product {
+                    id
+                    title
+                    handle
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      userErrors {
+        field
+        message
+      }
+    }
+  }
+`;
+
+// Remove lines from cart
+export const CART_LINES_REMOVE_MUTATION = gql`
+  mutation CartLinesRemove($cartId: ID!, $lineIds: [ID!]!) {
+    cartLinesRemove(cartId: $cartId, lineIds: $lineIds) {
+      cart {
+        id
+        checkoutUrl
+        cost {
+          totalAmount {
+            amount
+            currencyCode
+          }
+          subtotalAmount {
+            amount
+            currencyCode
+          }
+          totalTaxAmount {
+            amount
+            currencyCode
+          }
+        }
+        lines(first: 250) {
+          edges {
+            node {
+              id
+              quantity
+              cost {
+                totalAmount {
+                  amount
+                  currencyCode
+                }
+              }
+              merchandise {
+                ... on ProductVariant {
+                  id
+                  title
+                  price {
+                    amount
+                    currencyCode
+                  }
+                  product {
+                    id
+                    title
+                    handle
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      userErrors {
+        field
+        message
+      }
+    }
+  }
+`;
+
+// Update cart buyer identity (for customer authentication and preferences)
+export const CART_BUYER_IDENTITY_UPDATE_MUTATION = gql`
+  mutation CartBuyerIdentityUpdate(
+    $cartId: ID!
+    $buyerIdentity: CartBuyerIdentityInput!
+  ) {
+    cartBuyerIdentityUpdate(cartId: $cartId, buyerIdentity: $buyerIdentity) {
+      cart {
+        id
+        checkoutUrl
+        cost {
+          totalAmount {
+            amount
+            currencyCode
+          }
+          subtotalAmount {
+            amount
+            currencyCode
+          }
+          totalTaxAmount {
+            amount
+            currencyCode
+          }
+        }
+        buyerIdentity {
+          email
+          customer {
+            id
+            firstName
+            lastName
+          }
+          deliveryAddressPreferences {
+            ... on MailingAddress {
+              id
+              firstName
+              lastName
+              company
+              address1
+              address2
+              city
+              province
+              country
+              zip
+              phone
+            }
+          }
+        }
+      }
+      userErrors {
+        field
+        message
+      }
+    }
+  }
+`;
+
+// Query to retrieve cart by ID
+export const GET_CART_QUERY = gql`
+  query GetCart($cartId: ID!) {
+    cart(id: $cartId) {
+      id
+      checkoutUrl
+      cost {
+        totalAmount {
+          amount
+          currencyCode
+        }
+        subtotalAmount {
+          amount
+          currencyCode
+        }
+        totalTaxAmount {
+          amount
+          currencyCode
+        }
+      }
+      lines(first: 250) {
+        edges {
+          node {
+            id
+            quantity
+            cost {
+              totalAmount {
+                amount
+                currencyCode
+              }
+            }
+            merchandise {
+              ... on ProductVariant {
                 id
                 title
                 price {
@@ -298,9 +554,28 @@ export const CHECKOUT_LINE_ITEMS_ADD_MUTATION = gql`
           }
         }
       }
-      checkoutUserErrors {
-        field
-        message
+      buyerIdentity {
+        email
+        customer {
+          id
+          firstName
+          lastName
+        }
+        deliveryAddressPreferences {
+          ... on MailingAddress {
+            id
+            firstName
+            lastName
+            company
+            address1
+            address2
+            city
+            province
+            country
+            zip
+            phone
+          }
+        }
       }
     }
   }
@@ -394,12 +669,14 @@ export interface ShopifyProductByHandleData {
   productByHandle: ShopifyProductDetails | null;
 }
 
-// --- Define types for checkout functionality ---
-export interface ShopifyCheckoutLineItem {
+// --- Define types for modern Cart API functionality ---
+export interface ShopifyCartLine {
   id: string;
-  title: string;
   quantity: number;
-  variant: {
+  cost: {
+    totalAmount: ShopifyMoney;
+  };
+  merchandise: {
     id: string;
     title: string;
     price: ShopifyMoney;
@@ -411,121 +688,337 @@ export interface ShopifyCheckoutLineItem {
   };
 }
 
-export interface ShopifyCheckout {
-  id: string;
-  webUrl: string;
-  totalTaxV2: ShopifyMoney;
-  totalPriceV2: ShopifyMoney;
-  subtotalPriceV2: ShopifyMoney;
-  lineItems: {
-    edges: {
-      node: ShopifyCheckoutLineItem;
-    }[];
-  };
+export interface ShopifyCartCost {
+  totalAmount: ShopifyMoney;
+  subtotalAmount: ShopifyMoney;
+  totalTaxAmount: ShopifyMoney;
 }
 
-export interface ShopifyCheckoutUserError {
+export interface ShopifyCartBuyerIdentity {
+  email?: string;
+  customer?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+  };
+  deliveryAddressPreferences?: Array<{
+    id: string;
+    firstName: string;
+    lastName: string;
+    company?: string;
+    address1: string;
+    address2?: string;
+    city: string;
+    province: string;
+    country: string;
+    zip: string;
+    phone?: string;
+  }>;
+}
+
+export interface ShopifyCart {
+  id: string;
+  checkoutUrl: string;
+  cost: ShopifyCartCost;
+  lines: {
+    edges: {
+      node: ShopifyCartLine;
+    }[];
+  };
+  buyerIdentity?: ShopifyCartBuyerIdentity;
+}
+
+export interface ShopifyCartUserError {
   field: string[];
   message: string;
 }
 
-export interface ShopifyCheckoutCreateData {
-  checkoutCreate: {
-    checkout: ShopifyCheckout | null;
-    checkoutUserErrors: ShopifyCheckoutUserError[];
+export interface ShopifyCartCreateData {
+  cartCreate: {
+    cart: ShopifyCart | null;
+    userErrors: ShopifyCartUserError[];
   };
 }
 
-export interface ShopifyCheckoutLineItemsAddData {
-  checkoutLineItemsAdd: {
-    checkout: ShopifyCheckout | null;
-    checkoutUserErrors: ShopifyCheckoutUserError[];
+export interface ShopifyCartLinesAddData {
+  cartLinesAdd: {
+    cart: ShopifyCart | null;
+    userErrors: ShopifyCartUserError[];
   };
 }
 
-export interface CheckoutLineItemInput {
-  variantId: string;
+export interface ShopifyCartLinesUpdateData {
+  cartLinesUpdate: {
+    cart: ShopifyCart | null;
+    userErrors: ShopifyCartUserError[];
+  };
+}
+
+export interface ShopifyCartLinesRemoveData {
+  cartLinesRemove: {
+    cart: ShopifyCart | null;
+    userErrors: ShopifyCartUserError[];
+  };
+}
+
+export interface ShopifyCartBuyerIdentityUpdateData {
+  cartBuyerIdentityUpdate: {
+    cart: ShopifyCart | null;
+    userErrors: ShopifyCartUserError[];
+  };
+}
+
+export interface ShopifyGetCartData {
+  cart: ShopifyCart | null;
+}
+
+export interface CartLineInput {
+  merchandiseId: string;
   quantity: number;
-  customAttributes?: {
+  attributes?: {
     key: string;
     value: string;
   }[];
 }
 
-export interface CheckoutCreateInput {
-  lineItems?: CheckoutLineItemInput[];
+export interface CartLineUpdateInput {
+  id: string;
+  quantity: number;
+  attributes?: {
+    key: string;
+    value: string;
+  }[];
+}
+
+export interface CartBuyerIdentityInput {
   email?: string;
-  shippingAddress?: {
+  customerAccessToken?: string;
+  countryCode?: string;
+  deliveryAddressPreferences?: Array<{
     firstName?: string;
     lastName?: string;
     company?: string;
     address1?: string;
     address2?: string;
     city?: string;
-    country?: string;
     province?: string;
+    country?: string;
     zip?: string;
     phone?: string;
-  };
+  }>;
 }
 
-// --- Helper functions for checkout functionality ---
+export interface CartInput {
+  lines?: CartLineInput[];
+  buyerIdentity?: CartBuyerIdentityInput;
+  attributes?: {
+    key: string;
+    value: string;
+  }[];
+}
+
+// --- Helper functions for modern Cart API functionality ---
 
 /**
- * Create a new Shopify checkout with line items
+ * Create a new Shopify cart with line items and buyer identity
  */
-export async function createCheckout(
-  lineItems: CheckoutLineItemInput[],
-  email?: string
-): Promise<ShopifyCheckout> {
+export async function createCart(
+  lines: CartLineInput[],
+  buyerIdentity?: CartBuyerIdentityInput
+): Promise<ShopifyCart> {
   try {
-    const input: CheckoutCreateInput = {
-      lineItems,
-      email,
+    const input: CartInput = {
+      lines,
+      buyerIdentity,
     };
 
-    const data = await storefrontApiRequest<ShopifyCheckoutCreateData>(
-      CREATE_CHECKOUT_MUTATION,
+    const data = await storefrontApiRequest<ShopifyCartCreateData>(
+      CART_CREATE_MUTATION,
       { input }
     );
 
-    if (data.checkoutCreate.checkoutUserErrors.length > 0) {
+    if (data.cartCreate.userErrors.length > 0) {
       throw new Error(
-        `Checkout creation failed: ${data.checkoutCreate.checkoutUserErrors
+        `Cart creation failed: ${data.cartCreate.userErrors
           .map((error) => error.message)
           .join(", ")}`
       );
     }
 
-    if (!data.checkoutCreate.checkout) {
-      throw new Error("Checkout creation failed: No checkout returned");
+    if (!data.cartCreate.cart) {
+      throw new Error("Cart creation failed: No cart returned");
     }
 
-    return data.checkoutCreate.checkout;
-  } catch (error) {
-    console.error("Failed to create checkout:", error);
+    return data.cartCreate.cart;
+  } catch (error: unknown) {
+    console.error("Failed to create cart:", error);
     throw error;
   }
 }
 
 /**
- * Convert cart items to Shopify checkout line items
+ * Add lines to an existing cart
+ */
+export async function addLinesToCart(
+  cartId: string,
+  lines: CartLineInput[]
+): Promise<ShopifyCart> {
+  try {
+    const data = await storefrontApiRequest<ShopifyCartLinesAddData>(
+      CART_LINES_ADD_MUTATION,
+      { cartId, lines }
+    );
+
+    if (data.cartLinesAdd.userErrors.length > 0) {
+      throw new Error(
+        `Adding lines to cart failed: ${data.cartLinesAdd.userErrors
+          .map((error) => error.message)
+          .join(", ")}`
+      );
+    }
+
+    if (!data.cartLinesAdd.cart) {
+      throw new Error("Adding lines to cart failed: No cart returned");
+    }
+
+    return data.cartLinesAdd.cart;
+  } catch (error: unknown) {
+    console.error("Failed to add lines to cart:", error);
+    throw error;
+  }
+}
+
+/**
+ * Update lines in an existing cart
+ */
+export async function updateCartLines(
+  cartId: string,
+  lines: CartLineUpdateInput[]
+): Promise<ShopifyCart> {
+  try {
+    const data = await storefrontApiRequest<ShopifyCartLinesUpdateData>(
+      CART_LINES_UPDATE_MUTATION,
+      { cartId, lines }
+    );
+
+    if (data.cartLinesUpdate.userErrors.length > 0) {
+      throw new Error(
+        `Updating cart lines failed: ${data.cartLinesUpdate.userErrors
+          .map((error) => error.message)
+          .join(", ")}`
+      );
+    }
+
+    if (!data.cartLinesUpdate.cart) {
+      throw new Error("Updating cart lines failed: No cart returned");
+    }
+
+    return data.cartLinesUpdate.cart;
+  } catch (error: unknown) {
+    console.error("Failed to update cart lines:", error);
+    throw error;
+  }
+}
+
+/**
+ * Remove lines from an existing cart
+ */
+export async function removeCartLines(
+  cartId: string,
+  lineIds: string[]
+): Promise<ShopifyCart> {
+  try {
+    const data = await storefrontApiRequest<ShopifyCartLinesRemoveData>(
+      CART_LINES_REMOVE_MUTATION,
+      { cartId, lineIds }
+    );
+
+    if (data.cartLinesRemove.userErrors.length > 0) {
+      throw new Error(
+        `Removing cart lines failed: ${data.cartLinesRemove.userErrors
+          .map((error) => error.message)
+          .join(", ")}`
+      );
+    }
+
+    if (!data.cartLinesRemove.cart) {
+      throw new Error("Removing cart lines failed: No cart returned");
+    }
+
+    return data.cartLinesRemove.cart;
+  } catch (error: unknown) {
+    console.error("Failed to remove cart lines:", error);
+    throw error;
+  }
+}
+
+/**
+ * Update cart buyer identity for customer authentication and preferences
+ */
+export async function updateCartBuyerIdentity(
+  cartId: string,
+  buyerIdentity: CartBuyerIdentityInput
+): Promise<ShopifyCart> {
+  try {
+    const data = await storefrontApiRequest<ShopifyCartBuyerIdentityUpdateData>(
+      CART_BUYER_IDENTITY_UPDATE_MUTATION,
+      { cartId, buyerIdentity }
+    );
+
+    if (data.cartBuyerIdentityUpdate.userErrors.length > 0) {
+      throw new Error(
+        `Updating cart buyer identity failed: ${data.cartBuyerIdentityUpdate.userErrors
+          .map((error) => error.message)
+          .join(", ")}`
+      );
+    }
+
+    if (!data.cartBuyerIdentityUpdate.cart) {
+      throw new Error("Updating cart buyer identity failed: No cart returned");
+    }
+
+    return data.cartBuyerIdentityUpdate.cart;
+  } catch (error: unknown) {
+    console.error("Failed to update cart buyer identity:", error);
+    throw error;
+  }
+}
+
+/**
+ * Retrieve a cart by ID
+ */
+export async function getCart(cartId: string): Promise<ShopifyCart | null> {
+  try {
+    const data = await storefrontApiRequest<ShopifyGetCartData>(
+      GET_CART_QUERY,
+      { cartId }
+    );
+
+    return data.cart;
+  } catch (error: unknown) {
+    console.error("Failed to get cart:", error);
+    throw error;
+  }
+}
+
+/**
+ * Convert cart items to Shopify cart line inputs
  * Note: This requires mapping cart items to actual Shopify variant IDs
  */
-export function convertCartItemsToLineItems(
+export function convertCartItemsToCartLines(
   cartItems: Array<{
     name: string;
     size: string;
     quantity: number;
-    variantId?: string; // We'll need to add this to cart items
+    variantId?: string;
   }>
-): CheckoutLineItemInput[] {
+): CartLineInput[] {
   return cartItems
     .filter((item) => item.variantId) // Only include items with variant IDs
     .map((item) => ({
-      variantId: item.variantId!,
+      merchandiseId: item.variantId!,
       quantity: item.quantity,
-      customAttributes: [
+      attributes: [
         {
           key: "Size",
           value: item.size,
@@ -535,31 +1028,59 @@ export function convertCartItemsToLineItems(
 }
 
 /**
- * Create checkout and redirect to Shopify checkout page
+ * Create cart with customer authentication and redirect to checkout
  */
-export async function createCheckoutAndRedirect(
+export async function createCartAndRedirect(
   cartItems: Array<{
     name: string;
     size: string;
     quantity: number;
     variantId?: string;
   }>,
-  email?: string
+  customerAccessToken?: string,
+  email?: string,
+  deliveryAddress?: {
+    firstName?: string;
+    lastName?: string;
+    company?: string;
+    address1?: string;
+    address2?: string;
+    city?: string;
+    province?: string;
+    country?: string;
+    zip?: string;
+    phone?: string;
+  }
 ): Promise<void> {
   try {
-    const lineItems = convertCartItemsToLineItems(cartItems);
+    const lines = convertCartItemsToCartLines(cartItems);
 
-    if (lineItems.length === 0) {
+    if (lines.length === 0) {
       throw new Error(
         "No valid items to checkout. Please ensure products have variant IDs."
       );
     }
 
-    const checkout = await createCheckout(lineItems, email);
+    // Prepare buyer identity
+    const buyerIdentity: CartBuyerIdentityInput = {};
+
+    if (customerAccessToken) {
+      buyerIdentity.customerAccessToken = customerAccessToken;
+    }
+
+    if (email) {
+      buyerIdentity.email = email;
+    }
+
+    if (deliveryAddress) {
+      buyerIdentity.deliveryAddressPreferences = [deliveryAddress];
+    }
+
+    const cart = await createCart(lines, buyerIdentity);
 
     // Redirect to Shopify checkout page
-    window.location.href = checkout.webUrl;
-  } catch (error) {
+    window.location.href = cart.checkoutUrl;
+  } catch (error: unknown) {
     console.error("Checkout failed:", error);
     throw error;
   }
