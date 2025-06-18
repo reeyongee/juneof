@@ -535,12 +535,6 @@ export default function DashboardPage() {
                 )}
               </CardContent>
             </Card>
-
-            <div className="text-center py-8">
-              <p className="text-gray-600 lowercase tracking-wider">
-                additional profile settings coming soon
-              </p>
-            </div>
           </div>
         );
       default:
