@@ -6,6 +6,7 @@ import { createPortal } from "react-dom";
 import Image from "next/image";
 import { useCart } from "@/context/CartContext";
 import { useAddress } from "@/context/AddressContext";
+import { useAuth } from "@/context/AuthContext";
 import AddressSelectionOverlay from "./AddressSelectionOverlay";
 import { ShoppingBagIcon, XMarkIcon } from "@heroicons/react/24/outline";
 
@@ -42,6 +43,9 @@ export default function CartOverlay({ isOpen, onClose }: CartOverlayProps) {
 
   // Use address from context
   const { addresses, selectedAddressId } = useAddress();
+
+  // Use auth from context
+  const { isAuthenticated, login } = useAuth();
 
   const [isCheckingOut, setIsCheckingOut] = useState(false);
 
@@ -133,6 +137,12 @@ export default function CartOverlay({ isOpen, onClose }: CartOverlayProps) {
   );
 
   const handleCheckout = async () => {
+    // Check if user is authenticated
+    if (!isAuthenticated) {
+      login();
+      return;
+    }
+
     try {
       setIsCheckingOut(true);
       await proceedToCheckout();
@@ -262,7 +272,18 @@ export default function CartOverlay({ isOpen, onClose }: CartOverlayProps) {
           <div className="p-6 border-t border-gray-300 space-y-4">
             {/* Address Selection */}
             <div>
-              {selectedAddress ? (
+              {!isAuthenticated ? (
+                <div className="bg-[#F8F4EC] border border-gray-300 p-3 text-xs">
+                  <div className="flex justify-center">
+                    <button
+                      onClick={login}
+                      className="text-xs tracking-widest lowercase hover:text-gray-600 transition-colors underline"
+                    >
+                      sign in to view addresses
+                    </button>
+                  </div>
+                </div>
+              ) : selectedAddress ? (
                 <div className="bg-[#F8F4EC] border border-gray-300 p-3 text-xs">
                   <div className="space-y-3">
                     <div>
@@ -312,7 +333,11 @@ export default function CartOverlay({ isOpen, onClose }: CartOverlayProps) {
               disabled={isCheckingOut}
               className="w-full bg-[#171717] text-[#F8F4EC] hover:bg-black py-3 text-base lowercase tracking-wider transition-colors disabled:opacity-50 checkout-btn no-underline-effect"
             >
-              {isCheckingOut ? "Processing..." : "checkout"}
+              {isCheckingOut
+                ? "Processing..."
+                : !isAuthenticated
+                ? "sign in to checkout"
+                : "checkout"}
             </button>
           </div>
         )}

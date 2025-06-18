@@ -4,6 +4,7 @@ import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAddress } from "@/context/AddressContext";
+import { useAuth } from "@/context/AuthContext";
 
 interface AddressSelectionOverlayProps {
   isOpen: boolean;
@@ -17,6 +18,7 @@ export default function AddressSelectionOverlay({
   onAddressSelect,
 }: AddressSelectionOverlayProps) {
   const { addresses, selectedAddressId, selectAddress } = useAddress();
+  const { isAuthenticated, login } = useAuth();
 
   const handleAddressSelect = (addressId: string) => {
     selectAddress(addressId);
@@ -57,67 +59,81 @@ export default function AddressSelectionOverlay({
 
         {/* Address List */}
         <div className="p-4 overflow-y-auto max-h-[calc(75vh-140px)]">
-          <div className="space-y-3">
-            {addresses.map((address) => (
-              <Card
-                key={address.id}
-                className={`cursor-pointer transition-all duration-200 ${
-                  selectedAddressId === address.id
-                    ? "border-2 border-black bg-gray-50"
-                    : "border border-gray-300 hover:border-gray-400"
-                } ${
-                  address.isDefaultShopify
-                    ? "ring-1 ring-black ring-opacity-20"
-                    : ""
-                }`}
-                onClick={() => handleAddressSelect(address.id)}
+          {!isAuthenticated ? (
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <p className="text-gray-600 lowercase tracking-wider mb-4">
+                you need to sign in to view your addresses
+              </p>
+              <Button
+                onClick={login}
+                className="bg-black text-white hover:bg-gray-800 lowercase tracking-wider px-6 py-2"
               >
-                <CardContent className="p-3">
-                  <div className="flex justify-between items-start">
-                    <div className="flex-grow min-w-0">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h4 className="font-medium lowercase tracking-wider text-black text-sm truncate">
-                          {address.name ||
-                            `${address.firstName} ${address.lastName}`.trim()}
-                        </h4>
-                        {address.isDefaultShopify && (
-                          <span className="text-xs lowercase tracking-wider bg-black text-white px-2 py-0.5 flex-shrink-0">
-                            default
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-xs text-gray-600 lowercase tracking-wider space-y-0.5">
-                        <p className="truncate">{address.address1}</p>
-                        {address.address2 && (
-                          <p className="truncate">{address.address2}</p>
-                        )}
-                        <p className="truncate">
-                          {address.city}, {address.province || address.zoneCode}{" "}
-                          {address.zip}
-                        </p>
-                        {address.country && (
-                          <p className="truncate">
-                            {address.country} ({address.territoryCode})
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Selection Indicator */}
-                    <div className="ml-3 flex-shrink-0">
-                      {selectedAddressId === address.id ? (
-                        <div className="w-5 h-5 border-2 border-black bg-black flex items-center justify-center">
-                          <div className="w-2 h-2 bg-white"></div>
+                sign in with shopify
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {addresses.map((address) => (
+                <Card
+                  key={address.id}
+                  className={`cursor-pointer transition-all duration-200 ${
+                    selectedAddressId === address.id
+                      ? "border-2 border-black bg-gray-50"
+                      : "border border-gray-300 hover:border-gray-400"
+                  } ${
+                    address.isDefaultShopify
+                      ? "ring-1 ring-black ring-opacity-20"
+                      : ""
+                  }`}
+                  onClick={() => handleAddressSelect(address.id)}
+                >
+                  <CardContent className="p-3">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-grow min-w-0">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h4 className="font-medium lowercase tracking-wider text-black text-sm truncate">
+                            {address.name ||
+                              `${address.firstName} ${address.lastName}`.trim()}
+                          </h4>
+                          {address.isDefaultShopify && (
+                            <span className="text-xs lowercase tracking-wider bg-black text-white px-2 py-0.5 flex-shrink-0">
+                              default
+                            </span>
+                          )}
                         </div>
-                      ) : (
-                        <div className="w-5 h-5 border border-gray-400"></div>
-                      )}
+                        <div className="text-xs text-gray-600 lowercase tracking-wider space-y-0.5">
+                          <p className="truncate">{address.address1}</p>
+                          {address.address2 && (
+                            <p className="truncate">{address.address2}</p>
+                          )}
+                          <p className="truncate">
+                            {address.city},{" "}
+                            {address.province || address.zoneCode} {address.zip}
+                          </p>
+                          {address.country && (
+                            <p className="truncate">
+                              {address.country} ({address.territoryCode})
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Selection Indicator */}
+                      <div className="ml-3 flex-shrink-0">
+                        {selectedAddressId === address.id ? (
+                          <div className="w-5 h-5 border-2 border-black bg-black flex items-center justify-center">
+                            <div className="w-2 h-2 bg-white"></div>
+                          </div>
+                        ) : (
+                          <div className="w-5 h-5 border border-gray-400"></div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Action Buttons */}
