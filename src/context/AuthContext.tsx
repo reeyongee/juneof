@@ -8,6 +8,7 @@ import React, {
   useCallback,
   useMemo,
 } from "react";
+import { useRouter } from "next/navigation";
 
 import {
   getStoredTokens,
@@ -72,6 +73,7 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+  const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true); // Key: Start true
   const [customerData, setCustomerData] = useState<CustomerProfileData | null>(
@@ -146,7 +148,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setApiClient(null);
     setError(null);
     setIsLoading(false); // Ensure loading is false after logout
-  }, []);
+
+    // Redirect to homepage after logout
+    router.push("/");
+  }, [router]);
 
   // Internal function to fetch data and handle token refresh
   const _internalFetchAndSetCustomerData = useCallback(
