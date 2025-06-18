@@ -214,57 +214,64 @@ export default function CustomCursor() {
       return;
     }
 
-    let targetX, targetY, currentLerpAmount;
+    try {
+      let targetX, targetY, currentLerpAmount;
 
-    if (isStuckRef.current && stuckToRef.current) {
-      // Check if the stuck element still exists in DOM
-      if (!document.contains(stuckToRef.current)) {
-        console.warn("Stuck element removed from DOM, resetting cursor");
-        resetCursorToDefault("stuck-element-removed");
+      if (isStuckRef.current && stuckToRef.current) {
+        // Check if the stuck element still exists in DOM
+        if (!document.contains(stuckToRef.current)) {
+          console.warn("Stuck element removed from DOM, resetting cursor");
+          resetCursorToDefault("stuck-element-removed");
 
-        // Continue with normal mouse following
-        targetX = mousePos.current.x;
-        targetY = mousePos.current.y;
-        currentLerpAmount = lerpAmount;
-      } else {
-        // Magnetic mode: target the center of the stuck element
-        const targetRect = stuckToRef.current.getBoundingClientRect();
-
-        // Check if element has valid dimensions (not hidden or collapsed)
-        if (targetRect.width === 0 || targetRect.height === 0) {
-          console.warn("Stuck element has no dimensions, resetting cursor");
-          resetCursorToDefault("stuck-element-no-dimensions");
-
-          // Force reset and continue with mouse following
+          // Continue with normal mouse following
           targetX = mousePos.current.x;
           targetY = mousePos.current.y;
           currentLerpAmount = lerpAmount;
         } else {
-          targetX = targetRect.left + targetRect.width / 2;
-          targetY = targetRect.top + targetRect.height / 2;
-          currentLerpAmount = stuckLerpAmount;
+          // Magnetic mode: target the center of the stuck element
+          const targetRect = stuckToRef.current.getBoundingClientRect();
+
+          // Check if element has valid dimensions (not hidden or collapsed)
+          if (targetRect.width === 0 || targetRect.height === 0) {
+            console.warn("Stuck element has no dimensions, resetting cursor");
+            resetCursorToDefault("stuck-element-no-dimensions");
+
+            // Force reset and continue with mouse following
+            targetX = mousePos.current.x;
+            targetY = mousePos.current.y;
+            currentLerpAmount = lerpAmount;
+          } else {
+            targetX = targetRect.left + targetRect.width / 2;
+            targetY = targetRect.top + targetRect.height / 2;
+            currentLerpAmount = stuckLerpAmount;
+          }
         }
+      } else {
+        // Normal mode: follow mouse
+        targetX = mousePos.current.x;
+        targetY = mousePos.current.y;
+        currentLerpAmount = lerpAmount;
       }
-    } else {
-      // Normal mode: follow mouse
-      targetX = mousePos.current.x;
-      targetY = mousePos.current.y;
-      currentLerpAmount = lerpAmount;
+
+      // Linear interpolation for smooth movement
+      currentPos.current.x +=
+        (targetX - currentPos.current.x) * currentLerpAmount;
+      currentPos.current.y +=
+        (targetY - currentPos.current.y) * currentLerpAmount;
+
+      // Update cursor position
+      gsap.set(cursorWrapperRef.current, {
+        x: currentPos.current.x,
+        y: currentPos.current.y,
+      });
+
+      renderLoopRef.current = requestAnimationFrame(render);
+    } catch (error) {
+      console.error("Cursor render error:", error);
+      // Simple error recovery - reset cursor and continue
+      resetCursorToDefault("render-error");
+      renderLoopRef.current = requestAnimationFrame(render);
     }
-
-    // Linear interpolation for smooth movement
-    currentPos.current.x +=
-      (targetX - currentPos.current.x) * currentLerpAmount;
-    currentPos.current.y +=
-      (targetY - currentPos.current.y) * currentLerpAmount;
-
-    // Update cursor position
-    gsap.set(cursorWrapperRef.current, {
-      x: currentPos.current.x,
-      y: currentPos.current.y,
-    });
-
-    renderLoopRef.current = requestAnimationFrame(render);
   }, [lerpAmount, stuckLerpAmount, resetCursorToDefault]);
 
   const startRenderLoop = useCallback(() => {
@@ -853,6 +860,69 @@ export default function CustomCursor() {
       }
     };
   }, [stopRenderLoop, stopShapeMonitoring]);
+
+  // Debug utilities for development
+  useEffect(() => {
+    if (
+      typeof window !== "undefined" &&
+      process.env.NODE_ENV === "development"
+    ) {
+      const debugCursor = () => {
+        if (!outerCursorRef.current) return { error: "Cursor not initialized" };
+
+        const element = outerCursorRef.current;
+        const computedStyle = window.getComputedStyle(element);
+        const rect = element.getBoundingClientRect();
+
+        return {
+          state: {
+            isStuck: isStuckRef.current,
+            isInitialized: isInitializedRef.current,
+            isCursorActive: isCursorActiveRef.current,
+            stuckElement: stuckToRef.current?.tagName || null,
+          },
+          position: {
+            mouse: mousePos.current,
+            current: currentPos.current,
+            wrapper: cursorWrapperRef.current
+              ? {
+                  transform: cursorWrapperRef.current.style.transform,
+                  display: cursorWrapperRef.current.style.display,
+                }
+              : null,
+          },
+          dimensions: {
+            computed: {
+              width: computedStyle.width,
+              height: computedStyle.height,
+              borderRadius: computedStyle.borderRadius,
+            },
+            rect: {
+              width: rect.width,
+              height: rect.height,
+            },
+            expected: cursorOriginals.current,
+          },
+        };
+      };
+
+      const resetCursor = () => {
+        console.log("Manual cursor reset triggered");
+        resetCursorToDefault("manual-debug-reset");
+      };
+
+      // Expose debug functions
+      const globalWindow = window as typeof window & {
+        debugCursor?: () => object;
+        resetCursor?: () => void;
+      };
+      globalWindow.debugCursor = debugCursor;
+      globalWindow.resetCursor = resetCursor;
+      console.log(
+        "Debug functions available: window.debugCursor() and window.resetCursor()"
+      );
+    }
+  }, [resetCursorToDefault]);
 
   return (
     <div
