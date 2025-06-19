@@ -74,7 +74,7 @@ const Footer = () => {
   return (
     <footer
       ref={footerRef}
-      className="fixed top-0 left-0 w-full z-[1] block"
+      className="fixed top-0 left-0 w-full z-[-1] block"
       id="footer"
     >
       <div

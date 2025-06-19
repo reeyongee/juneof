@@ -5,6 +5,9 @@ import type { Metadata } from "next";
 import { SplashProvider } from "@/context/SplashContext";
 import { AuthProvider } from "@/context/AuthContext";
 import { LoadingProvider } from "@/context/LoadingContext";
+import { ProductProvider } from "@/context/ProductContext";
+import { CartProvider } from "@/context/CartContext";
+import { AddressProvider } from "@/context/AddressContext";
 import ClientLayout from "@/app/components/ClientLayout";
 import LenisProvider from "@/components/LenisProvider";
 
@@ -30,9 +33,15 @@ export default function RootLayout({
         <LenisProvider>
           <LoadingProvider>
             <SplashProvider>
-              <AuthProvider>
-                <ClientLayout>{children}</ClientLayout>
-              </AuthProvider>
+              <ProductProvider>
+                <AuthProvider>
+                  <AddressProvider>
+                    <CartProvider>
+                      <ClientLayout>{children}</ClientLayout>
+                    </CartProvider>
+                  </AddressProvider>
+                </AuthProvider>
+              </ProductProvider>
             </SplashProvider>
           </LoadingProvider>
         </LenisProvider>

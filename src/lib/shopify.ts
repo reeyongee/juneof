@@ -1109,3 +1109,33 @@ export async function createCartAndRedirect(
     throw error;
   }
 }
+
+// --- Client-side preload function for splash screen ---
+export async function preloadShopifyProducts(): Promise<{
+  products: ShopifyProductNode[];
+  imageUrls: string[];
+}> {
+  try {
+    const data = await storefrontApiRequest<ShopifyProductsData>(
+      GET_PRODUCTS_FOR_LISTING_QUERY,
+      { first: 20 } // Preload first 20 products
+    );
+
+    const products = data.products.edges.map((edge) => edge.node);
+
+    // Extract all image URLs for preloading
+    const imageUrls: string[] = [];
+    products.forEach((product) => {
+      product.images.edges.forEach((imageEdge) => {
+        if (imageEdge.node.originalSrc) {
+          imageUrls.push(imageEdge.node.originalSrc);
+        }
+      });
+    });
+
+    return { products, imageUrls };
+  } catch (error) {
+    console.error("Failed to preload Shopify products:", error);
+    return { products: [], imageUrls: [] };
+  }
+}

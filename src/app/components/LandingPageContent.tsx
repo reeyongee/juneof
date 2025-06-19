@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Image from "next/image";
+import ScrollIndicator from "./ScrollIndicator";
 import "../landing-page.css";
 
 // Register GSAP plugins
@@ -191,6 +192,9 @@ export default function LandingPageContent() {
 
   return (
     <div ref={containerRef} className="relative w-full z-[2]">
+      {/* Scroll Indicator */}
+      <ScrollIndicator />
+
       {/* Section 1 - Image Panels */}
       <div
         ref={section1Ref}
