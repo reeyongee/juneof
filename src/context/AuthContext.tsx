@@ -141,6 +141,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = useCallback(async () => {
     console.log("AuthContext: LOGOUT called");
+
+    // Get current tokens to check if we have an id_token for Shopify logout
+    const currentTokens = await getTokensUnified();
+
+    // Clear local storage and cookies first
     clearAuthStorage();
     clearStoredTokens();
 
@@ -149,16 +154,47 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       await clearTokenCookiesServer();
     }
 
+    // Clear local state
     setIsAuthenticated(false);
     setCustomerData(null);
     setTokens(null);
     setApiClient(null);
     setError(null);
-    setIsLoading(false); // Ensure loading is false after logout
+    setIsLoading(false);
 
-    // Redirect to homepage after logout
-    router.push("/");
-  }, [router]);
+    // If we have an id_token, redirect to Shopify's logout endpoint first
+    // This will clear Shopify's session completely
+    if (currentTokens?.idToken) {
+      console.log(
+        "AuthContext: LOGOUT - Redirecting to Shopify logout endpoint"
+      );
+
+      // Create Shopify logout URL
+      const logoutUrl = new URL(
+        `https://shopify.com/authentication/${shopifyAuthConfig.shopId}/logout`
+      );
+
+      // Add required id_token_hint parameter
+      logoutUrl.searchParams.append("id_token_hint", currentTokens.idToken);
+
+      // Add post_logout_redirect_uri to come back to our app
+      const postLogoutRedirectUri = `${appBaseUrl}/?shopify_logout=true`;
+      logoutUrl.searchParams.append(
+        "post_logout_redirect_uri",
+        postLogoutRedirectUri
+      );
+
+      // Redirect to Shopify logout endpoint
+      window.location.href = logoutUrl.toString();
+      return; // Don't redirect to homepage yet, let Shopify handle the redirect
+    } else {
+      console.log(
+        "AuthContext: LOGOUT - No id_token found, redirecting to homepage"
+      );
+      // If no id_token, just redirect to homepage
+      router.push("/");
+    }
+  }, [router, shopifyAuthConfig.shopId, appBaseUrl]);
 
   // Internal function to fetch data and handle token refresh
   const _internalFetchAndSetCustomerData = useCallback(
@@ -249,11 +285,53 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const justCompletedAuthSignal =
       localUrlParams.get("auth_completed") === "true";
     const authTimestamp = localUrlParams.get("t");
+    const shopifyLogoutSignal = localUrlParams.get("shopify_logout") === "true";
 
     console.log(
-      `AuthContext: initializeAuth - START. URL Search: "${currentRawSearchParams}", Signal: ${justCompletedAuthSignal}, Timestamp: ${authTimestamp}`
+      `AuthContext: initializeAuth - START. URL Search: "${currentRawSearchParams}", Signal: ${justCompletedAuthSignal}, Timestamp: ${authTimestamp}, Shopify Logout: ${shopifyLogoutSignal}`
     );
     setIsLoading(true); // Set loading to true at the beginning of this entire process
+
+    // If user is returning from Shopify logout, clean up URL and ensure clean state
+    if (shopifyLogoutSignal) {
+      console.log(
+        "AuthContext: initializeAuth - User returned from Shopify logout"
+      );
+
+      // Ensure all auth data is cleared
+      clearAuthStorage();
+      clearStoredTokens();
+      if (process.env.NODE_ENV === "production") {
+        await clearTokenCookiesServer();
+      }
+
+      // Set clean unauthenticated state
+      setIsAuthenticated(false);
+      setCustomerData(null);
+      setTokens(null);
+      setApiClient(null);
+      setError(null);
+
+      // Clean up URL parameter
+      if (typeof window !== "undefined") {
+        const currentUrl = new URL(window.location.href);
+        currentUrl.searchParams.delete("shopify_logout");
+        window.history.replaceState(
+          {},
+          document.title,
+          currentUrl.pathname + currentUrl.search
+        );
+        console.log(
+          "AuthContext: initializeAuth - Cleaned up shopify_logout URL param"
+        );
+      }
+
+      setIsLoading(false);
+      console.log(
+        "AuthContext: initializeAuth - Shopify logout cleanup complete"
+      );
+      return; // Exit early, user is logged out
+    }
 
     let tokensFoundAndValid = false;
     let attempts = 0;
@@ -353,6 +431,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         currentUrl.searchParams.delete("t");
         paramsRemoved = true;
       }
+      // Also clean up shopify_logout if it exists (shouldn't normally be here with auth_completed, but just in case)
+      if (currentUrl.searchParams.has("shopify_logout")) {
+        currentUrl.searchParams.delete("shopify_logout");
+        paramsRemoved = true;
+      }
       if (paramsRemoved) {
         window.history.replaceState(
           {},
@@ -360,7 +443,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           currentUrl.pathname + currentUrl.search
         );
         console.log(
-          "AuthContext: initializeAuth - Cleaned up auth_completed and timestamp URL params."
+          "AuthContext: initializeAuth - Cleaned up auth_completed, timestamp, and shopify_logout URL params."
         );
       }
     }

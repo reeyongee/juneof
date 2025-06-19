@@ -897,6 +897,79 @@ export interface LogoutConfig {
 }
 
 /**
+ * Enhanced logout configuration with better error handling
+ */
+export interface EnhancedLogoutConfig {
+  shopId: string;
+  idToken?: string;
+  postLogoutRedirectUri?: string;
+  appBaseUrl?: string;
+}
+
+/**
+ * Creates a complete logout URL for Shopify Customer Account API
+ * This will redirect to Shopify's logout endpoint to completely clear the session
+ * @param config - Enhanced logout configuration
+ * @returns string - Complete logout URL
+ */
+export function createEnhancedLogoutUrl(config: EnhancedLogoutConfig): string {
+  const logoutUrl = new URL(
+    `https://shopify.com/authentication/${config.shopId}/logout`
+  );
+
+  // Add required id_token_hint parameter if available
+  if (config.idToken) {
+    logoutUrl.searchParams.append("id_token_hint", config.idToken);
+  }
+
+  // Add post_logout_redirect_uri parameter
+  const postLogoutRedirectUri =
+    config.postLogoutRedirectUri ||
+    `${
+      config.appBaseUrl ||
+      (typeof window !== "undefined" ? window.location.origin : "")
+    }/?shopify_logout=true`;
+
+  logoutUrl.searchParams.append(
+    "post_logout_redirect_uri",
+    postLogoutRedirectUri
+  );
+
+  return logoutUrl.toString();
+}
+
+/**
+ * Performs a complete logout including Shopify session clearing
+ * This function will:
+ * 1. Clear all local storage and cookies
+ * 2. Redirect to Shopify's logout endpoint to clear their session
+ * 3. Shopify will redirect back to your app with shopify_logout=true parameter
+ * @param config - Enhanced logout configuration
+ */
+export function performCompleteLogout(config: EnhancedLogoutConfig): void {
+  // Clear stored tokens and auth data first
+  clearStoredTokens();
+  clearAuthStorage();
+
+  // Create logout URL and redirect
+  const logoutUrl = createEnhancedLogoutUrl(config);
+
+  console.log(
+    "Shopify Auth: Performing complete logout, redirecting to:",
+    logoutUrl
+  );
+
+  // Redirect to Shopify logout endpoint
+  if (typeof window !== "undefined") {
+    window.location.href = logoutUrl;
+  } else {
+    console.warn(
+      "Shopify Auth: Cannot redirect on server-side, use client-side only"
+    );
+  }
+}
+
+/**
  * Logs out a customer by redirecting to Shopify's logout endpoint
  * Following Shopify's recommended implementation
  * @param config - Logout configuration with shop ID, ID token, and optional redirect URI
@@ -948,191 +1021,6 @@ export function createLogoutUrl(config: LogoutConfig): string {
   }
 
   return logoutUrl.toString();
-}
-
-/**
- * Checkout URL configuration interface
- */
-export interface CheckoutUrlConfig {
-  shopDomain: string;
-  checkoutId: string;
-  stayAuthenticated?: boolean;
-}
-
-/**
- * Creates a checkout URL that maintains authentication from headless storefront
- * Following Shopify's recommended implementation for staying authenticated
- * @param config - Checkout URL configuration
- * @returns string - Complete checkout URL with authentication parameter
- */
-export function createAuthenticatedCheckoutUrl(
-  config: CheckoutUrlConfig
-): string {
-  const checkoutUrl = new URL(
-    `https://${config.shopDomain}/checkouts/${config.checkoutId}`
-  );
-
-  // Add logged_in=true parameter to maintain authentication
-  if (config.stayAuthenticated !== false) {
-    checkoutUrl.searchParams.append("logged_in", "true");
-  }
-
-  return checkoutUrl.toString();
-}
-
-/**
- * Silent authentication configuration interface
- */
-export interface SilentAuthConfig extends ShopifyAuthConfig {
-  onLoginRequired?: () => void;
-  onSuccess?: (tokens: AccessTokenResponse) => void;
-  onError?: (error: string, description?: string) => void;
-}
-
-/**
- * Performs silent authentication check using prompt=none
- * This checks if the customer is still authenticated without showing login UI
- * Following Shopify's recommended implementation
- * @param config - Silent authentication configuration
- * @returns Promise<boolean> - True if silent auth succeeded, false if login required
- */
-export async function performSilentAuth(
-  config: SilentAuthConfig
-): Promise<boolean> {
-  try {
-    // Create authorization URL with prompt=none for silent check
-    const authData = await createAuthorizationUrl(config, { prompt: "none" });
-
-    // Store auth parameters for callback validation
-    localStorage.setItem("shopify-auth-state", authData.state);
-    localStorage.setItem("shopify-auth-nonce", authData.nonce);
-    localStorage.setItem("shopify-auth-code-verifier", authData.codeVerifier);
-
-    // Create a hidden iframe for silent authentication
-    return new Promise((resolve) => {
-      const iframe = document.createElement("iframe");
-      iframe.style.display = "none";
-      iframe.src = authData.url;
-
-      // Handle iframe load event
-      iframe.onload = () => {
-        try {
-          // Check if we can access iframe content (same-origin)
-          const iframeUrl = iframe.contentWindow?.location.href;
-
-          if (iframeUrl && iframeUrl.includes(config.redirectUri)) {
-            // Parse callback URL
-            const callbackResult = validateCallback(iframeUrl);
-
-            if (callbackResult.isValid && callbackResult.code) {
-              // Exchange code for tokens
-              exchangeCodeForTokens(
-                config,
-                callbackResult.code,
-                authData.codeVerifier
-              )
-                .then((tokens) => {
-                  config.onSuccess?.(tokens);
-                  resolve(true);
-                })
-                .catch((error) => {
-                  config.onError?.(error.message || "Token exchange failed");
-                  resolve(false);
-                });
-            } else if (callbackResult.error === "login_required") {
-              // Session expired, login required
-              config.onLoginRequired?.();
-              resolve(false);
-            } else {
-              // Other error
-              config.onError?.(
-                callbackResult.error || "Unknown error",
-                callbackResult.errorDescription
-              );
-              resolve(false);
-            }
-          }
-        } catch (error) {
-          // Cross-origin error or other issue
-          config.onError?.(
-            "Silent authentication failed",
-            error instanceof Error ? error.message : "Unknown error"
-          );
-          resolve(false);
-        } finally {
-          // Clean up iframe
-          document.body.removeChild(iframe);
-        }
-      };
-
-      // Handle iframe error
-      iframe.onerror = () => {
-        config.onError?.(
-          "Silent authentication failed",
-          "Failed to load authentication frame"
-        );
-        document.body.removeChild(iframe);
-        resolve(false);
-      };
-
-      // Add iframe to document
-      document.body.appendChild(iframe);
-
-      // Set timeout for silent auth
-      setTimeout(() => {
-        if (document.body.contains(iframe)) {
-          document.body.removeChild(iframe);
-          config.onError?.(
-            "Silent authentication timeout",
-            "Authentication check took too long"
-          );
-          resolve(false);
-        }
-      }, 10000); // 10 second timeout
-    });
-  } catch (error) {
-    config.onError?.(
-      "Silent authentication setup failed",
-      error instanceof Error ? error.message : "Unknown error"
-    );
-    return false;
-  }
-}
-
-/**
- * Checks if customer is authenticated and performs silent re-authentication if needed
- * This is useful for maintaining authentication state in headless storefronts
- * @param config - Silent authentication configuration
- * @returns Promise<boolean> - True if customer is authenticated, false otherwise
- */
-export async function ensureAuthentication(
-  config: SilentAuthConfig
-): Promise<boolean> {
-  // Check if we have valid stored tokens
-  const storedTokens = getStoredTokens();
-
-  if (
-    storedTokens &&
-    !isTokenExpired(storedTokens.expiresIn, storedTokens.issuedAt)
-  ) {
-    // We have valid tokens
-    return true;
-  }
-
-  // Try to refresh tokens if we have a refresh token
-  if (storedTokens?.refreshToken) {
-    try {
-      const refreshedTokens = await autoRefreshTokens(config);
-      if (refreshedTokens) {
-        return true;
-      }
-    } catch {
-      // Refresh failed, continue to silent auth
-    }
-  }
-
-  // Perform silent authentication check
-  return await performSilentAuth(config);
 }
 
 /**
