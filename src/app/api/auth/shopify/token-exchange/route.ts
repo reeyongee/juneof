@@ -115,6 +115,17 @@ export async function POST(request: NextRequest) {
           });
         }
 
+        // Store id_token for logout functionality
+        if (tokens.id_token) {
+          response.cookies.set("shopify-id-token", tokens.id_token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "strict",
+            expires: expirationDate,
+            path: "/",
+          });
+        }
+
         // Store token metadata in a separate cookie (not httpOnly so client can read expiration)
         const tokenMetadata = {
           tokenType: tokens.token_type,

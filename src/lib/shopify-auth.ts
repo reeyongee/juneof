@@ -1612,7 +1612,7 @@ export async function getTokensFromServer(): Promise<TokenStorage | null> {
       expiresIn: tokenData.expiresIn,
       issuedAt: tokenData.issuedAt,
       scope: tokenData.scope,
-      idToken: undefined, // ID token not included in cookie response for security
+      idToken: tokenData.idToken, // ID token is now included for logout functionality
     };
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") {

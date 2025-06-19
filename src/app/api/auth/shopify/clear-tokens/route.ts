@@ -23,6 +23,14 @@ export async function POST() {
       path: "/",
     });
 
+    response.cookies.set("shopify-id-token", "", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      expires: expiredDate,
+      path: "/",
+    });
+
     response.cookies.set("shopify-token-metadata", "", {
       httpOnly: false,
       secure: process.env.NODE_ENV === "production",

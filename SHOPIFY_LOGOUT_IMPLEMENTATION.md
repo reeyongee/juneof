@@ -204,6 +204,30 @@ New enhanced functions:
 - `NEXT_PUBLIC_SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID` - Your Customer Account API client ID
 - `NEXTAUTH_URL` or fallback to `window.location.origin` - Your app's base URL
 
+## Cookie Storage Enhancement
+
+For production environments using secure cookies, the implementation includes:
+
+### Server-Side Cookie Storage
+
+- **Access Token**: Stored in `shopify-access-token` httpOnly cookie
+- **Refresh Token**: Stored in `shopify-refresh-token` httpOnly cookie
+- **ID Token**: Stored in `shopify-id-token` httpOnly cookie (NEW - for logout functionality)
+- **Token Metadata**: Stored in `shopify-token-metadata` regular cookie (client-readable)
+
+### API Route Updates
+
+- **Token Exchange**: `/api/auth/shopify/token-exchange` now stores `id_token` in cookie
+- **Get Tokens**: `/api/auth/shopify/get-tokens` now retrieves `id_token` from cookie
+- **Clear Tokens**: `/api/auth/shopify/clear-tokens` now clears `id_token` cookie
+
+### Environment-Aware Storage
+
+- **Development**: Uses localStorage (includes `id_token`)
+- **Production**: Uses httpOnly cookies (now includes `id_token` for logout)
+
+This ensures that both development and production environments have access to the `id_token` required for complete Shopify logout functionality.
+
 ## Notes
 
 - The `id_token` is required for Shopify logout to work properly
@@ -211,3 +235,4 @@ New enhanced functions:
 - The `shopify_logout=true` parameter is used to detect return from Shopify logout
 - URL cleanup ensures a clean user experience
 - Works in both development and production environments
+- **FIXED**: Production cookie storage now includes `id_token` for proper logout

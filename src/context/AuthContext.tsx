@@ -142,25 +142,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = useCallback(async () => {
     console.log("AuthContext: LOGOUT called");
 
-    // Get current tokens to check if we have an id_token for Shopify logout
+    // Get current tokens BEFORE clearing them to check if we have an id_token for Shopify logout
     const currentTokens = await getTokensUnified();
-
-    // Clear local storage and cookies first
-    clearAuthStorage();
-    clearStoredTokens();
-
-    // Clear cookies in production
-    if (process.env.NODE_ENV === "production") {
-      await clearTokenCookiesServer();
-    }
-
-    // Clear local state
-    setIsAuthenticated(false);
-    setCustomerData(null);
-    setTokens(null);
-    setApiClient(null);
-    setError(null);
-    setIsLoading(false);
+    console.log(
+      "AuthContext: LOGOUT - Current tokens:",
+      currentTokens ? "FOUND" : "NULL",
+      currentTokens?.idToken ? "with id_token" : "no id_token"
+    );
 
     // If we have an id_token, redirect to Shopify's logout endpoint first
     // This will clear Shopify's session completely
@@ -168,6 +156,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log(
         "AuthContext: LOGOUT - Redirecting to Shopify logout endpoint"
       );
+
+      // Clear local storage and cookies BEFORE redirecting
+      clearAuthStorage();
+      clearStoredTokens();
+
+      // Clear cookies in production
+      if (process.env.NODE_ENV === "production") {
+        await clearTokenCookiesServer();
+      }
+
+      // Clear local state
+      setIsAuthenticated(false);
+      setCustomerData(null);
+      setTokens(null);
+      setApiClient(null);
+      setError(null);
+      setIsLoading(false);
 
       // Create Shopify logout URL
       const logoutUrl = new URL(
@@ -184,13 +189,36 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         postLogoutRedirectUri
       );
 
+      console.log(
+        "AuthContext: LOGOUT - Shopify logout URL:",
+        logoutUrl.toString()
+      );
+
       // Redirect to Shopify logout endpoint
       window.location.href = logoutUrl.toString();
       return; // Don't redirect to homepage yet, let Shopify handle the redirect
     } else {
       console.log(
-        "AuthContext: LOGOUT - No id_token found, redirecting to homepage"
+        "AuthContext: LOGOUT - No id_token found, performing local logout only"
       );
+
+      // Clear local storage and cookies
+      clearAuthStorage();
+      clearStoredTokens();
+
+      // Clear cookies in production
+      if (process.env.NODE_ENV === "production") {
+        await clearTokenCookiesServer();
+      }
+
+      // Clear local state
+      setIsAuthenticated(false);
+      setCustomerData(null);
+      setTokens(null);
+      setApiClient(null);
+      setError(null);
+      setIsLoading(false);
+
       // If no id_token, just redirect to homepage
       router.push("/");
     }
@@ -532,6 +560,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async () => {
     console.log("AuthContext: login - START");
+
+    // Check current state before login
+    const currentTokens = await getTokensUnified();
+    console.log(
+      "AuthContext: login - Current tokens before login:",
+      currentTokens ? "FOUND" : "NULL"
+    );
+
     if (
       !shopifyAuthConfig.shopId ||
       shopifyAuthConfig.shopId.startsWith("error-") ||

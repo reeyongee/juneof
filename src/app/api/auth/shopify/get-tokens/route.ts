@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
     // Get tokens from httpOnly cookies
     const accessToken = request.cookies.get("shopify-access-token")?.value;
     const refreshToken = request.cookies.get("shopify-refresh-token")?.value;
+    const idToken = request.cookies.get("shopify-id-token")?.value;
     const metadataString = request.cookies.get("shopify-token-metadata")?.value;
 
     if (!accessToken || !metadataString) {
@@ -44,6 +45,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       accessToken,
       refreshToken: refreshToken || undefined,
+      idToken: idToken || undefined,
       tokenType: metadata.tokenType,
       expiresIn: metadata.expiresIn,
       issuedAt: metadata.issuedAt,
