@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { gsap } from "gsap";
-import { useAuth } from "@/context/AuthContext";
+import { usePathname } from "next/navigation";
 
 const ScrollIndicator = () => {
   const [isVisible, setIsVisible] = useState(false);
@@ -10,56 +10,81 @@ const ScrollIndicator = () => {
   const indicatorRef = useRef<HTMLDivElement>(null);
   const messageRef = useRef<HTMLDivElement>(null);
   const bobbingAnimationRef = useRef<gsap.core.Tween | null>(null);
-  const { isAuthenticated } = useAuth();
+  const pathname = usePathname();
+
+  // Only show on home page
+  const shouldShow = pathname === "/";
 
   useEffect(() => {
-    // Check if user has seen this indicator before (only if logged in)
-    const hasSeenIndicator = isAuthenticated
-      ? localStorage.getItem("hasSeenScrollIndicator")
-      : null;
+    if (!shouldShow) return;
 
-    if (!hasSeenIndicator) {
-      // Show indicator immediately
-      setIsVisible(true);
+    // Show indicator immediately
+    setIsVisible(true);
 
-      // Listen for scroll events
-      const handleScroll = () => {
-        if (!hasScrolled) {
-          setHasScrolled(true);
+    // Listen for scroll events
+    const handleScroll = () => {
+      const scrollY = window.scrollY || document.documentElement.scrollTop;
 
-          // Stop bobbing animation
-          if (bobbingAnimationRef.current) {
-            bobbingAnimationRef.current.kill();
-          }
+      if (!hasScrolled && scrollY > 10) {
+        setHasScrolled(true);
 
-          // Fade out quickly
-          if (indicatorRef.current) {
-            gsap.to(indicatorRef.current, {
-              opacity: 0,
-              duration: 0.3,
-              ease: "power2.out",
-              onComplete: () => {
-                setIsVisible(false);
-                // Mark as seen in localStorage only if logged in
-                if (isAuthenticated) {
-                  localStorage.setItem("hasSeenScrollIndicator", "true");
-                }
-              },
-            });
-          }
-        }
-      };
-
-      window.addEventListener("scroll", handleScroll, { passive: true });
-
-      return () => {
-        window.removeEventListener("scroll", handleScroll);
+        // Stop bobbing animation
         if (bobbingAnimationRef.current) {
           bobbingAnimationRef.current.kill();
+          bobbingAnimationRef.current = null;
         }
-      };
-    }
-  }, [hasScrolled, isAuthenticated]);
+
+        // Fade out quickly
+        if (indicatorRef.current) {
+          gsap.to(indicatorRef.current, {
+            opacity: 0,
+            duration: 0.3,
+            ease: "power2.out",
+            onComplete: () => {
+              setIsVisible(false);
+            },
+          });
+        }
+      }
+    };
+
+    // Add scroll listeners
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    document.addEventListener("scroll", handleScroll, { passive: true });
+
+    // Listen for Lenis scroll events if available
+    const checkLenis = () => {
+      const lenis = (
+        window as unknown as {
+          lenis?: {
+            on: (
+              event: string,
+              callback: (data: { scroll: number }) => void
+            ) => void;
+          };
+        }
+      ).lenis;
+      if (lenis) {
+        lenis.on("scroll", ({ scroll }: { scroll: number }) => {
+          if (!hasScrolled && scroll > 10) {
+            handleScroll();
+          }
+        });
+      }
+    };
+
+    // Check for Lenis with delay to ensure it's loaded
+    setTimeout(checkLenis, 500);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      document.removeEventListener("scroll", handleScroll);
+      if (bobbingAnimationRef.current) {
+        bobbingAnimationRef.current.kill();
+        bobbingAnimationRef.current = null;
+      }
+    };
+  }, [shouldShow, hasScrolled]);
 
   // Start bobbing animation when component becomes visible
   useEffect(() => {
@@ -72,18 +97,23 @@ const ScrollIndicator = () => {
         repeat: -1,
       });
     }
+
+    return () => {
+      if (bobbingAnimationRef.current) {
+        bobbingAnimationRef.current.kill();
+        bobbingAnimationRef.current = null;
+      }
+    };
   }, [isVisible]);
 
-  if (!isVisible) return null;
+  if (!shouldShow || !isVisible) return null;
 
   return (
     <div
       ref={indicatorRef}
       className="fixed bottom-[20%] right-[8%] z-[100] pointer-events-none"
-      style={{ opacity: hasScrolled ? 0 : 1 }}
     >
       <div ref={messageRef} className="flex items-center">
-        {/* Message Text with Arrow */}
         <div className="text-black text-base font-medium tracking-wider lowercase">
           swipe down to see more {">"}
           {">"}
