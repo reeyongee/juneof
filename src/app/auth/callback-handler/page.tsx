@@ -7,7 +7,7 @@ import {
   validateCallback,
   completeAuthentication,
   storeTokens,
-  exchangeCodeForTokensSafari,
+  exchangeCodeForTokensServer,
   getStoredCodeVerifier,
   type ShopifyAuthConfig,
 } from "@/lib/shopify-auth";
@@ -25,181 +25,111 @@ function CallbackHandlerContent() {
       const code = searchParams.get("code");
       const state = searchParams.get("state");
 
-      // --- Parameter Validation ---
       if (!code || !state) {
-        const errorMsg =
-          "Essential authentication parameters (code or state) are missing from Shopify's callback.";
-        console.error("ClientCallbackHandler:", errorMsg);
-        stopLoading("callback-handler");
+        console.error("Missing authorization code or state parameter");
         router.push(
-          `/auth/error?error=missing_parameters&description=${encodeURIComponent(
-            errorMsg
-          )}`
+          "/auth/error?error=missing_parameters&description=Authorization code or state parameter is missing"
         );
+        stopLoading("callback-handler");
         return;
       }
 
-      // --- State Validation ---
-      const validation = validateCallback(window.location.href);
-      if (!validation.isValid || !validation.code) {
-        const errorMsg =
-          validation.errorDescription ||
-          "Invalid authentication state or callback parameters.";
-        console.error(
-          "ClientCallbackHandler: State validation failed -",
-          errorMsg
-        );
-        stopLoading("callback-handler");
-        router.push(
-          `/auth/error?error=${
-            validation.error || "invalid_state"
-          }&description=${encodeURIComponent(errorMsg)}`
-        );
-        return;
-      }
-
-      // --- Configuration Check ---
-      // On Vercel, NEXTAUTH_URL might not be available on client side since it's not NEXT_PUBLIC_
-      // Use window.location.origin as fallback for client-side operations
-      const appBaseUrl =
-        process.env.NEXTAUTH_URL ||
-        (typeof window !== "undefined"
-          ? window.location.origin
-          : "https://dev.juneof.com");
-      const shopId = process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_SHOP_ID;
-      const clientId =
-        process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID;
-
-      console.log("CallbackHandler: Environment check", {
-        appBaseUrl: appBaseUrl ? "✓" : "✗",
-        shopId: shopId ? "✓" : "✗",
-        clientId: clientId ? "✓" : "✗",
-        isClient: typeof window !== "undefined",
-      });
-
-      if (!appBaseUrl || !shopId || !clientId) {
-        const errorMsg =
-          "Client-side application configuration error: NEXTAUTH_URL, Shopify Shop ID, or Client ID is missing.";
-        console.error("ClientCallbackHandler:", errorMsg, {
-          appBaseUrl: appBaseUrl ? "✓" : "✗",
-          shopId: shopId ? "✓" : "✗",
-          clientId: clientId ? "✓" : "✗",
-        });
-        stopLoading("callback-handler");
-        router.push(
-          `/auth/error?error=server_configuration&description=${encodeURIComponent(
-            errorMsg
-          )}`
-        );
-        return;
-      }
-
-      const authConfig: ShopifyAuthConfig = {
-        shopId,
-        clientId,
-        redirectUri: `${appBaseUrl}/api/auth/shopify/callback`, // This MUST match exactly what's in Shopify app config
-      };
-
-      // --- Token Exchange ---
       try {
-        // Get the stored code verifier
+        // Validate the callback parameters
+        const isValid = validateCallback(
+          `${window.location.origin}/auth/callback-handler?code=${code}&state=${state}`
+        );
+        if (!isValid.isValid) {
+          router.push(
+            "/auth/error?error=invalid_state&description=State parameter validation failed"
+          );
+          stopLoading("callback-handler");
+          return;
+        }
+
+        // Get the stored code verifier for PKCE
         const codeVerifier = getStoredCodeVerifier();
         if (!codeVerifier) {
-          throw new Error("Code verifier not found in storage");
+          console.error("Code verifier not found in storage");
+          router.push(
+            "/auth/error?error=missing_verifier&description=Code verifier not found"
+          );
+          stopLoading("callback-handler");
+          return;
         }
 
-        // Detect Safari and use Safari-compatible method
-        const isSafari = /^((?!chrome|android).)*safari/i.test(
-          navigator.userAgent
+        const config: ShopifyAuthConfig = {
+          clientId: process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID!,
+          shopId: process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_SHOP_ID!,
+          redirectUri: `${window.location.origin}/api/auth/shopify/callback`,
+          scope: "openid email customer-account-api:full",
+        };
+
+        console.log("🔄 Exchanging authorization code for tokens...");
+
+        // Use server-side token exchange to bypass Safari CORS issues
+        const tokenResponse = await exchangeCodeForTokensServer(
+          code,
+          codeVerifier,
+          config
         );
 
-        let tokens;
-        if (isSafari) {
-          console.log(
-            "🍎 Safari detected - using Safari-compatible token exchange"
-          );
-          tokens = await exchangeCodeForTokensSafari(
-            authConfig,
-            validation.code,
-            codeVerifier
-          );
-        } else {
-          // Use the original completeAuthentication for other browsers
-          tokens = await completeAuthentication(authConfig, validation.code);
-        }
+        console.log("✅ Token exchange successful");
 
-        storeTokens(tokens); // Securely store tokens
+        // Store the tokens securely
+        storeTokens(tokenResponse);
 
-        console.log(
-          "✅ ClientCallbackHandler: Token exchange successful. Tokens stored."
-        );
+        // Complete the authentication process
+        await completeAuthentication(config, code);
 
-        // Dispatch custom event to notify AuthContext immediately
-        window.dispatchEvent(new CustomEvent("shopify-auth-complete"));
-        console.log(
-          "ClientCallbackHandler: Dispatched shopify-auth-complete event"
-        );
+        console.log("🎉 Authentication completed successfully");
 
-        // Add a small delay to ensure tokens are fully stored before redirect
-        await new Promise((resolve) => setTimeout(resolve, 500));
-
-        // Add a signal and timestamp to the dashboard URL to help AuthContext retry if needed
-        const dashboardUrl = new URL("/dashboard", window.location.origin);
-        dashboardUrl.searchParams.set("auth_completed", "true"); // Our signal
-        dashboardUrl.searchParams.set("t", Date.now().toString()); // Timestamp for freshness
-
-        // Clean the current URL of auth code/state before pushing new history state
-        const cleanCurrentUrl = new URL(window.location.href);
-        cleanCurrentUrl.searchParams.delete("code");
-        cleanCurrentUrl.searchParams.delete("state");
-        window.history.replaceState(
-          {},
-          document.title,
-          cleanCurrentUrl.pathname
-        ); // Clean current URL
-
-        // Stop loading and redirect to dashboard with the signal and timestamp
-        stopLoading("callback-handler");
-        router.push(dashboardUrl.pathname + dashboardUrl.search); // Pushes /dashboard?auth_completed=true&t=timestamp
-      } catch (err) {
+        // Redirect to success page
+        router.push("/auth/success");
+      } catch (error) {
+        console.error("❌ Authentication failed:", error);
         const errorMessage =
-          err instanceof Error
-            ? err.message
-            : "An unexpected error occurred during token exchange.";
-        console.error(
-          "ClientCallbackHandler: Token exchange failed -",
-          errorMessage
-        );
-
-        // Provide Safari-specific error guidance
-        const isSafari = /^((?!chrome|android).)*safari/i.test(
-          navigator.userAgent
-        );
-        let enhancedErrorMessage = errorMessage;
-
-        if (isSafari && errorMessage.includes("Storage access required")) {
-          enhancedErrorMessage = `Safari Privacy Settings Issue: ${errorMessage}\n\nTo fix this:\n1. Go to Safari > Settings > Privacy\n2. Uncheck "Prevent cross-site tracking"\n3. Try logging in again\n\nOr use Chrome/Firefox for authentication.`;
-        }
-
-        stopLoading("callback-handler");
+          error instanceof Error ? error.message : "Unknown error occurred";
         router.push(
-          `/auth/error?error=invalid_grant&description=${encodeURIComponent(
-            enhancedErrorMessage
+          `/auth/error?error=authentication_failed&description=${encodeURIComponent(
+            errorMessage
           )}`
         );
+      } finally {
+        stopLoading("callback-handler");
       }
     };
 
     processCallback();
   }, [searchParams, router, startLoading, stopLoading]);
 
-  // This component doesn't render anything - loading is handled by LoadingProvider
-  return null;
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
+        <p className="text-gray-600">Completing authentication...</p>
+        <p className="text-sm text-gray-400 mt-2">
+          Please wait while we securely log you in
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function LoadingFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
+        <p className="text-gray-600">Loading authentication handler...</p>
+      </div>
+    </div>
+  );
 }
 
 export default function CallbackHandlerPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<LoadingFallback />}>
       <CallbackHandlerContent />
     </Suspense>
   );

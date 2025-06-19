@@ -1450,3 +1450,41 @@ export async function exchangeCodeForTokensSafari(
   // Proceed with normal token exchange
   return exchangeCodeForTokens(config, code, codeVerifier);
 }
+
+/**
+ * Server-side token exchange to bypass Safari CORS issues
+ * This function exchanges the authorization code for tokens on the server
+ */
+export async function exchangeCodeForTokensServer(
+  code: string,
+  codeVerifier: string,
+  config: ShopifyAuthConfig
+): Promise<AccessTokenResponse> {
+  try {
+    // Call our backend API route instead of Shopify directly
+    const response = await fetch("/api/auth/shopify/token-exchange", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        code,
+        codeVerifier,
+        redirectUri: config.redirectUri,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Token exchange failed: ${response.status} ${errorText}`);
+    }
+
+    const tokenData = await response.json();
+    return tokenData;
+  } catch (error) {
+    console.error("Server-side token exchange failed:", error);
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+    throw new Error(`Failed to exchange authorization code: ${errorMessage}`);
+  }
+}
