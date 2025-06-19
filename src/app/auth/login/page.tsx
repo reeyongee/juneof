@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, Suspense, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,7 +26,7 @@ function LoginContent() {
   const error = searchParams.get("error");
   const errorDescription = searchParams.get("description");
 
-  const handleLogin = async () => {
+  const handleLogin = useCallback(async () => {
     if (isLoggingIn) return;
 
     setIsLoggingIn(true);
@@ -57,7 +57,7 @@ function LoginContent() {
       setIsLoggingIn(false);
       stopLoading("shopify-auth");
     }
-  };
+  }, [isLoggingIn, startLoading, stopLoading, router]);
 
   useEffect(() => {
     // Auto-retry login if coming from an error page (optional)
@@ -73,7 +73,7 @@ function LoginContent() {
         }
       }, 2000);
     }
-  }, [error, errorDescription, isLoggingIn]);
+  }, [error, errorDescription, isLoggingIn, handleLogin]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
