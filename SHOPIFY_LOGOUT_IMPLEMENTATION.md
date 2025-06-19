@@ -10,6 +10,54 @@ This implementation provides proper Shopify Customer Account API logout that com
 
 **After**: The app redirects to Shopify's official logout endpoint first, which clears Shopify's session completely, then redirects back to the app.
 
+## Improved Authentication Flow
+
+### Enhanced Login Experience
+
+**Before**: Users had to click through multiple pages after authentication:
+
+1. Login → Shopify auth → Success page → Click "Go Home" → Click login again → Dashboard
+
+**After**: Users get a streamlined one-click login experience:
+
+1. Login → Shopify auth → **Automatic redirect to Dashboard** ✨
+
+### Implementation Details
+
+#### 1. Callback Handler Redirect Update
+
+```typescript
+// src/app/auth/callback-handler/page.tsx
+// Instead of redirecting to success page:
+// router.push("/auth/success");
+
+// Now redirects with auth completion flag:
+router.push("/?auth_completed=true&t=" + Date.now());
+```
+
+#### 2. PostLoginRedirect Component Enhancement
+
+```typescript
+// src/components/PostLoginRedirect.tsx
+// Always redirect to dashboard after successful login
+console.log(
+  "PostLoginRedirect: Authentication successful, redirecting to dashboard"
+);
+startLoading("post-login-redirect", 800);
+setTimeout(() => {
+  stopLoading("post-login-redirect");
+  router.replace("/dashboard");
+}, 800);
+```
+
+### Complete User Experience Flow
+
+1. **User clicks "Login"** → Initiates Shopify OAuth flow
+2. **Shopify authentication** → User enters credentials if needed
+3. **Callback processing** → Tokens exchanged and stored securely
+4. **Automatic redirect** → User lands directly on dashboard
+5. **Profile completion** → If needed, shown inline on dashboard
+
 ## Implementation Details
 
 ### 1. Enhanced Logout Flow

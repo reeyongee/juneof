@@ -97,8 +97,9 @@ function CallbackHandlerContent() {
 
         console.log("🎉 Authentication completed successfully");
 
-        // Redirect to success page
-        router.push("/auth/success");
+        // Redirect to homepage with auth_completed flag to trigger PostLoginRedirect
+        // PostLoginRedirect component will handle the appropriate redirection based on profile completion
+        router.push("/?auth_completed=true&t=" + Date.now());
       } catch (error) {
         console.error("❌ Authentication failed:", error);
         const errorMessage =

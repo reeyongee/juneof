@@ -41,27 +41,20 @@ function PostLoginRedirectContent() {
         missingFields: profileStatus.missingFields,
       });
 
-      if (isProfileComplete) {
-        // Profile is complete -> start global loading then redirect to homepage
-        console.log(
-          "PostLoginRedirect: Profile complete, starting global loading then redirecting to homepage"
-        );
-        startLoading("post-login-complete", 1200);
-        setTimeout(() => {
-          stopLoading("post-login-complete");
-          router.replace("/");
-        }, 1200);
-      } else {
-        // Profile is incomplete -> start brief loading then redirect to dashboard
-        console.log(
-          "PostLoginRedirect: Profile incomplete, starting brief loading then redirecting to dashboard"
-        );
-        startLoading("post-login-incomplete", 800);
-        setTimeout(() => {
-          stopLoading("post-login-incomplete");
-          router.replace("/dashboard");
-        }, 800);
-      }
+      // Always redirect to dashboard after successful login
+      console.log(
+        "PostLoginRedirect: Authentication successful, redirecting to dashboard",
+        {
+          isProfileComplete,
+          completionPercentage: profileStatus.completionPercentage,
+          missingFields: profileStatus.missingFields,
+        }
+      );
+      startLoading("post-login-redirect", 800);
+      setTimeout(() => {
+        stopLoading("post-login-redirect");
+        router.replace("/dashboard");
+      }, 800);
     }
   }, [
     searchParams,
