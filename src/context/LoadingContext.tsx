@@ -149,17 +149,11 @@ export const LoadingProvider: React.FC<LoadingProviderProps> = ({
   }, []);
 
   const forceCompleteAuthFlow = useCallback(() => {
-    console.log("LoadingManager: Force completing authentication flow");
+    console.log("LoadingManager: Force completing auth flow");
     setIsAuthFlowActive(false);
-
-    // Clear auth flow state from sessionStorage
     if (typeof window !== "undefined") {
-      sessionStorage.removeItem("auth-flow-active");
+      sessionStorage.removeItem("juneof-auth-flow-active");
     }
-
-    // Force stop global loading immediately
-    setIsGlobalLoading(false);
-    setLoadingMessage("");
   }, []);
 
   // Initialize loading state based on persisted auth flow
@@ -170,37 +164,37 @@ export const LoadingProvider: React.FC<LoadingProviderProps> = ({
     }
   }, [isAuthFlowActive]);
 
-  // Debug function accessible from browser console
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (window as any).clearAuthFlow = () => {
-        console.log("Debug: Manually clearing auth flow");
-        forceCompleteAuthFlow();
-      };
-    }
-  }, [forceCompleteAuthFlow]);
-
-  // Failsafe: Auto-complete auth flow after 15 seconds to prevent infinite loading
+  // Enhanced timeout mechanism for auth flow
   useEffect(() => {
     if (isAuthFlowActive) {
-      const failsafeTimer = setTimeout(() => {
+      // Set a 20-second global failsafe timeout
+      const timeoutId = setTimeout(() => {
         console.warn(
-          "LoadingManager: Failsafe timeout - completing auth flow after 15 seconds"
+          "LoadingManager: Auth flow timeout after 20 seconds, force completing"
         );
-        setIsAuthFlowActive(false);
-        if (typeof window !== "undefined") {
-          sessionStorage.removeItem("auth-flow-active");
-        }
-        if (activeLoadersRef.current.size === 0) {
-          setIsGlobalLoading(false);
-          setLoadingMessage("");
-        }
-      }, 15000);
+        forceCompleteAuthFlow();
+      }, 20000);
 
-      return () => clearTimeout(failsafeTimer);
+      // Add a manual recovery function to window for debugging
+      if (typeof window !== "undefined") {
+        (
+          window as typeof window & { clearAuthFlow?: () => void }
+        ).clearAuthFlow = () => {
+          console.log("Manual auth flow clear triggered");
+          clearTimeout(timeoutId);
+          forceCompleteAuthFlow();
+        };
+      }
+
+      return () => {
+        clearTimeout(timeoutId);
+        if (typeof window !== "undefined") {
+          delete (window as typeof window & { clearAuthFlow?: () => void })
+            .clearAuthFlow;
+        }
+      };
     }
-  }, [isAuthFlowActive]);
+  }, [isAuthFlowActive, forceCompleteAuthFlow]);
 
   // Cleanup on unmount
   useEffect(() => {

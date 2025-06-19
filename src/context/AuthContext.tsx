@@ -99,12 +99,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const shopId = process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_SHOP_ID;
     const clientId = process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID;
 
-    console.log("AuthContext: Environment check", {
-      appBaseUrl: appBaseUrl ? "✓" : "✗",
-      shopId: shopId ? "✓" : "✗",
-      clientId: clientId ? "✓" : "✗",
-      isClient: typeof window !== "undefined",
-    });
+    // Log environment check only once per session
+    const hasLoggedEnvCheck =
+      typeof window !== "undefined" &&
+      sessionStorage.getItem("shopify-env-checked");
+
+    if (typeof window !== "undefined" && !hasLoggedEnvCheck) {
+      console.log("AuthContext: Environment check", {
+        appBaseUrl: appBaseUrl ? "✓" : "✗",
+        shopId: shopId ? "✓" : "✗",
+        clientId: clientId ? "✓" : "✗",
+        isClient: typeof window !== "undefined",
+      });
+      sessionStorage.setItem("shopify-env-checked", "true");
+    }
 
     if (!appBaseUrl || !shopId || !clientId) {
       console.error(
@@ -132,7 +140,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       redirectUri: getRedirectUri(),
       scope: "openid email customer-account-api:full", // Define required scopes
     };
-  }, []);
+  }, []); // Empty dependency array since environment variables don't change
 
   // Store appBaseUrl separately for validation - use same logic as above
   const appBaseUrl =
@@ -363,17 +371,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       return; // Exit early, user is logged out
     }
 
-    let tokensFoundAndValid = false;
     let attempts = 0;
-    const maxAttempts = justCompletedAuthSignal ? 15 : 1; // More attempts if signal is present (increased from 10 to 15)
-    let currentRetryDelay = 50; // Start with 50ms for faster initial checks
-    const maxTotalWaitTime = justCompletedAuthSignal ? 8000 : 5000; // Longer wait time for auth completion
+    const maxAttempts = justCompletedAuthSignal ? 20 : 1; // More attempts when we know auth just completed
+    let currentRetryDelay = 25; // Start with very short delay for cookie race condition
+    let tokensFoundAndValid = false;
+
+    // Extended wait time for auth completion to handle cookie race conditions
+    const maxTotalWaitTime = justCompletedAuthSignal ? 12000 : 5000;
     const startTime = Date.now();
 
     while (attempts < maxAttempts && !tokensFoundAndValid) {
       console.log(
         `AuthContext: initializeAuth - Attempt ${attempts + 1}/${maxAttempts}`
       );
+
+      // Add small initial delay on first few attempts to handle immediate cookie race condition
+      if (justCompletedAuthSignal && attempts < 3) {
+        const initialDelay = attempts === 0 ? 100 : attempts === 1 ? 200 : 500;
+        await new Promise((resolve) => setTimeout(resolve, initialDelay));
+      }
+
       const storedTokens = await getTokensUnified();
       console.log(
         `AuthContext: initializeAuth - Attempt ${
@@ -429,8 +446,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         );
         await new Promise((resolve) => setTimeout(resolve, currentRetryDelay));
 
-        // Exponential backoff: double the delay for next attempt, max 1000ms
-        currentRetryDelay = Math.min(currentRetryDelay * 2, 1000);
+        // Progressive backoff: increase delay more aggressively after first few attempts
+        if (attempts < 5) {
+          currentRetryDelay = Math.min(currentRetryDelay + 50, 300); // Quick retries first
+        } else if (attempts < 10) {
+          currentRetryDelay = Math.min(currentRetryDelay + 100, 500); // Medium retries
+        } else {
+          currentRetryDelay = Math.min(currentRetryDelay + 200, 1000); // Slower retries later
+        }
       } else {
         // No tokens, and either no signal or max attempts reached for signaled auth
         break; // Exit loop

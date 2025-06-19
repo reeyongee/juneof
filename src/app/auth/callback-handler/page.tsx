@@ -97,13 +97,14 @@ function CallbackHandlerContent() {
 
         console.log("🎉 Authentication completed successfully");
 
-        // Small delay to ensure tokens are fully stored before redirecting
-        // This helps prevent race conditions with AuthContext initialization
+        // Extended delay to ensure cookies are fully processed by the browser
+        // This is critical for preventing cookie race conditions with AuthContext
         setTimeout(() => {
+          console.log("🔄 Cookies should be fully processed, redirecting...");
           // Redirect to homepage with auth_completed flag to trigger PostLoginRedirect
           // PostLoginRedirect component will handle the appropriate redirection based on profile completion
           router.push("/?auth_completed=true&t=" + Date.now());
-        }, 200);
+        }, 500); // Increased delay to handle cookie race condition
       } catch (error) {
         console.error("❌ Authentication failed:", error);
         const errorMessage =

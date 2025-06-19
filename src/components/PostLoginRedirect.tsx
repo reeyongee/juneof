@@ -51,9 +51,9 @@ function PostLoginRedirectContent() {
         }
       );
 
-      // If we've been waiting too long (more than 8 seconds), force redirect to homepage
+      // If we've been waiting too long (more than 10 seconds), force redirect to homepage
       if (
-        waitTime > 8000 &&
+        waitTime > 10000 &&
         !hasRedirectedRef.current &&
         !isRedirectingRef.current
       ) {
@@ -66,10 +66,10 @@ function PostLoginRedirectContent() {
         return;
       }
 
-      // If user is authenticated but we're still waiting for customerData after 5 seconds,
+      // If user is authenticated but we're still waiting for customerData after 7 seconds,
       // redirect anyway to prevent getting stuck
       if (
-        waitTime > 5000 &&
+        waitTime > 7000 &&
         isAuthenticated &&
         !authLoading &&
         !customerData &&
@@ -77,7 +77,7 @@ function PostLoginRedirectContent() {
         !isRedirectingRef.current
       ) {
         console.warn(
-          "PostLoginRedirect: Authenticated but no customer data after 5s, redirecting to dashboard anyway"
+          "PostLoginRedirect: Authenticated but no customer data after 7s, redirecting to dashboard anyway"
         );
         hasRedirectedRef.current = true;
         completeAuthFlow();
@@ -86,27 +86,51 @@ function PostLoginRedirectContent() {
       }
 
       // If we have tokens but state isn't updated yet, try to trigger auth initialization
+      // This handles the cookie race condition
       if (
-        waitTime > 2000 &&
-        waitTime < 5000 &&
+        waitTime > 1500 &&
+        waitTime < 6000 &&
         !isAuthenticated &&
         !hasRedirectedRef.current &&
         !isRedirectingRef.current
       ) {
         console.log(
-          "PostLoginRedirect: Tokens may exist but state not updated, checking manually..."
+          "PostLoginRedirect: Tokens may exist but state not updated, checking manually and triggering refresh..."
         );
-        // Force a re-check of authentication state
+
+        // Force multiple re-checks of authentication state with increasing delays
         import("@/lib/shopify-auth").then(({ getTokensUnified }) => {
-          getTokensUnified().then((tokens) => {
-            if (tokens) {
-              console.log(
-                "PostLoginRedirect: Found tokens manually, triggering auth refresh"
-              );
-              // Dispatch a custom event to trigger AuthContext refresh
-              window.dispatchEvent(new CustomEvent("shopify-auth-complete"));
+          // Check for tokens multiple times with delays to handle cookie race condition
+          const checkTokensAndRefresh = async (attempt: number = 1) => {
+            try {
+              const tokens = await getTokensUnified();
+              if (tokens) {
+                console.log(
+                  `PostLoginRedirect: Found tokens on attempt ${attempt}, triggering auth refresh`
+                );
+                // Dispatch multiple custom events to ensure AuthContext picks it up
+                window.dispatchEvent(new CustomEvent("shopify-auth-complete"));
+                setTimeout(() => {
+                  window.dispatchEvent(
+                    new CustomEvent("shopify-auth-complete")
+                  );
+                }, 100);
+                setTimeout(() => {
+                  window.dispatchEvent(
+                    new CustomEvent("shopify-auth-complete")
+                  );
+                }, 300);
+              } else if (attempt < 5) {
+                // Try again with exponential backoff
+                const delay = attempt * 500; // 500ms, 1s, 1.5s, 2s
+                setTimeout(() => checkTokensAndRefresh(attempt + 1), delay);
+              }
+            } catch (error) {
+              console.error("PostLoginRedirect: Error checking tokens:", error);
             }
-          });
+          };
+
+          checkTokensAndRefresh();
         });
       }
     }
