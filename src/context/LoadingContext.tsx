@@ -15,6 +15,9 @@ interface LoadingContextType {
   stopLoading: (source: string) => void;
   setLoadingMessage: (message: string) => void;
   loadingMessage: string;
+  startAuthFlow: () => void;
+  completeAuthFlow: () => void;
+  isAuthFlowActive: boolean;
 }
 
 const LoadingContext = createContext<LoadingContextType | undefined>(undefined);
@@ -36,6 +39,13 @@ export const LoadingProvider: React.FC<LoadingProviderProps> = ({
 }) => {
   const [isGlobalLoading, setIsGlobalLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("");
+  const [isAuthFlowActive, setIsAuthFlowActive] = useState(() => {
+    // Check if auth flow is active from sessionStorage to persist across page navigation
+    if (typeof window !== "undefined") {
+      return sessionStorage.getItem("auth-flow-active") === "true";
+    }
+    return false;
+  });
   const activeLoadersRef = useRef<Set<string>>(new Set());
   const timersRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
 
@@ -76,30 +86,74 @@ export const LoadingProvider: React.FC<LoadingProviderProps> = ({
     timersRef.current.set(source, timer);
   }, []);
 
-  const stopLoading = useCallback((source: string) => {
-    console.log(`LoadingManager: Manually stopping loading for ${source}`);
+  const stopLoading = useCallback(
+    (source: string) => {
+      console.log(`LoadingManager: Manually stopping loading for ${source}`);
 
-    // Clear timer and remove from active loaders
-    const timer = timersRef.current.get(source);
-    if (timer) {
-      clearTimeout(timer);
-    }
+      // Clear timer and remove from active loaders
+      const timer = timersRef.current.get(source);
+      if (timer) {
+        clearTimeout(timer);
+      }
 
-    activeLoadersRef.current.delete(source);
-    timersRef.current.delete(source);
+      activeLoadersRef.current.delete(source);
+      timersRef.current.delete(source);
 
-    console.log(
-      `LoadingManager: Stopped loading for ${source}. Active loaders:`,
-      Array.from(activeLoadersRef.current)
-    );
+      console.log(
+        `LoadingManager: Stopped loading for ${source}. Active loaders:`,
+        Array.from(activeLoadersRef.current)
+      );
 
-    // Only stop global loading if no active loaders
-    if (activeLoadersRef.current.size === 0) {
-      console.log("LoadingManager: All loaders stopped, hiding global loading");
-      setIsGlobalLoading(false);
-      setLoadingMessage("");
+      // Only stop global loading if no active loaders AND auth flow is not active
+      if (activeLoadersRef.current.size === 0 && !isAuthFlowActive) {
+        console.log(
+          "LoadingManager: All loaders stopped, hiding global loading"
+        );
+        setIsGlobalLoading(false);
+        setLoadingMessage("");
+      }
+    },
+    [isAuthFlowActive]
+  );
+
+  const startAuthFlow = useCallback(() => {
+    console.log("LoadingManager: Starting authentication flow");
+    setIsAuthFlowActive(true);
+    setIsGlobalLoading(true);
+    setLoadingMessage("Authenticating...");
+
+    // Persist auth flow state across page navigation
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("auth-flow-active", "true");
     }
   }, []);
+
+  const completeAuthFlow = useCallback(() => {
+    console.log("LoadingManager: Completing authentication flow");
+    setIsAuthFlowActive(false);
+
+    // Clear auth flow state from sessionStorage
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem("auth-flow-active");
+    }
+
+    // Only stop global loading if no other active loaders
+    if (activeLoadersRef.current.size === 0) {
+      // Add a small delay for smooth transition
+      setTimeout(() => {
+        setIsGlobalLoading(false);
+        setLoadingMessage("");
+      }, 300);
+    }
+  }, []);
+
+  // Initialize loading state based on persisted auth flow
+  useEffect(() => {
+    if (isAuthFlowActive) {
+      setIsGlobalLoading(true);
+      setLoadingMessage("Authenticating...");
+    }
+  }, [isAuthFlowActive]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -118,12 +172,20 @@ export const LoadingProvider: React.FC<LoadingProviderProps> = ({
         stopLoading,
         setLoadingMessage,
         loadingMessage,
+        startAuthFlow,
+        completeAuthFlow,
+        isAuthFlowActive,
       }}
     >
       {children}
       {isGlobalLoading && (
-        <div className="fixed inset-0 bg-[#F8F4EC] flex items-center justify-center z-50">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
+        <div className="fixed inset-0 bg-[#F8F4EC] flex flex-col items-center justify-center z-50 transition-opacity duration-300">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mb-4"></div>
+          {loadingMessage && (
+            <p className="text-black text-lg font-medium tracking-wide lowercase">
+              {loadingMessage}
+            </p>
+          )}
         </div>
       )}
     </LoadingContext.Provider>

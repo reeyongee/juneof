@@ -9,6 +9,7 @@ import React, {
   useMemo,
 } from "react";
 import { useRouter } from "next/navigation";
+import { useLoading } from "@/context/LoadingContext";
 
 import {
   getTokensUnified,
@@ -75,6 +76,7 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const router = useRouter();
+  const { startAuthFlow, completeAuthFlow } = useLoading();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true); // Key: Start true
   const [customerData, setCustomerData] = useState<CustomerProfileData | null>(
@@ -590,6 +592,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
     setIsLoading(true);
     setError(null);
+
+    // Start the persistent auth flow loading
+    startAuthFlow();
+
     try {
       console.log(
         "AuthContext: login - Initiating Shopify auth with config:",
@@ -603,6 +609,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         err instanceof Error ? err.message : "Failed to start login process."
       );
       setIsLoading(false);
+      completeAuthFlow(); // Complete auth flow on error
     }
   };
 

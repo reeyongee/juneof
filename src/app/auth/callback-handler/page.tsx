@@ -97,9 +97,13 @@ function CallbackHandlerContent() {
 
         console.log("🎉 Authentication completed successfully");
 
-        // Redirect to homepage with auth_completed flag to trigger PostLoginRedirect
-        // PostLoginRedirect component will handle the appropriate redirection based on profile completion
-        router.push("/?auth_completed=true&t=" + Date.now());
+        // Small delay to ensure tokens are fully stored before redirecting
+        // This helps prevent race conditions with AuthContext initialization
+        setTimeout(() => {
+          // Redirect to homepage with auth_completed flag to trigger PostLoginRedirect
+          // PostLoginRedirect component will handle the appropriate redirection based on profile completion
+          router.push("/?auth_completed=true&t=" + Date.now());
+        }, 200);
       } catch (error) {
         console.error("❌ Authentication failed:", error);
         const errorMessage =
@@ -118,13 +122,10 @@ function CallbackHandlerContent() {
   }, [searchParams, router, startLoading, stopLoading]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="min-h-screen flex items-center justify-center bg-[#F8F4EC]">
+      {/* The global loading overlay will handle the spinner, so we just need a minimal placeholder */}
       <div className="text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
-        <p className="text-gray-600">Completing authentication...</p>
-        <p className="text-sm text-gray-400 mt-2">
-          Please wait while we securely log you in
-        </p>
+        <p className="text-black text-sm opacity-50">Processing...</p>
       </div>
     </div>
   );

@@ -1,71 +1,103 @@
 "use client";
 
-import { useEffect, useRef, Suspense } from "react";
+import { useEffect, useRef, Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { useProfileCompletion } from "@/hooks/useProfileCompletion";
+
 import { useLoading } from "@/context/LoadingContext";
 
 function PostLoginRedirectContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isAuthenticated, isLoading: authLoading, customerData } = useAuth();
-  const { isProfileComplete, profileStatus } = useProfileCompletion();
-  const { startLoading, stopLoading } = useLoading();
+  const { completeAuthFlow } = useLoading();
   const hasRedirectedRef = useRef(false);
   const isRedirectingRef = useRef(false);
+  const [waitStartTime, setWaitStartTime] = useState<number | null>(null);
 
   useEffect(() => {
     // Only run redirect logic if:
     // 1. User just completed authentication (auth_completed=true in URL)
     // 2. User is authenticated and not loading
-    // 3. We have profile status data
+    // 3. We have customer data
     // 4. We haven't already redirected
     const authCompleted = searchParams.get("auth_completed") === "true";
+
+    // Add detailed logging for debugging
+    if (authCompleted) {
+      // Start timing if not already started
+      if (waitStartTime === null) {
+        setWaitStartTime(Date.now());
+      }
+
+      const waitTime = waitStartTime ? Date.now() - waitStartTime : 0;
+      console.log(
+        "PostLoginRedirect: Auth completed detected, checking conditions:",
+        {
+          authCompleted,
+          isAuthenticated,
+          authLoading,
+          hasCustomerData: !!customerData,
+          hasRedirected: hasRedirectedRef.current,
+          isRedirecting: isRedirectingRef.current,
+          waitTimeMs: waitTime,
+        }
+      );
+
+      // If we've been waiting too long (more than 8 seconds), force redirect to homepage
+      if (
+        waitTime > 8000 &&
+        !hasRedirectedRef.current &&
+        !isRedirectingRef.current
+      ) {
+        console.warn(
+          "PostLoginRedirect: Timeout waiting for authentication state, redirecting to homepage"
+        );
+        hasRedirectedRef.current = true;
+        completeAuthFlow();
+        router.replace("/?auth_timeout=true");
+        return;
+      }
+    }
 
     if (
       authCompleted &&
       isAuthenticated &&
       !authLoading &&
       customerData &&
-      profileStatus &&
       !hasRedirectedRef.current &&
       !isRedirectingRef.current
     ) {
       hasRedirectedRef.current = true;
       isRedirectingRef.current = true;
 
-      console.log("PostLoginRedirect: Determining redirect destination", {
-        isProfileComplete,
-        completionPercentage: profileStatus.completionPercentage,
-        missingFields: profileStatus.missingFields,
-      });
-
       // Always redirect to dashboard after successful login
       console.log(
-        "PostLoginRedirect: Authentication successful, redirecting to dashboard",
+        "PostLoginRedirect: All conditions met, redirecting to dashboard",
         {
-          isProfileComplete,
-          completionPercentage: profileStatus.completionPercentage,
-          missingFields: profileStatus.missingFields,
+          isAuthenticated,
+          authLoading,
+          hasCustomerData: !!customerData,
+          customerName:
+            customerData.customer.displayName ||
+            customerData.customer.firstName,
         }
       );
-      startLoading("post-login-redirect", 800);
+
+      // Complete the auth flow instead of using regular loading
       setTimeout(() => {
-        stopLoading("post-login-redirect");
+        completeAuthFlow();
         router.replace("/dashboard");
-      }, 800);
+      }, 500);
     }
   }, [
     searchParams,
     isAuthenticated,
     authLoading,
     customerData,
-    profileStatus,
-    isProfileComplete,
+    waitStartTime,
     router,
-    startLoading,
-    stopLoading,
+    completeAuthFlow,
   ]);
 
   // This component doesn't render anything - loading is handled by LoadingProvider
