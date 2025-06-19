@@ -17,6 +17,7 @@ interface LoadingContextType {
   loadingMessage: string;
   startAuthFlow: () => void;
   completeAuthFlow: () => void;
+  forceCompleteAuthFlow: () => void;
   isAuthFlowActive: boolean;
 }
 
@@ -147,11 +148,57 @@ export const LoadingProvider: React.FC<LoadingProviderProps> = ({
     }
   }, []);
 
+  const forceCompleteAuthFlow = useCallback(() => {
+    console.log("LoadingManager: Force completing authentication flow");
+    setIsAuthFlowActive(false);
+
+    // Clear auth flow state from sessionStorage
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem("auth-flow-active");
+    }
+
+    // Force stop global loading immediately
+    setIsGlobalLoading(false);
+    setLoadingMessage("");
+  }, []);
+
   // Initialize loading state based on persisted auth flow
   useEffect(() => {
     if (isAuthFlowActive) {
       setIsGlobalLoading(true);
       setLoadingMessage("Authenticating...");
+    }
+  }, [isAuthFlowActive]);
+
+  // Debug function accessible from browser console
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).clearAuthFlow = () => {
+        console.log("Debug: Manually clearing auth flow");
+        forceCompleteAuthFlow();
+      };
+    }
+  }, [forceCompleteAuthFlow]);
+
+  // Failsafe: Auto-complete auth flow after 15 seconds to prevent infinite loading
+  useEffect(() => {
+    if (isAuthFlowActive) {
+      const failsafeTimer = setTimeout(() => {
+        console.warn(
+          "LoadingManager: Failsafe timeout - completing auth flow after 15 seconds"
+        );
+        setIsAuthFlowActive(false);
+        if (typeof window !== "undefined") {
+          sessionStorage.removeItem("auth-flow-active");
+        }
+        if (activeLoadersRef.current.size === 0) {
+          setIsGlobalLoading(false);
+          setLoadingMessage("");
+        }
+      }, 15000);
+
+      return () => clearTimeout(failsafeTimer);
     }
   }, [isAuthFlowActive]);
 
@@ -174,6 +221,7 @@ export const LoadingProvider: React.FC<LoadingProviderProps> = ({
         loadingMessage,
         startAuthFlow,
         completeAuthFlow,
+        forceCompleteAuthFlow,
         isAuthFlowActive,
       }}
     >

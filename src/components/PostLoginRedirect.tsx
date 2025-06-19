@@ -23,6 +23,13 @@ function PostLoginRedirectContent() {
     // 4. We haven't already redirected
     const authCompleted = searchParams.get("auth_completed") === "true";
 
+    // Debug: Log all URL parameters
+    console.log("PostLoginRedirect: Current URL params:", {
+      fullSearch: searchParams.toString(),
+      authCompleted: searchParams.get("auth_completed"),
+      timestamp: searchParams.get("t"),
+    });
+
     // Add detailed logging for debugging
     if (authCompleted) {
       // Start timing if not already started
@@ -56,6 +63,25 @@ function PostLoginRedirectContent() {
         hasRedirectedRef.current = true;
         completeAuthFlow();
         router.replace("/?auth_timeout=true");
+        return;
+      }
+
+      // If user is authenticated but we're still waiting for customerData after 3 seconds,
+      // redirect anyway to prevent getting stuck
+      if (
+        waitTime > 3000 &&
+        isAuthenticated &&
+        !authLoading &&
+        !customerData &&
+        !hasRedirectedRef.current &&
+        !isRedirectingRef.current
+      ) {
+        console.warn(
+          "PostLoginRedirect: Authenticated but no customer data after 3s, redirecting to dashboard anyway"
+        );
+        hasRedirectedRef.current = true;
+        completeAuthFlow();
+        router.replace("/dashboard");
         return;
       }
     }
