@@ -5,11 +5,11 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useLoading } from "@/context/LoadingContext";
 import {
   validateCallback,
-  completeAuthentication,
   storeTokens,
   exchangeCodeForTokensServer,
   getStoredCodeVerifier,
   type ShopifyAuthConfig,
+  clearAuthStorage,
 } from "@/lib/shopify-auth";
 
 function CallbackHandlerContent() {
@@ -79,8 +79,8 @@ function CallbackHandlerContent() {
         // Store the tokens securely
         storeTokens(tokenResponse);
 
-        // Complete the authentication process
-        await completeAuthentication(config, code);
+        // Clear stored authentication parameters after successful exchange
+        clearAuthStorage();
 
         console.log("🎉 Authentication completed successfully");
 

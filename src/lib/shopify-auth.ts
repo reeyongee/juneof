@@ -440,7 +440,12 @@ export async function completeAuthentication(
   }
 
   try {
-    const tokens = await exchangeCodeForTokens(config, code, codeVerifier);
+    // Use server-side token exchange to bypass Safari CORS issues
+    const tokens = await exchangeCodeForTokensServer(
+      code,
+      codeVerifier,
+      config
+    );
 
     // Clear stored authentication parameters after successful exchange
     clearAuthStorage();
@@ -672,8 +677,8 @@ export async function autoRefreshTokens(
   }
 
   try {
-    const refreshedTokens = await refreshAccessToken(
-      config,
+    // Use server-side refresh to bypass Safari CORS issues
+    const refreshedTokens = await refreshAccessTokenServer(
       storedTokens.refreshToken
     );
     const issuedAt = Date.now();
@@ -1486,5 +1491,39 @@ export async function exchangeCodeForTokensServer(
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error";
     throw new Error(`Failed to exchange authorization code: ${errorMessage}`);
+  }
+}
+
+/**
+ * Server-side token refresh to bypass Safari CORS issues
+ * This function refreshes tokens on the server
+ */
+export async function refreshAccessTokenServer(
+  refreshToken: string
+): Promise<RefreshTokenResponse> {
+  try {
+    // Call our backend API route instead of Shopify directly
+    const response = await fetch("/api/auth/shopify/refresh", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        refreshToken,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Token refresh failed: ${response.status} ${errorText}`);
+    }
+
+    const tokenData: RefreshTokenResponse = await response.json();
+    return tokenData;
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error(`Token refresh failed: ${String(error)}`);
   }
 }

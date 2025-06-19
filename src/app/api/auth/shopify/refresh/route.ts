@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { refreshAccessToken, type ShopifyAuthConfig } from "@/lib/shopify-auth";
+
+const SHOPIFY_CLIENT_ID =
+  process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID;
+const SHOPIFY_SHOP_ID = process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_SHOP_ID;
 
 /**
  * Handles refresh token requests
@@ -7,90 +10,76 @@ import { refreshAccessToken, type ShopifyAuthConfig } from "@/lib/shopify-auth";
  */
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { refreshToken } = body;
+    const { refreshToken } = await request.json();
 
     if (!refreshToken) {
       return NextResponse.json(
-        {
-          error: "missing_refresh_token",
-          message: "Refresh token is required",
-        },
+        { error: "Missing required parameter: refreshToken" },
         { status: 400 }
       );
     }
 
-    // Get environment variables
-    const shopId = process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_SHOP_ID;
-    const clientId = process.env.NEXT_PUBLIC_SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID;
-    const baseUrl =
-      process.env.NEXTAUTH_URL ||
-      process.env.NEXT_PUBLIC_NEXTAUTH_URL ||
-      "https://dev.juneof.com";
-    const redirectUri = baseUrl + "/api/auth/shopify/callback";
-
-    if (!shopId || !clientId || !redirectUri) {
+    if (!SHOPIFY_CLIENT_ID || !SHOPIFY_SHOP_ID) {
+      console.error("Missing Shopify configuration");
       return NextResponse.json(
-        {
-          error: "server_configuration",
-          message: "Server configuration error",
-        },
+        { error: "Server configuration error" },
         { status: 500 }
       );
     }
 
-    // Create config object for token refresh
-    const config: ShopifyAuthConfig = {
-      shopId,
-      clientId,
-      redirectUri,
+    // Prepare the token refresh request
+    const tokenUrl = `https://shopify.com/authentication/${SHOPIFY_SHOP_ID}/oauth/token`;
+
+    const body = new URLSearchParams();
+    body.append("grant_type", "refresh_token");
+    body.append("client_id", SHOPIFY_CLIENT_ID);
+    body.append("refresh_token", refreshToken);
+
+    const headers = {
+      "Content-Type": "application/x-www-form-urlencoded",
+      Accept: "application/json",
+      "User-Agent": "ShopifyCustomerAuth/1.0",
     };
 
-    // Refresh the access token
-    const refreshedTokens = await refreshAccessToken(config, refreshToken);
+    console.log("🔄 Server-side token refresh request to Shopify...");
 
-    // Return the new tokens (in production, handle tokens securely)
-    return NextResponse.json({
-      success: true,
-      access_token: refreshedTokens.access_token,
-      token_type: refreshedTokens.token_type,
-      expires_in: refreshedTokens.expires_in,
-      refresh_token: refreshedTokens.refresh_token,
-      scope: refreshedTokens.scope,
-      issued_at: Date.now(),
+    const response = await fetch(tokenUrl, {
+      method: "POST",
+      headers,
+      body,
     });
+
+    if (!response.ok) {
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch {
+        errorData = {
+          error: "unknown_error",
+          error_description: `HTTP ${response.status}: ${response.statusText}`,
+        };
+      }
+
+      console.error("❌ Token refresh failed:", errorData);
+      return NextResponse.json(
+        {
+          error: "token_refresh_failed",
+          details: errorData,
+        },
+        { status: response.status }
+      );
+    }
+
+    const tokenData = await response.json();
+    console.log("✅ Token refresh successful");
+
+    return NextResponse.json(tokenData);
   } catch (error) {
-    console.error("Token refresh error:", error);
-
-    // Handle specific refresh token errors
-    const errorMessage =
-      error instanceof Error ? error.message : "Token refresh failed";
-
-    // Check for specific error types
-    if (errorMessage.includes("invalid_grant")) {
-      return NextResponse.json(
-        {
-          error: "invalid_refresh_token",
-          message: "The refresh token is invalid, expired, or revoked",
-        },
-        { status: 400 }
-      );
-    }
-
-    if (errorMessage.includes("invalid_client")) {
-      return NextResponse.json(
-        {
-          error: "invalid_client",
-          message: "Invalid client configuration",
-        },
-        { status: 401 }
-      );
-    }
-
+    console.error("❌ Server error during token refresh:", error);
     return NextResponse.json(
       {
-        error: "refresh_failed",
-        message: errorMessage,
+        error: "internal_server_error",
+        message: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }
     );
