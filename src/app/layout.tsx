@@ -6,6 +6,7 @@ import { SplashProvider } from "@/context/SplashContext";
 import { AuthProvider } from "@/context/AuthContext";
 import { LoadingProvider } from "@/context/LoadingContext";
 import ClientLayout from "@/app/components/ClientLayout";
+import LenisProvider from "@/components/LenisProvider";
 
 const oldStandardTT = Old_Standard_TT({
   weight: ["400", "700"],
@@ -26,13 +27,15 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${oldStandardTT.className} flex flex-col min-h-screen`}>
-        <LoadingProvider>
-          <SplashProvider>
-            <AuthProvider>
-              <ClientLayout>{children}</ClientLayout>
-            </AuthProvider>
-          </SplashProvider>
-        </LoadingProvider>
+        <LenisProvider>
+          <LoadingProvider>
+            <SplashProvider>
+              <AuthProvider>
+                <ClientLayout>{children}</ClientLayout>
+              </AuthProvider>
+            </SplashProvider>
+          </LoadingProvider>
+        </LenisProvider>
       </body>
     </html>
   );

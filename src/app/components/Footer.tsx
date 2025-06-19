@@ -78,7 +78,7 @@ const Footer = () => {
       id="footer"
     >
       <div
-        className={`sticky top-[45vh] w-full h-[55vh] ${backgroundColor} ${textColor} pt-10 pb-10 overflow-x-hidden flex flex-col justify-between`}
+        className={`sticky top-[45vh] w-full h-[55vh] ${backgroundColor} ${textColor} pt-2 pb-10 overflow-x-hidden flex flex-col justify-between`}
       >
         <div className="container mx-auto px-4 md:px-8 h-full flex flex-col justify-between">
           {/* Links Section */}

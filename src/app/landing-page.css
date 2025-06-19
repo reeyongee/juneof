@@ -1,0 +1,177 @@
+/* Custom properties and base styles */
+:root {
+  --custom-white: #fdf3e1;
+  --custom-white-alt: #f8f4ec;
+  --custom-black: #000000;
+  --custom-teal: rgb(34, 42, 55);
+}
+
+/* Section 1 - Image Panels */
+.section1 {
+  position: absolute;
+  display: block;
+  width: 100vw;
+  background-color: var(--custom-white);
+  color: var(--custom-black);
+  top: 0;
+  left: 0;
+}
+
+.section1 .container {
+  display: flex;
+  flex-direction: row;
+  height: 100vh;
+  overflow: hidden;
+  width: 100vw;
+}
+
+.section1 .panel {
+  position: relative;
+  height: 100vh;
+}
+
+.section1 .panel img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* Specific width constraints for each image based on original design */
+.section1 .container .panel.first img {
+  min-width: 650px;
+  width: 50vw;
+  max-width: 800px;
+}
+
+.section1 .container .panel img.pic2 {
+  min-width: 350px;
+  width: 35vw;
+  max-width: 800px;
+}
+
+.section1 .container .panel img.pic3 {
+  min-width: 250px;
+  width: 20vw;
+  max-width: 800px;
+}
+
+.section1 .container .panel img.pic4 {
+  min-width: 650px;
+  width: 55vw;
+  max-width: 800px;
+}
+
+/* Section 2 - Sticky Image */
+.section2 {
+  position: absolute;
+  display: block;
+  left: 0;
+  width: 100vw !important;
+  height: 200vh;
+  max-width: none !important;
+}
+
+.section2 .container {
+  position: sticky;
+  top: 0;
+  width: 100vw !important;
+  height: 100vh;
+  background: var(--custom-white);
+  max-width: none !important;
+  left: 0 !important;
+}
+
+.section2 .container img {
+  min-width: 600px;
+  width: 55vw;
+  max-width: 1800px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Section 3 - Manifesto */
+.section3 {
+  position: absolute;
+  display: block;
+  left: 0;
+  width: 100vw;
+  background: var(--custom-white);
+}
+
+.section3 .container {
+  overflow: hidden;
+  background-color: teal;
+  width: 100vw;
+}
+
+/* Section 4 - Floating Images */
+.section4 {
+  position: absolute;
+  display: block;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--custom-white-alt);
+}
+
+.section4 img {
+  min-width: 150px;
+  max-width: 300px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1000px) {
+  .section1 .panel img {
+    min-width: 300px;
+    width: 80vw;
+  }
+
+  .section2 .container img {
+    min-width: 300px;
+    width: 80vw;
+  }
+
+  .section4 img {
+    min-width: 100px;
+    max-width: 200px;
+  }
+}
+
+/* Layout text styles */
+.layout-text {
+  box-sizing: border-box;
+  padding: 3rem 3vw;
+}
+
+@media (max-width: 1024px) {
+  .layout-text {
+    padding: 3rem 5vw;
+  }
+}
+
+/* Link hover effects */
+.link a {
+  position: relative;
+}
+
+.link a::after {
+  content: "";
+  position: absolute;
+  display: block;
+  width: 0%;
+  height: 1px;
+  border-radius: 10px;
+  background-color: var(--custom-black);
+  transform-origin: bottom right;
+  transition: all 0.2s ease-in-out;
+  bottom: -2px;
+  left: 0;
+}
+
+.link a:hover::after {
+  width: 100%;
+  transform-origin: bottom left;
+}

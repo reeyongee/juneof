@@ -224,8 +224,12 @@ const Navbar: React.FC = () => {
   const dynamicHeaderClasses = `fixed top-0 left-0 right-0 z-50 text-black p-4 transition-all duration-300 ${
     visible ? "translate-y-0" : "-translate-y-full"
   } ${
-    // Navbar background becomes transparent if scrolled and not hovered
-    transparent && !isNavItemHovered ? "bg-transparent" : "bg-[#F8F4EC]"
+    // Navbar is always transparent on landing page, otherwise normal transparency logic
+    pathname === "/"
+      ? "bg-transparent"
+      : transparent && !isNavItemHovered
+      ? "bg-transparent"
+      : "bg-[#F8F4EC]"
   }`;
 
   // Link items get mix-blend-difference if navbar is transparent, otherwise no special blend mode.
@@ -238,7 +242,8 @@ const Navbar: React.FC = () => {
     "text-lg lowercase tracking-wider hover:opacity-75"; // Changed from text-base to text-lg for even bigger font
 
   // Determine if the navbar is effectively transparent for item styling
-  const isEffectivelyTransparent = transparent && !isNavItemHovered;
+  const isEffectivelyTransparent =
+    pathname === "/" ? true : transparent && !isNavItemHovered;
 
   return (
     <>

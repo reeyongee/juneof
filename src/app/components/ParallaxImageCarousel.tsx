@@ -181,7 +181,7 @@ const ParallaxImageCarousel: React.FC = () => {
   }, [showSplash]);
 
   return (
-    <section ref={sectionRef} className="relative w-full h-auto bg-[#F8F4EC]">
+    <section ref={sectionRef} className="relative w-full h-auto bg-[#FDF3E1]">
       {" "}
       {/* Adjust height as needed for content after */}
       <div ref={pinSpacerRef} className="h-screen w-full overflow-hidden">
