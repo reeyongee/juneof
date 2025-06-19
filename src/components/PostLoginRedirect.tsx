@@ -51,6 +51,22 @@ function PostLoginRedirectContent() {
         }
       );
 
+      // Early fallback - if nothing happens after 3 seconds, redirect to dashboard optimistically
+      if (
+        waitTime > 3000 &&
+        waitTime <= 3100 && // Only trigger once in this window
+        !hasRedirectedRef.current &&
+        !isRedirectingRef.current
+      ) {
+        console.warn(
+          "PostLoginRedirect: 3-second fallback triggered - redirecting to dashboard optimistically"
+        );
+        hasRedirectedRef.current = true;
+        completeAuthFlow();
+        router.replace("/dashboard");
+        return;
+      }
+
       // If we've been waiting too long (more than 12 seconds), force redirect to homepage
       if (
         waitTime > 12000 &&
