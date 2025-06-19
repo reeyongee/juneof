@@ -51,14 +51,14 @@ function PostLoginRedirectContent() {
         }
       );
 
-      // If we've been waiting too long (more than 10 seconds), force redirect to homepage
+      // If we've been waiting too long (more than 12 seconds), force redirect to homepage
       if (
-        waitTime > 10000 &&
+        waitTime > 12000 &&
         !hasRedirectedRef.current &&
         !isRedirectingRef.current
       ) {
         console.warn(
-          "PostLoginRedirect: Timeout waiting for authentication state, redirecting to homepage"
+          "PostLoginRedirect: Timeout waiting for authentication state after 12 seconds, redirecting to homepage"
         );
         hasRedirectedRef.current = true;
         completeAuthFlow();
@@ -86,10 +86,10 @@ function PostLoginRedirectContent() {
       }
 
       // If we have tokens but state isn't updated yet, try to trigger auth initialization
-      // This handles the cookie race condition
+      // This handles the cookie race condition - start earlier and be more aggressive
       if (
-        waitTime > 1500 &&
-        waitTime < 6000 &&
+        waitTime > 300 &&
+        waitTime < 12000 &&
         !isAuthenticated &&
         !hasRedirectedRef.current &&
         !isRedirectingRef.current

@@ -97,6 +97,18 @@ function CallbackHandlerContent() {
 
         console.log("🎉 Authentication completed successfully");
 
+        // Dispatch custom event to notify AuthContext immediately
+        if (typeof window !== "undefined") {
+          console.log("🔔 Dispatching auth completion events...");
+          window.dispatchEvent(new CustomEvent("shopify-auth-complete"));
+          setTimeout(() => {
+            window.dispatchEvent(new CustomEvent("shopify-auth-complete"));
+          }, 100);
+          setTimeout(() => {
+            window.dispatchEvent(new CustomEvent("shopify-auth-complete"));
+          }, 300);
+        }
+
         // Extended delay to ensure cookies are fully processed by the browser
         // This is critical for preventing cookie race conditions with AuthContext
         setTimeout(() => {

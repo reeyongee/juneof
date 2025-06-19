@@ -371,13 +371,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       return; // Exit early, user is logged out
     }
 
+    // Check if we're on the callback handler page (where tokens are being set)
+    const isCallbackHandler =
+      typeof window !== "undefined" &&
+      window.location.pathname === "/auth/callback-handler";
+    const shouldDoAggressiveRetries =
+      justCompletedAuthSignal || isCallbackHandler;
+
     let attempts = 0;
-    const maxAttempts = justCompletedAuthSignal ? 20 : 1; // More attempts when we know auth just completed
+    const maxAttempts = shouldDoAggressiveRetries ? 40 : 1; // More attempts when we know auth just completed or during callback
     let currentRetryDelay = 25; // Start with very short delay for cookie race condition
     let tokensFoundAndValid = false;
 
     // Extended wait time for auth completion to handle cookie race conditions
-    const maxTotalWaitTime = justCompletedAuthSignal ? 12000 : 5000;
+    const maxTotalWaitTime = shouldDoAggressiveRetries ? 12000 : 5000;
     const startTime = Date.now();
 
     while (attempts < maxAttempts && !tokensFoundAndValid) {
@@ -386,7 +393,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       );
 
       // Add small initial delay on first few attempts to handle immediate cookie race condition
-      if (justCompletedAuthSignal && attempts < 3) {
+      if (shouldDoAggressiveRetries && attempts < 3) {
         const initialDelay = attempts === 0 ? 100 : attempts === 1 ? 200 : 500;
         await new Promise((resolve) => setTimeout(resolve, initialDelay));
       }
@@ -429,7 +436,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           tokensFoundAndValid = false; // Mark as unsuccessful
         }
         break; // Exit loop whether successful or token became invalid
-      } else if (justCompletedAuthSignal && attempts < maxAttempts - 1) {
+      } else if (shouldDoAggressiveRetries && attempts < maxAttempts - 1) {
         // Check if we've exceeded maximum total wait time
         const elapsedTime = Date.now() - startTime;
         if (elapsedTime >= maxTotalWaitTime) {
@@ -440,9 +447,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
 
         console.warn(
-          `AuthContext: initializeAuth - No tokens (Attempt ${
-            attempts + 1
-          }), signal=true. Retrying in ${currentRetryDelay}ms... (Total elapsed: ${elapsedTime}ms)`
+          `AuthContext: initializeAuth - No tokens (Attempt ${attempts + 1}), ${
+            isCallbackHandler ? "callback-handler" : "auth-signal"
+          }=true. Retrying in ${currentRetryDelay}ms... (Total elapsed: ${elapsedTime}ms)`
         );
         await new Promise((resolve) => setTimeout(resolve, currentRetryDelay));
 
