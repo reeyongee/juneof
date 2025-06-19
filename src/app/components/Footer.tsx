@@ -1,88 +1,22 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 
 const Footer = () => {
-  const footerRef = useRef<HTMLElement>(null);
-
   // Use a color close to the image, adjust as needed
   const backgroundColor = "bg-[#FDF3E1]"; // Example: A pale beige/orange
   const textColor = "text-black"; // Example: Black text
 
-  useEffect(() => {
-    const calculateFooterHeight = () => {
-      if (footerRef.current) {
-        const height = window.innerHeight;
-
-        // Get all sections and calculate their total height
-        const sections = document.querySelectorAll("main section, section");
-        let totalSectionHeight = 0;
-
-        sections.forEach((section) => {
-          totalSectionHeight += (section as HTMLElement).offsetHeight;
-        });
-
-        // Add the ParallaxImageCarousel height if it exists
-        const mainElement = document.querySelector("main");
-        const parallaxCarousel =
-          document.querySelector('[class*="parallax"]') ||
-          document.querySelector('[class*="carousel"]') ||
-          (mainElement ? mainElement.firstElementChild : null);
-
-        if (parallaxCarousel && parallaxCarousel !== sections[0]) {
-          totalSectionHeight += (parallaxCarousel as HTMLElement).offsetHeight;
-        }
-
-        // Footer height = total content height + 55vh for the reveal effect
-        const footerHeight = totalSectionHeight + height * 0.55;
-
-        console.log("Footer height calculation:", {
-          totalSectionHeight,
-          viewportHeight: height,
-          revealSpace: height * 0.55,
-          finalFooterHeight: footerHeight,
-          sectionsCount: sections.length,
-        });
-
-        footerRef.current.style.height = `${footerHeight}px`;
-
-        // Add bottom padding to body to create scroll space for fixed footer
-        document.body.style.paddingBottom = `${height * 0.55}px`;
-      }
-    };
-
-    // Calculate after content is loaded
-    const timer = setTimeout(calculateFooterHeight, 500);
-
-    // Recalculate on resize
-    window.addEventListener("resize", calculateFooterHeight);
-
-    // Also recalculate when images load
-    window.addEventListener("load", calculateFooterHeight);
-
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener("resize", calculateFooterHeight);
-      window.removeEventListener("load", calculateFooterHeight);
-      // Clean up the body padding
-      document.body.style.paddingBottom = "";
-    };
-  }, []);
-
   return (
-    <footer
-      ref={footerRef}
-      className="fixed top-0 left-0 w-full z-[-1] block"
-      id="footer"
-    >
+    <footer className="w-full" id="footer">
       <div
-        className={`sticky top-[45vh] w-full h-[55vh] ${backgroundColor} ${textColor} pt-2 pb-10 overflow-x-hidden flex flex-col justify-between`}
+        className={`w-full ${backgroundColor} ${textColor} pt-8 pb-10 overflow-x-hidden`}
       >
-        <div className="container mx-auto px-4 md:px-8 h-full flex flex-col justify-between">
+        <div className="container mx-auto px-4 md:px-8 flex flex-col justify-between min-h-[400px]">
           {/* Links Section */}
-          <div className="flex flex-wrap justify-between items-start text-base tracking-wider">
+          <div className="flex flex-wrap justify-between items-start text-base tracking-wider mb-8">
             {/* Column 1: Empty (was Newsletter) */}
             <div className="w-full md:w-1/4 mb-6 md:mb-0">
               {/* Intentionally empty */}
@@ -147,14 +81,13 @@ const Footer = () => {
             </div>
           </div>
 
-          {/* Logo Section - Removed cutoff, smaller, left-aligned */}
+          {/* Logo Section - Smaller, left-aligned */}
           <div className="w-full flex justify-start">
             <Image
               src="/juneof-logo.svg"
               alt="Juneof Logo"
               width={640} // Reduced width by 20%
               height={160} // Reduced height by 20%
-              // Removed transform class
               className="pointer-events-none"
               style={{ userSelect: "none" }}
               draggable="false"

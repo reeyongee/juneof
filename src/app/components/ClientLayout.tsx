@@ -61,9 +61,7 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
           style={{ display: isGlobalLoading ? "none" : "block" }}
         >
           <Navbar />
-          <main className="relative z-[1] min-h-screen bg-white">
-            {children}
-          </main>
+          <main className="min-h-screen bg-white">{children}</main>
           <Footer />
         </div>
         <Toaster position="bottom-left" />
