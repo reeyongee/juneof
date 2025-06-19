@@ -85,8 +85,8 @@ function PostLoginRedirectContent() {
         return;
       }
 
-      // If we have tokens but state isn't updated yet, try to trigger auth initialization
-      // This handles the cookie race condition - start earlier and be more aggressive
+      // Let AuthContext handle the cookie race condition with its optimized retry logic
+      // Just log the waiting state for debugging
       if (
         waitTime > 300 &&
         waitTime < 12000 &&
@@ -95,43 +95,8 @@ function PostLoginRedirectContent() {
         !isRedirectingRef.current
       ) {
         console.log(
-          "PostLoginRedirect: Tokens may exist but state not updated, checking manually and triggering refresh..."
+          `PostLoginRedirect: Waiting for AuthContext to detect tokens... (${waitTime}ms elapsed)`
         );
-
-        // Force multiple re-checks of authentication state with increasing delays
-        import("@/lib/shopify-auth").then(({ getTokensUnified }) => {
-          // Check for tokens multiple times with delays to handle cookie race condition
-          const checkTokensAndRefresh = async (attempt: number = 1) => {
-            try {
-              const tokens = await getTokensUnified();
-              if (tokens) {
-                console.log(
-                  `PostLoginRedirect: Found tokens on attempt ${attempt}, triggering auth refresh`
-                );
-                // Dispatch multiple custom events to ensure AuthContext picks it up
-                window.dispatchEvent(new CustomEvent("shopify-auth-complete"));
-                setTimeout(() => {
-                  window.dispatchEvent(
-                    new CustomEvent("shopify-auth-complete")
-                  );
-                }, 100);
-                setTimeout(() => {
-                  window.dispatchEvent(
-                    new CustomEvent("shopify-auth-complete")
-                  );
-                }, 300);
-              } else if (attempt < 5) {
-                // Try again with exponential backoff
-                const delay = attempt * 500; // 500ms, 1s, 1.5s, 2s
-                setTimeout(() => checkTokensAndRefresh(attempt + 1), delay);
-              }
-            } catch (error) {
-              console.error("PostLoginRedirect: Error checking tokens:", error);
-            }
-          };
-
-          checkTokensAndRefresh();
-        });
       }
     }
 

@@ -393,8 +393,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       );
 
       // Add small initial delay on first few attempts to handle immediate cookie race condition
-      if (shouldDoAggressiveRetries && attempts < 3) {
-        const initialDelay = attempts === 0 ? 100 : attempts === 1 ? 200 : 500;
+      if (shouldDoAggressiveRetries && attempts < 5) {
+        const initialDelay =
+          attempts === 0
+            ? 0
+            : attempts === 1
+            ? 25
+            : attempts === 2
+            ? 50
+            : attempts === 3
+            ? 100
+            : 200;
         await new Promise((resolve) => setTimeout(resolve, initialDelay));
       }
 
@@ -453,13 +462,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         );
         await new Promise((resolve) => setTimeout(resolve, currentRetryDelay));
 
-        // Progressive backoff: increase delay more aggressively after first few attempts
-        if (attempts < 5) {
-          currentRetryDelay = Math.min(currentRetryDelay + 50, 300); // Quick retries first
-        } else if (attempts < 10) {
-          currentRetryDelay = Math.min(currentRetryDelay + 100, 500); // Medium retries
+        // Progressive backoff: start very fast, then gradually increase
+        if (attempts < 10) {
+          currentRetryDelay = Math.min(currentRetryDelay + 25, 150); // Very quick retries first (25ms->50ms->75ms->100ms->125ms->150ms)
+        } else if (attempts < 20) {
+          currentRetryDelay = Math.min(currentRetryDelay + 50, 300); // Medium retries
         } else {
-          currentRetryDelay = Math.min(currentRetryDelay + 200, 1000); // Slower retries later
+          currentRetryDelay = Math.min(currentRetryDelay + 100, 500); // Slower retries later
         }
       } else {
         // No tokens, and either no signal or max attempts reached for signaled auth
