@@ -1401,3 +1401,52 @@ export class CustomerAccountApiClient {
     this.config.apiVersion = apiVersion;
   }
 }
+
+/**
+ * Request storage access for Safari ITP compatibility
+ * This is required for Safari to allow cross-site authentication requests
+ */
+export async function requestStorageAccessForSafari(): Promise<boolean> {
+  // Check if we're in Safari and if Storage Access API is available
+  if (typeof document !== "undefined" && "requestStorageAccess" in document) {
+    try {
+      // First check if we already have storage access
+      const hasAccess = await document.hasStorageAccess();
+      if (hasAccess) {
+        return true;
+      }
+
+      // Request storage access from the user
+      await document.requestStorageAccess();
+      console.log("✅ Storage access granted by user");
+      return true;
+    } catch (error) {
+      console.warn("⚠️ Storage access denied or not available:", error);
+      return false;
+    }
+  }
+
+  // Not Safari or Storage Access API not available
+  return true;
+}
+
+/**
+ * Safari-compatible token exchange with Storage Access API
+ */
+export async function exchangeCodeForTokensSafari(
+  config: ShopifyAuthConfig,
+  code: string,
+  codeVerifier: string
+): Promise<AccessTokenResponse> {
+  // Request storage access first for Safari
+  const hasStorageAccess = await requestStorageAccessForSafari();
+
+  if (!hasStorageAccess) {
+    throw new Error(
+      "Storage access required for authentication. Please enable cross-site tracking in Safari or use Chrome."
+    );
+  }
+
+  // Proceed with normal token exchange
+  return exchangeCodeForTokens(config, code, codeVerifier);
+}

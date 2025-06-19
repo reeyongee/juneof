@@ -7,6 +7,8 @@ import {
   validateCallback,
   completeAuthentication,
   storeTokens,
+  exchangeCodeForTokensSafari,
+  getStoredCodeVerifier,
   type ShopifyAuthConfig,
 } from "@/lib/shopify-auth";
 
@@ -100,11 +102,32 @@ function CallbackHandlerContent() {
 
       // --- Token Exchange ---
       try {
-        // `completeAuthentication` internally retrieves 'shopify-auth-code-verifier' from localStorage
-        const tokens = await completeAuthentication(
-          authConfig,
-          validation.code
+        // Get the stored code verifier
+        const codeVerifier = getStoredCodeVerifier();
+        if (!codeVerifier) {
+          throw new Error("Code verifier not found in storage");
+        }
+
+        // Detect Safari and use Safari-compatible method
+        const isSafari = /^((?!chrome|android).)*safari/i.test(
+          navigator.userAgent
         );
+
+        let tokens;
+        if (isSafari) {
+          console.log(
+            "🍎 Safari detected - using Safari-compatible token exchange"
+          );
+          tokens = await exchangeCodeForTokensSafari(
+            authConfig,
+            validation.code,
+            codeVerifier
+          );
+        } else {
+          // Use the original completeAuthentication for other browsers
+          tokens = await completeAuthentication(authConfig, validation.code);
+        }
+
         storeTokens(tokens); // Securely store tokens
 
         console.log(
@@ -147,10 +170,21 @@ function CallbackHandlerContent() {
           "ClientCallbackHandler: Token exchange failed -",
           errorMessage
         );
+
+        // Provide Safari-specific error guidance
+        const isSafari = /^((?!chrome|android).)*safari/i.test(
+          navigator.userAgent
+        );
+        let enhancedErrorMessage = errorMessage;
+
+        if (isSafari && errorMessage.includes("Storage access required")) {
+          enhancedErrorMessage = `Safari Privacy Settings Issue: ${errorMessage}\n\nTo fix this:\n1. Go to Safari > Settings > Privacy\n2. Uncheck "Prevent cross-site tracking"\n3. Try logging in again\n\nOr use Chrome/Firefox for authentication.`;
+        }
+
         stopLoading("callback-handler");
         router.push(
           `/auth/error?error=invalid_grant&description=${encodeURIComponent(
-            errorMessage
+            enhancedErrorMessage
           )}`
         );
       }
