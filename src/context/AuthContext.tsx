@@ -207,6 +207,34 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         logoutUrl.toString()
       );
 
+      // Set multiple fallback timeouts in case Shopify logout gets stuck
+      // 3-second optimistic fallback
+      setTimeout(() => {
+        console.warn(
+          "AuthContext: LOGOUT - 3-second fallback, redirecting to homepage optimistically"
+        );
+        completeAuthFlow();
+        window.location.href = "/";
+      }, 3000);
+
+      // 7-second fallback (in case 3-second didn't work)
+      setTimeout(() => {
+        console.warn(
+          "AuthContext: LOGOUT - 7-second fallback, forcing redirect to homepage"
+        );
+        completeAuthFlow();
+        window.location.href = "/";
+      }, 7000);
+
+      // 10-second final fallback
+      setTimeout(() => {
+        console.warn(
+          "AuthContext: LOGOUT - 10-second final fallback, forcing redirect to homepage"
+        );
+        completeAuthFlow();
+        window.location.href = "/";
+      }, 10000);
+
       // Redirect to Shopify logout endpoint
       window.location.href = logoutUrl.toString();
       return; // Don't redirect to homepage yet, let Shopify handle the redirect
@@ -235,7 +263,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // If no id_token, just redirect to homepage
       router.push("/");
     }
-  }, [router, shopifyAuthConfig.shopId, appBaseUrl, startAuthFlow]);
+  }, [
+    router,
+    shopifyAuthConfig.shopId,
+    appBaseUrl,
+    startAuthFlow,
+    completeAuthFlow,
+  ]);
 
   // Internal function to fetch data and handle token refresh
   const _internalFetchAndSetCustomerData = useCallback(
@@ -368,6 +402,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       setIsLoading(false);
+      completeAuthFlow(); // Hide the loading spinner after logout cleanup
       console.log(
         "AuthContext: initializeAuth - Shopify logout cleanup complete"
       );
@@ -527,7 +562,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       "isAuthenticated:",
       tokensFoundAndValid
     );
-  }, [shopifyAuthConfig, _internalFetchAndSetCustomerData]); // `logout` is included via _internalFetch
+  }, [shopifyAuthConfig, _internalFetchAndSetCustomerData, completeAuthFlow]); // `logout` is included via _internalFetch
 
   // This useEffect will run on initial mount and when initializeAuth changes
   useEffect(() => {
