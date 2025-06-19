@@ -66,10 +66,10 @@ function PostLoginRedirectContent() {
         return;
       }
 
-      // If user is authenticated but we're still waiting for customerData after 3 seconds,
+      // If user is authenticated but we're still waiting for customerData after 5 seconds,
       // redirect anyway to prevent getting stuck
       if (
-        waitTime > 3000 &&
+        waitTime > 5000 &&
         isAuthenticated &&
         !authLoading &&
         !customerData &&
@@ -77,12 +77,37 @@ function PostLoginRedirectContent() {
         !isRedirectingRef.current
       ) {
         console.warn(
-          "PostLoginRedirect: Authenticated but no customer data after 3s, redirecting to dashboard anyway"
+          "PostLoginRedirect: Authenticated but no customer data after 5s, redirecting to dashboard anyway"
         );
         hasRedirectedRef.current = true;
         completeAuthFlow();
         router.replace("/dashboard");
         return;
+      }
+
+      // If we have tokens but state isn't updated yet, try to trigger auth initialization
+      if (
+        waitTime > 2000 &&
+        waitTime < 5000 &&
+        !isAuthenticated &&
+        !hasRedirectedRef.current &&
+        !isRedirectingRef.current
+      ) {
+        console.log(
+          "PostLoginRedirect: Tokens may exist but state not updated, checking manually..."
+        );
+        // Force a re-check of authentication state
+        import("@/lib/shopify-auth").then(({ getTokensUnified }) => {
+          getTokensUnified().then((tokens) => {
+            if (tokens) {
+              console.log(
+                "PostLoginRedirect: Found tokens manually, triggering auth refresh"
+              );
+              // Dispatch a custom event to trigger AuthContext refresh
+              window.dispatchEvent(new CustomEvent("shopify-auth-complete"));
+            }
+          });
+        });
       }
     }
 

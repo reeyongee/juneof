@@ -365,9 +365,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     let tokensFoundAndValid = false;
     let attempts = 0;
-    const maxAttempts = justCompletedAuthSignal ? 10 : 1; // More attempts if signal is present (increased from 5 to 10)
-    let currentRetryDelay = 100; // Start with 100ms, will use exponential backoff
-    const maxTotalWaitTime = 5000; // Maximum 5 seconds total wait time
+    const maxAttempts = justCompletedAuthSignal ? 15 : 1; // More attempts if signal is present (increased from 10 to 15)
+    let currentRetryDelay = 50; // Start with 50ms for faster initial checks
+    const maxTotalWaitTime = justCompletedAuthSignal ? 8000 : 5000; // Longer wait time for auth completion
     const startTime = Date.now();
 
     while (attempts < maxAttempts && !tokensFoundAndValid) {
@@ -530,7 +530,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log(
         "AuthContext: Custom auth-complete event received. Re-running initializeAuth."
       );
+      // Run multiple times to ensure we catch the tokens
+      initializeAuth();
       setTimeout(() => initializeAuth(), 50);
+      setTimeout(() => initializeAuth(), 200);
     };
 
     // Listen for browser navigation events
@@ -549,8 +552,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log(
         "AuthContext: Initial mount detected auth_completed=true, ensuring initializeAuth runs"
       );
-      // Small delay to ensure this runs after the main useEffect
+      // Run immediately and also with small delays to ensure it catches the tokens
+      initializeAuth();
       setTimeout(() => initializeAuth(), 50);
+      setTimeout(() => initializeAuth(), 200);
+      setTimeout(() => initializeAuth(), 500);
     }
 
     return () => {
