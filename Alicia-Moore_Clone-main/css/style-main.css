@@ -1,4 +1,4 @@
-[class^=cursor] {
+[class^="cursor"] {
   position: fixed;
   top: -50%;
   left: 0;
@@ -150,7 +150,8 @@
   width: 100%;
   z-index: 1;
 }
-.footer p, .footer a {
+.footer p,
+.footer a {
   display: inline-block;
   margin: 0;
   color: var(--white);
@@ -209,7 +210,8 @@
 .footer .footer-position .subscrible .subscrible-tag input::placeholder {
   color: var(--white);
 }
-.footer .footer-position .subscrible .subscrible-tag input:valid, .footer .footer-position .subscrible .subscrible-tag input:focus {
+.footer .footer-position .subscrible .subscrible-tag input:valid,
+.footer .footer-position .subscrible .subscrible-tag input:focus {
   border: none;
   stroke: none;
   outline: none;
@@ -221,11 +223,13 @@
   border: none;
   color: var(--white);
 }
-.footer .footer-position .shop-follow, .footer .footer-position .subscrible {
+.footer .footer-position .shop-follow,
+.footer .footer-position .subscrible {
   display: flex;
   gap: 5vw;
 }
-.footer .footer-position .shop-tag, .footer .footer-position .subscrible-tag {
+.footer .footer-position .shop-tag,
+.footer .footer-position .subscrible-tag {
   width: 18vw;
 }
 
@@ -270,10 +274,6 @@
     display: none !important;
   }
 }
-#container {
-  position: relative;
-  width: 100%;
-  z-index: 2;
-}
+/* Container styles moved to Tailwind classes */
 
 /*# sourceMappingURL=style-main.css.map */
