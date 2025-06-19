@@ -1,0 +1,51 @@
+:root {
+	--white: #f1f0ec;
+	--teal : rgb(34, 42, 55);
+}
+* {
+	box-sizing: border-box;
+	text-decoration: none;
+	-moz-transform: perspective(1000px);
+    -moz-transform-style: preserve-3d;
+/*	cursor: none !important;*/
+}
+html,body {
+	position: relative;
+	height: 100%;
+	color: var(--t);
+	margin: 0 !important;
+	padding: 0 !important;
+	width: 100%;
+	min-height: 100%;
+	height: auto;
+	overscroll-behavior: none;
+	background-color: var(--b);
+}
+canvas {
+	display: inline-block;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	vertical-align: baseline;
+}
+.p5Canvas {
+	display: none;
+}
+main:not(.barba) {
+	display: none;
+}
+
+[class^="layout"]{
+	padding-left: 3vw;
+	padding-right: 3vw;
+}
+@media (max-width: 1000px) {
+	[class^="layout"]{
+		padding-left: 5vw !important;
+		padding-right: 5vw !important;
+	}
+}
+
+
+
+

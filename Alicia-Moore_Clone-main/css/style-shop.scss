@@ -1,0 +1,141 @@
+#container{
+	position: absolute;
+	display: block;
+	width: 100%;
+	padding: 0 7.5vw 0 7.5vw;
+	background: var(--white);
+}
+
+.container {
+	position: relative;
+	width: 100%;
+	display: block;
+	// background-color: green;
+
+	.filter {
+		position: fixed;
+		top: 50px;
+		right: 7.5vw;
+		display: flex;
+		z-index: 100;
+		margin: 0px;
+		width: 100%;
+		height: 100px;
+		list-style-type: none;
+
+		button {
+			border: none;
+			background: transparent;
+			font-size: 12px;
+		}
+		button:hover {
+			cursor: pointer;
+		}
+
+		li:first-child {
+			margin-left: auto;
+		}
+	}
+
+	.grid-3{
+		display: grid;
+		width: 100%;
+		grid-template-columns: repeat(3, 1fr);
+		grid-template-rows: repeat(2, 1fr);
+		grid-column-gap: 10px;
+		grid-row-gap: 20px;
+
+		article {
+			position: relative;
+			display: block;
+			text-align: center;
+
+			figure {
+				display: flex;
+				widows: 100%;
+				height: 100%;
+				flex-direction: column;
+				justify-content: flex-start;
+
+				.image {
+					position: relative;
+					display: block;
+					width: 100%;
+
+					div {
+						position: relative;
+						top: 0;
+						left: 0;
+						display: block;
+						width: 100%;
+						height: 100%;
+
+						img {
+							width: 100%;
+						}
+					}
+
+					.product-thumbnail {
+						position: absolute;
+						opacity: 0;
+						transition: opacity .2s ease-in;
+					}
+				}
+
+				figcaption {
+					margin-top: -5px;
+					color: black;
+					font-size: 12px;
+
+					p {
+						margin-bottom: 5px;
+					}
+				}
+			}
+		}
+
+		article:first-child {
+			grid-area: 1/1/2/2;
+		}
+		article:nth-of-type(2) {
+			grid-area: 1/2/3/4;
+		}
+		article:nth-of-type(3) {
+			grid-area: 2/1/3/2;
+		}
+
+		article:hover {
+			figure{
+				.image {
+					.product-thumbnail {
+						opacity: 1;
+						transition: opacity .5s ease-out;
+					}
+				}
+			}
+			
+		}
+	}
+	.grid-3:nth-of-type(2) {
+		article:first-child {
+			grid-area: 1/3/2/4;
+		}
+		article:nth-of-type(2) {
+			grid-area: 1/1/3/3;
+		}
+		article:nth-of-type(3) {
+			grid-area: 2/3/3/4;
+		}
+	}
+	.grid-3:first-of-type {
+		margin-top: 100px
+	}
+}
+
+@media (max-width: 1000px) {
+	.container {
+		.grid-3 {
+			display: block !important;
+		}
+	}
+}

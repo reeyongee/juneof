@@ -61,7 +61,7 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
           style={{ display: isGlobalLoading ? "none" : "block" }}
         >
           <Navbar />
-          <main className="flex-grow bg-[#F8F4EC] relative z-[1]">
+          <main className="flex-grow relative z-[2] min-h-screen">
             {children}
           </main>
           <Footer />

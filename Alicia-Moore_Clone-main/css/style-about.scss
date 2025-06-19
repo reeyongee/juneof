@@ -1,0 +1,29 @@
+.container {
+	position: absolute;
+	width: 100%;
+	background-image: url("./../imgs/about.jpg");
+	background-size: cover;
+	color: var(--white);
+	font-size: 2rem;
+	display: flex;
+
+	& p {
+		max-width: 500px;
+		margin: auto;
+	}
+	.firsttext {
+		margin-left: 300px;
+	}
+}
+
+@media (max-width: 1000px) {
+	.container {
+		flex-direction: column;
+		text-align: center;
+		font-size: 1.5rem;
+		.firsttext {
+			margin: auto;
+			margin-bottom: 30px !important;
+		}
+	}
+}
