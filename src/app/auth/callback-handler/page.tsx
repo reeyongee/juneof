@@ -7,6 +7,7 @@ import {
   validateCallback,
   storeTokens,
   exchangeCodeForTokensServer,
+  exchangeCodeForTokensServerWithCookies,
   getStoredCodeVerifier,
   type ShopifyAuthConfig,
   clearAuthStorage,
@@ -67,17 +68,29 @@ function CallbackHandlerContent() {
 
         console.log("🔄 Exchanging authorization code for tokens...");
 
-        // Use server-side token exchange to bypass Safari CORS issues
-        const tokenResponse = await exchangeCodeForTokensServer(
-          code,
-          codeVerifier,
-          config
-        );
+        const useSecureCookies = process.env.NODE_ENV === "production";
+
+        if (useSecureCookies) {
+          // Use secure httpOnly cookies for production
+          console.log("🍪 Using secure cookie-based authentication");
+          await exchangeCodeForTokensServerWithCookies(
+            code,
+            codeVerifier,
+            config,
+            true
+          );
+        } else {
+          // Use localStorage for development
+          console.log("💾 Using localStorage-based authentication");
+          const tokenResponse = await exchangeCodeForTokensServer(
+            code,
+            codeVerifier,
+            config
+          );
+          storeTokens(tokenResponse);
+        }
 
         console.log("✅ Token exchange successful");
-
-        // Store the tokens securely
-        storeTokens(tokenResponse);
 
         // Clear stored authentication parameters after successful exchange
         clearAuthStorage();

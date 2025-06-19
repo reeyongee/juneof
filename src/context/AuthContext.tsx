@@ -11,11 +11,12 @@ import React, {
 import { useRouter } from "next/navigation";
 
 import {
-  getStoredTokens,
+  getTokensUnified,
   autoRefreshTokens,
   CustomerAccountApiClient,
   initiateShopifyAuth,
   clearStoredTokens,
+  clearTokenCookiesServer,
   clearAuthStorage,
   type ShopifyAuthConfig,
   type TokenStorage,
@@ -53,7 +54,7 @@ interface AuthContextType {
   apiClient: CustomerAccountApiClient | null;
   error: string | null;
   login: () => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   fetchCustomerData: () => Promise<void>; // Allows manual refresh/fetch
   refreshCustomerData: () => Promise<void>; // Alias for backward compatibility
 }
@@ -138,10 +139,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       ? window.location.origin
       : "https://dev.juneof.com");
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
     console.log("AuthContext: LOGOUT called");
     clearAuthStorage();
     clearStoredTokens();
+
+    // Clear cookies in production
+    if (process.env.NODE_ENV === "production") {
+      await clearTokenCookiesServer();
+    }
+
     setIsAuthenticated(false);
     setCustomerData(null);
     setTokens(null);
@@ -163,7 +170,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // setIsLoading(true); // isLoading should be managed by the caller (initializeAuth or fetchCustomerData)
       setError(null);
       try {
-        const refreshedTokens = await autoRefreshTokens(shopifyAuthConfig);
+        const refreshedTokens = await autoRefreshTokens(
+          shopifyAuthConfig,
+          false,
+          process.env.NODE_ENV === "production"
+        );
 
         if (refreshedTokens) {
           console.log(
@@ -255,11 +266,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log(
         `AuthContext: initializeAuth - Attempt ${attempts + 1}/${maxAttempts}`
       );
-      const storedTokens = getStoredTokens();
+      const storedTokens = await getTokensUnified();
       console.log(
         `AuthContext: initializeAuth - Attempt ${
           attempts + 1
-        } - getStoredTokens():`,
+        } - getTokensUnified():`,
         storedTokens ? "FOUND" : "NULL"
       );
 
@@ -280,7 +291,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         // IMPORTANT: After _internalFetchAndSetCustomerData, check if still authenticated
         // because _internalFetchAndSetCustomerData might call logout() if tokens are bad.
-        if (getStoredTokens()) {
+        const tokensAfterFetch = await getTokensUnified();
+        if (tokensAfterFetch) {
           // If tokens still exist, assume fetch was fine or error didn't invalidate tokens
           tokensFoundAndValid = true; // Mark as successful
         } else {
@@ -388,11 +400,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     // Storage event listener to detect when tokens are stored from callback handler
     const handleStorageChange = (event: StorageEvent) => {
-      // Check if Shopify auth tokens were added
-      if (
-        event.key === "shopify_access_token" ||
-        event.key === "shopify_refresh_token"
-      ) {
+      // Check if Shopify auth tokens were added/updated
+      if (event.key === "shopify-tokens") {
         console.log(
           `AuthContext: Storage event detected - ${event.key} was ${
             event.oldValue ? "updated" : "added"

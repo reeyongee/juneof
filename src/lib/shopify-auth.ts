@@ -432,7 +432,8 @@ export async function refreshAccessToken(
  */
 export async function completeAuthentication(
   config: ShopifyAuthConfig,
-  code: string
+  code: string,
+  useSecureCookies: boolean = process.env.NODE_ENV === "production"
 ): Promise<AccessTokenResponse> {
   const codeVerifier = getStoredCodeVerifier();
   if (!codeVerifier) {
@@ -440,17 +441,31 @@ export async function completeAuthentication(
   }
 
   try {
-    // Use server-side token exchange to bypass Safari CORS issues
-    const tokens = await exchangeCodeForTokensServer(
-      code,
-      codeVerifier,
-      config
-    );
+    if (useSecureCookies) {
+      // Use secure httpOnly cookies for production
+      const tokens = await exchangeCodeForTokensServerWithCookies(
+        code,
+        codeVerifier,
+        config,
+        true
+      );
 
-    // Clear stored authentication parameters after successful exchange
-    clearAuthStorage();
+      // Clear temporary auth storage since tokens are now in cookies
+      clearAuthStorage();
 
-    return tokens;
+      return tokens;
+    } else {
+      // Fallback to localStorage for development
+      const tokens = await exchangeCodeForTokensServer(
+        code,
+        codeVerifier,
+        config
+      );
+      const issuedAt = Date.now();
+      storeTokens(tokens, issuedAt);
+      clearAuthStorage();
+      return tokens;
+    }
   } catch (error) {
     // Clear storage on error to prevent stale data
     clearAuthStorage();
@@ -607,10 +622,88 @@ export interface TokenStorage {
 }
 
 /**
- * Stores tokens securely in localStorage (for demo purposes only)
- * In production, use secure HTTP-only cookies or server-side session storage
- * @param tokens - Token response from Shopify
- * @param issuedAt - When the tokens were issued (defaults to now)
+ * Stores tokens in httpOnly cookies (more secure than localStorage)
+ * Note: This requires server-side implementation to set httpOnly cookies
+ */
+export function storeTokensInCookies(
+  tokens: AccessTokenResponse | RefreshTokenResponse,
+  issuedAt: number = Date.now()
+): void {
+  // SSR safety check
+  if (typeof document === "undefined") {
+    console.warn("storeTokensInCookies: Cannot set cookies on server-side");
+    return;
+  }
+
+  const tokenStorage: TokenStorage = {
+    accessToken: tokens.access_token,
+    refreshToken: tokens.refresh_token,
+    tokenType: tokens.token_type,
+    expiresIn: tokens.expires_in,
+    issuedAt,
+    scope: tokens.scope,
+    idToken: "id_token" in tokens ? tokens.id_token : undefined,
+  };
+
+  // Calculate expiration date
+  const expirationDate = new Date(issuedAt + tokens.expires_in * 1000);
+
+  // Set individual cookies (httpOnly should be set server-side)
+  document.cookie = `shopify-access-token=${
+    tokens.access_token
+  }; expires=${expirationDate.toUTCString()}; path=/; secure; samesite=strict`;
+  document.cookie = `shopify-refresh-token=${
+    tokens.refresh_token || ""
+  }; expires=${expirationDate.toUTCString()}; path=/; secure; samesite=strict`;
+  document.cookie = `shopify-token-data=${encodeURIComponent(
+    JSON.stringify(tokenStorage)
+  )}; expires=${expirationDate.toUTCString()}; path=/; secure; samesite=strict`;
+}
+
+/**
+ * Retrieves tokens from cookies
+ */
+export function getTokensFromCookies(): TokenStorage | null {
+  // SSR safety check
+  if (typeof document === "undefined") {
+    return null;
+  }
+
+  try {
+    const cookies = document.cookie.split(";").reduce((acc, cookie) => {
+      const [key, value] = cookie.trim().split("=");
+      acc[key] = value;
+      return acc;
+    }, {} as Record<string, string>);
+
+    const tokenData = cookies["shopify-token-data"];
+    if (!tokenData) return null;
+
+    return JSON.parse(decodeURIComponent(tokenData)) as TokenStorage;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Clears authentication cookies
+ */
+export function clearTokenCookies(): void {
+  // SSR safety check
+  if (typeof document === "undefined") {
+    return;
+  }
+
+  const expiredDate = new Date(0).toUTCString();
+  document.cookie = `shopify-access-token=; expires=${expiredDate}; path=/; secure; samesite=strict`;
+  document.cookie = `shopify-refresh-token=; expires=${expiredDate}; path=/; secure; samesite=strict`;
+  document.cookie = `shopify-token-data=; expires=${expiredDate}; path=/; secure; samesite=strict`;
+}
+
+/**
+ * Stores tokens in localStorage
+ * @param tokens - Access or refresh token response
+ * @param issuedAt - Timestamp when tokens were issued
  */
 export function storeTokens(
   tokens: AccessTokenResponse | RefreshTokenResponse,
@@ -645,6 +738,27 @@ export function getStoredTokens(): TokenStorage | null {
 }
 
 /**
+ * Unified function to get tokens from either cookies or localStorage
+ * Prioritizes cookies in production, falls back to localStorage
+ * @param preferCookies - Whether to prefer cookie storage (default: true in production)
+ * @returns Promise<TokenStorage | null> - Stored tokens or null if not found
+ */
+export async function getTokensUnified(
+  preferCookies: boolean = process.env.NODE_ENV === "production"
+): Promise<TokenStorage | null> {
+  if (preferCookies) {
+    // Try to get tokens from httpOnly cookies first
+    const cookieTokens = await getTokensFromServer();
+    if (cookieTokens) {
+      return cookieTokens;
+    }
+  }
+
+  // Fallback to localStorage
+  return getStoredTokens();
+}
+
+/**
  * Clears stored tokens from localStorage
  */
 export function clearStoredTokens(): void {
@@ -653,15 +767,18 @@ export function clearStoredTokens(): void {
 
 /**
  * Automatically refreshes tokens if they are expired or will expire soon
+ * Works with both cookie and localStorage storage
  * @param config - Shopify authentication configuration
  * @param forceRefresh - Force refresh even if token is not expired
+ * @param useSecureCookies - Whether to use secure cookies (default: true in production)
  * @returns Promise<TokenStorage | null> - Updated tokens or null if refresh failed
  */
 export async function autoRefreshTokens(
   config: ShopifyAuthConfig,
-  forceRefresh: boolean = false
+  forceRefresh: boolean = false,
+  useSecureCookies: boolean = process.env.NODE_ENV === "production"
 ): Promise<TokenStorage | null> {
-  const storedTokens = getStoredTokens();
+  const storedTokens = await getTokensUnified(useSecureCookies);
 
   if (!storedTokens || !storedTokens.refreshToken) {
     return null;
@@ -679,12 +796,16 @@ export async function autoRefreshTokens(
   try {
     // Use server-side refresh to bypass Safari CORS issues
     const refreshedTokens = await refreshAccessTokenServer(
-      storedTokens.refreshToken
+      storedTokens.refreshToken,
+      config,
+      useSecureCookies
     );
     const issuedAt = Date.now();
 
-    // Store the new tokens
-    storeTokens(refreshedTokens, issuedAt);
+    if (!useSecureCookies) {
+      // Store the new tokens in localStorage (cookies are handled by the server)
+      storeTokens(refreshedTokens, issuedAt);
+    }
 
     return {
       accessToken: refreshedTokens.access_token,
@@ -696,8 +817,12 @@ export async function autoRefreshTokens(
     };
   } catch (error) {
     console.error("Auto refresh failed:", error);
-    // Clear invalid tokens
-    clearStoredTokens();
+    // Clear invalid tokens from both storage methods
+    if (useSecureCookies) {
+      await clearTokenCookiesServer();
+    } else {
+      clearStoredTokens();
+    }
     return null;
   }
 }
@@ -1475,7 +1600,8 @@ export async function exchangeCodeForTokensServer(
       body: JSON.stringify({
         code,
         codeVerifier,
-        redirectUri: config.redirectUri,
+        config,
+        useCookies: false,
       }),
     });
 
@@ -1499,7 +1625,9 @@ export async function exchangeCodeForTokensServer(
  * This function refreshes tokens on the server
  */
 export async function refreshAccessTokenServer(
-  refreshToken: string
+  refreshToken: string,
+  config?: ShopifyAuthConfig,
+  useCookies: boolean = false
 ): Promise<RefreshTokenResponse> {
   try {
     // Call our backend API route instead of Shopify directly
@@ -1510,6 +1638,8 @@ export async function refreshAccessTokenServer(
       },
       body: JSON.stringify({
         refreshToken,
+        config,
+        useCookies,
       }),
     });
 
@@ -1525,5 +1655,109 @@ export async function refreshAccessTokenServer(
       throw error;
     }
     throw new Error(`Token refresh failed: ${String(error)}`);
+  }
+}
+
+/**
+ * Exchange code for tokens using server-side API with cookie storage option
+ */
+export async function exchangeCodeForTokensServerWithCookies(
+  code: string,
+  codeVerifier: string,
+  config: ShopifyAuthConfig,
+  useCookies: boolean = false
+): Promise<AccessTokenResponse> {
+  const response = await fetch("/api/auth/shopify/token-exchange", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      code,
+      codeVerifier,
+      config,
+      useCookies,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(
+      `Server-side token exchange failed: ${errorData.error} - ${
+        errorData.error_description || "Unknown error"
+      }`
+    );
+  }
+
+  return response.json();
+}
+
+/**
+ * Get tokens from httpOnly cookies via server-side API
+ */
+export async function getTokensFromServer(): Promise<TokenStorage | null> {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
+    const response = await fetch("/api/auth/shopify/get-tokens", {
+      method: "GET",
+      credentials: "include", // Include cookies in request
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        return null; // No tokens found
+      }
+      throw new Error(`Failed to get tokens: ${response.status}`);
+    }
+
+    const tokenData = await response.json();
+
+    return {
+      accessToken: tokenData.accessToken,
+      refreshToken: tokenData.refreshToken,
+      tokenType: tokenData.tokenType,
+      expiresIn: tokenData.expiresIn,
+      issuedAt: tokenData.issuedAt,
+      scope: tokenData.scope,
+      idToken: undefined, // ID token not included in cookie response for security
+    };
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      console.error("Timeout getting tokens from server");
+      return null;
+    }
+    console.error("Error getting tokens from server:", error);
+    return null;
+  }
+}
+
+/**
+ * Clear authentication cookies via server-side API
+ */
+export async function clearTokenCookiesServer(): Promise<boolean> {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
+    const response = await fetch("/api/auth/shopify/clear-tokens", {
+      method: "POST",
+      credentials: "include",
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+    return response.ok;
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      console.error("Timeout clearing tokens on server");
+      return false;
+    }
+    console.error("Error clearing tokens on server:", error);
+    return false;
   }
 }
