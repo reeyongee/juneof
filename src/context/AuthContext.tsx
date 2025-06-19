@@ -152,6 +152,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = useCallback(async () => {
     console.log("AuthContext: LOGOUT called");
 
+    // Start loading spinner for logout flow
+    startAuthFlow();
+
     // Get current tokens BEFORE clearing them to check if we have an id_token for Shopify logout
     const currentTokens = await getTokensUnified();
     console.log(
@@ -232,7 +235,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // If no id_token, just redirect to homepage
       router.push("/");
     }
-  }, [router, shopifyAuthConfig.shopId, appBaseUrl]);
+  }, [router, shopifyAuthConfig.shopId, appBaseUrl, startAuthFlow]);
 
   // Internal function to fetch data and handle token refresh
   const _internalFetchAndSetCustomerData = useCallback(

@@ -121,7 +121,7 @@ export const LoadingProvider: React.FC<LoadingProviderProps> = ({
     console.log("LoadingManager: Starting authentication flow");
     setIsAuthFlowActive(true);
     setIsGlobalLoading(true);
-    setLoadingMessage("Authenticating...");
+    setLoadingMessage("");
 
     // Persist auth flow state across page navigation
     if (typeof window !== "undefined") {
@@ -160,7 +160,7 @@ export const LoadingProvider: React.FC<LoadingProviderProps> = ({
   useEffect(() => {
     if (isAuthFlowActive) {
       setIsGlobalLoading(true);
-      setLoadingMessage("Authenticating...");
+      setLoadingMessage("");
     }
   }, [isAuthFlowActive]);
 
