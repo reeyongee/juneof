@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { X, Loader2, RotateCcw } from "lucide-react";
-import { useCart } from "@/context/CartContext";
+
 import {
   ShopifyAuthConfig,
   getTokensUnified,
@@ -47,12 +47,6 @@ interface OrderNode {
         image: {
           url: string;
           altText: string;
-        };
-        variant?: {
-          id: string;
-          product?: {
-            handle: string;
-          };
         };
       };
     }>;
@@ -101,7 +95,8 @@ export default function CustomerOrders({
   >({});
   const [statusLoading, setStatusLoading] = useState(false);
   const hasFetchedRef = useRef(false);
-  const { addItemToCart, proceedToCheckout } = useCart();
+  // Note: Cart functions removed since reorder functionality is temporarily disabled
+  // const { addItemToCart, proceedToCheckout } = useCart();
 
   // Memoize config to prevent unnecessary re-renders
   const memoizedConfig = useMemo(
@@ -190,12 +185,7 @@ export default function CustomerOrders({
                               url
                               altText
                             }
-                            variant {
-                              id
-                              product {
-                                handle
-                              }
-                            }
+
                           }
                         }
                       }
@@ -372,29 +362,15 @@ export default function CustomerOrders({
     try {
       setReorderingOrderId(order.id);
 
-      // Add all line items to cart
-      for (const { node: lineItem } of order.lineItems.edges) {
-        if (lineItem.variant?.id && lineItem.variant?.product?.handle) {
-          const size = lineItem.variantTitle || "One Size";
+      // Note: Customer Account API doesn't provide variant IDs or product handles
+      // We'll need to implement a different approach for reordering
+      // For now, show a message directing users to browse the store
+      setError(
+        "Reordering is currently not available. Please browse our store to add items to your cart."
+      );
 
-          const cartItemData = {
-            name: lineItem.name,
-            size: size,
-            price: 0, // Will be fetched from product data
-            imageUrl: lineItem.image?.url || "",
-            variantId: lineItem.variant.id,
-            productHandle: lineItem.variant.product.handle,
-          };
-
-          // Add each item with its quantity
-          for (let i = 0; i < lineItem.quantity; i++) {
-            addItemToCart(cartItemData);
-          }
-        }
-      }
-
-      // Proceed to checkout
-      proceedToCheckout();
+      // Alternative: Could redirect to a specific collection page or search
+      // window.location.href = "/collections/all";
     } catch (error) {
       console.error("❌ Error reordering items:", error);
       setError("Failed to reorder items. Please try again.");
