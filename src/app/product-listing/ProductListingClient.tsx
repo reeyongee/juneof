@@ -9,13 +9,12 @@ import { ShopifyProductNode } from "@/lib/shopify";
 function transformShopifyProduct(product: ShopifyProductNode) {
   // Get the first image, or use a placeholder if no images
   const primaryImage =
-    product.images.edges[0]?.node?.originalSrc ||
-    "https://picsum.photos/300/450";
+    product.images.edges[0]?.node?.url || "https://picsum.photos/300/450";
 
   // For hover image, try to use the second image, or use a slightly different placeholder
   const hoverImage =
-    product.images.edges[1]?.node?.originalSrc ||
-    product.images.edges[0]?.node?.originalSrc ||
+    product.images.edges[1]?.node?.url ||
+    product.images.edges[0]?.node?.url ||
     "https://picsum.photos/id/238/300/450";
 
   // Convert price from string to number (Shopify returns price as string)

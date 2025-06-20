@@ -50,7 +50,7 @@ export default function PreloadDemoPage() {
                         .map((imageEdge, index) => (
                           <Image
                             key={index}
-                            src={imageEdge.node.originalSrc}
+                            src={imageEdge.node.url}
                             alt={
                               imageEdge.node.altText ||
                               `${product.title} image ${index + 1}`

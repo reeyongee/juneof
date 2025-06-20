@@ -77,7 +77,7 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
       price: parseFloat(product.priceRange.minVariantPrice.amount),
       size: selectedSize,
       imageUrl:
-        product.images.edges[0]?.node?.originalSrc ||
+        product.images.edges[0]?.node?.url ||
         "https://picsum.photos/id/11/100/150",
       variantId: variantId,
       productHandle: product.handle,
@@ -150,7 +150,7 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
                 return (
                   <Image
                     key={`product-image-${index}`}
-                    src={imageEdge.node.originalSrc}
+                    src={imageEdge.node.url}
                     alt={
                       imageEdge.node.altText ||
                       `${product.title} - Image ${index + 1}`

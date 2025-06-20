@@ -18,7 +18,7 @@ if (!domain || !storefrontAccessToken) {
 
 // Create a new GraphQL client instance
 const storefrontClient = new GraphQLClient(
-  `https://${domain}/api/2024-04/graphql.json`, // Using API version 2024-04. Adjust if Shopify updates.
+  `https://${domain}/api/2025-04/graphql.json`, // Using API version 2025-04. Updated for latest compatibility.
   {
     headers: {
       "X-Shopify-Storefront-Access-Token": storefrontAccessToken,
@@ -104,7 +104,7 @@ export const GET_FIRST_5_PRODUCTS_QUERY = gql`
           images(first: 1) {
             edges {
               node {
-                originalSrc
+                url
                 altText
               }
             }
@@ -134,7 +134,7 @@ export const GET_PRODUCTS_FOR_LISTING_QUERY = gql`
           images(first: 3) {
             edges {
               node {
-                originalSrc
+                url
                 altText
               }
             }
@@ -167,7 +167,7 @@ export const GET_PRODUCT_BY_HANDLE_QUERY = gql`
       images(first: 10) {
         edges {
           node {
-            originalSrc
+            url
             altText
             width
             height
@@ -599,7 +599,7 @@ export const GET_CART_QUERY = gql`
 // --- Define a basic type for the product data you expect from the query ---
 // This helps with TypeScript type safety.
 export interface ShopifyProductImage {
-  originalSrc: string;
+  url: string;
   altText: string | null;
 }
 
@@ -1127,8 +1127,8 @@ export async function preloadShopifyProducts(): Promise<{
     const imageUrls: string[] = [];
     products.forEach((product) => {
       product.images.edges.forEach((imageEdge) => {
-        if (imageEdge.node.originalSrc) {
-          imageUrls.push(imageEdge.node.originalSrc);
+        if (imageEdge.node.url) {
+          imageUrls.push(imageEdge.node.url);
         }
       });
     });
