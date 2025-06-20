@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { BlurScrollEffect_Effect4 } from "@/lib/animations"; // Adjust path if needed
 import gsap from "gsap"; // ScrollTrigger is globally registered
 
-export default function TermsOfUsePage() {
+export default function TermsAndConditionsPage() {
   const contentRef = useRef<HTMLDivElement>(null);
   const backgroundRef = useRef<HTMLDivElement>(null); // For parallax background
   const mainElementRef = useRef<HTMLElement>(null); // For main scroll trigger

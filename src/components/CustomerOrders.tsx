@@ -35,8 +35,8 @@ interface OrderNode {
     amount: string;
     currencyCode: string;
   };
-  fulfillmentStatus: string;
-  financialStatus: string;
+  displayFulfillmentStatus: string;
+  displayFinancialStatus: string;
   lineItems: {
     edges: Array<{
       node: {
@@ -172,8 +172,8 @@ export default function CustomerOrders({
                         amount
                         currencyCode
                       }
-                      fulfillmentStatus
-                      financialStatus
+                      displayFulfillmentStatus
+                      displayFinancialStatus
                       lineItems(first: 10) {
                         edges {
                           node {
@@ -185,17 +185,10 @@ export default function CustomerOrders({
                               url
                               altText
                             }
-
                           }
                         }
                       }
                     }
-                  }
-                  pageInfo {
-                    hasNextPage
-                    hasPreviousPage
-                    startCursor
-                    endCursor
                   }
                 }
               }
@@ -346,7 +339,7 @@ export default function CustomerOrders({
   const canCancelOrder = (order: OrderNode) => {
     const status = orderStatuses[order.id];
     return (
-      order.fulfillmentStatus !== "FULFILLED" &&
+      order.displayFulfillmentStatus !== "FULFILLED" &&
       (!status || !status.isCancelled)
     );
   };
@@ -383,15 +376,15 @@ export default function CustomerOrders({
   const currentOrders = orders.filter(
     (order) =>
       !isCancelledOrder(order) &&
-      (order.fulfillmentStatus !== "FULFILLED" ||
-        order.financialStatus !== "PAID")
+      (order.displayFulfillmentStatus !== "FULFILLED" ||
+        order.displayFinancialStatus !== "PAID")
   );
 
   const pastOrders = orders.filter(
     (order) =>
       !isCancelledOrder(order) &&
-      order.fulfillmentStatus === "FULFILLED" &&
-      order.financialStatus === "PAID"
+      order.displayFulfillmentStatus === "FULFILLED" &&
+      order.displayFinancialStatus === "PAID"
   );
 
   const cancelledOrders = orders.filter((order) => isCancelledOrder(order));
@@ -471,19 +464,19 @@ export default function CustomerOrders({
                         <div>
                           <p
                             className={`text-sm lowercase tracking-wider ${getStatusColor(
-                              order.fulfillmentStatus
+                              order.displayFulfillmentStatus
                             )}`}
                           >
-                            {order.fulfillmentStatus
+                            {order.displayFulfillmentStatus
                               .toLowerCase()
                               .replace("_", " ")}
                           </p>
                           <p
                             className={`text-sm lowercase tracking-wider ${getStatusColor(
-                              order.financialStatus
+                              order.displayFinancialStatus
                             )}`}
                           >
-                            {order.financialStatus.toLowerCase()}
+                            {order.displayFinancialStatus.toLowerCase()}
                           </p>
                         </div>
                         {canCancelOrder(order) && (

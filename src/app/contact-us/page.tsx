@@ -40,12 +40,12 @@ export default function ContactUsPage() {
   }, []);
 
   return (
-    <div className="relative">
+    <div className="relative" style={{ backgroundColor: "#fdf3e1" }}>
       {/* Clipping container for the parallax image */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div
           ref={backgroundRef}
-          className="absolute inset-0 z-0 h-[130%] bg-[url('https://picsum.photos/1920/1080')] bg-cover bg-center"
+          className="absolute inset-0 z-0 h-[130%] opacity-0"
         ></div>
       </div>
 
@@ -67,47 +67,16 @@ export default function ContactUsPage() {
             className="text-3xl lowercase tracking-wider text-black space-y-4 mix-blend-difference"
           >
             <p>
-              we would love to hear from you. whether you have questions about
-              our products, need assistance with your order, or simply want to
-              share your feedback, our team is here to help you every step of
-              the way.
-            </p>
-            <p>
-              for general inquiries and customer support, please reach out to us
-              at hello@juneof.com. our dedicated support team typically responds
-              within 24 hours during business days and will ensure your
-              questions are answered promptly and thoroughly.
-            </p>
-            <p>
-              if you need assistance with sizing, styling advice, or product
-              recommendations, our fashion consultants are available to provide
-              personalized guidance. we believe in helping you find the perfect
-              pieces that align with your personal style and preferences.
-            </p>
-            <p>
-              for wholesale inquiries, press requests, or collaboration
-              opportunities, please contact our partnerships team at
-              partnerships@juneof.com. we are always excited to explore new
-              opportunities and build meaningful relationships within the
-              fashion community.
-            </p>
-            <p>
-              our customer service hours are monday through friday, 9am to 6pm
-              est. while we strive to respond to all inquiries as quickly as
-              possible, please allow up to 48 hours for a complete response
-              during peak periods.
-            </p>
-            <p>
-              follow us on social media for the latest updates, styling
-              inspiration, and behind-the-scenes content. we love connecting
-              with our community and seeing how you style your june of pieces in
-              your everyday life.
-            </p>
-            <p>
-              thank you for choosing june of. your trust in our brand means
-              everything to us, and we are committed to providing you with an
-              exceptional experience from the moment you discover us to long
-              after your purchase arrives.
+              questions? write to us at reach@juneof.com or text us on our
+              socials:{" "}
+              <a
+                href="https://www.instagram.com/juneof__"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline hover:opacity-75"
+              >
+                instagram
+              </a>
             </p>
           </div>
         </div>

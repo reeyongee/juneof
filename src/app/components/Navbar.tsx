@@ -24,7 +24,9 @@ const Navbar: React.FC = () => {
   const isTransparencyAllowed =
     pathname === "/" ||
     pathname === "/privacy-policy" ||
-    pathname === "/terms-of-use" ||
+    pathname === "/terms-and-conditions" ||
+    pathname === "/shipping-and-delivery" ||
+    pathname === "/cancellations-and-refund" ||
     pathname === "/about-us" ||
     pathname === "/contact-us";
 

@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { BlurScrollEffect_Effect4 } from "@/lib/animations"; // Adjust path if needed
 import gsap from "gsap"; // ScrollTrigger is globally registered
 
-export default function AboutUsPage() {
+export default function ShippingAndDeliveryPage() {
   const contentRef = useRef<HTMLDivElement>(null);
   const backgroundRef = useRef<HTMLDivElement>(null); // For parallax background
   const mainElementRef = useRef<HTMLElement>(null); // For main scroll trigger
@@ -56,7 +56,7 @@ export default function AboutUsPage() {
         {/* Left Column (Sticky Title) */}
         <div className="relative sticky top-0 z-10 flex h-screen w-[40%] flex-shrink-0 flex-col justify-center p-8 border-r border-gray-300">
           <h1 className="text-xl font-medium tracking-widest lowercase text-black mix-blend-difference">
-            about us
+            shipping &amp; returns
           </h1>
         </div>
 
@@ -66,25 +66,34 @@ export default function AboutUsPage() {
             ref={contentRef}
             className="text-3xl lowercase tracking-wider text-black space-y-4 mix-blend-difference"
           >
-            <p>june of is where heritage meets the now.</p>
+            <p>effective date:</p>
             <p>
-              we take cues from the richness of indian craft and rework it for a
-              generation that lives in motion. think of it as timeless fabrics
-              in reimagined silhouettes, and a whole lot of intention behind
-              every stitch.
+              at june of, we want your experience to be smooth and delightful.
+              here&apos;s everything you need to know about shipping and
+              returns:
+            </p>
+            <p>⸻</p>
+            <p>1. shipping</p>
+            <p>shipping locations:</p>
+            <p>we currently ship pan india.</p>
+            <p>dispatch time:</p>
+            <p>
+              orders are typically processed and dispatched within 7 working
+              days.
+            </p>
+            <p>shipping charges:</p>
+            <p>
+              • domestic (india): [insert price or &quot;free above ₹____&quot;]
             </p>
             <p>
-              our pieces are made for everyday wear but hopefully they never
-              feel basic. designed for bodies that live, our fits move with you,
-              not against you. we believe style shouldn&apos;t come at the cost
-              of comfort or even identity.
+              • international: [insert rates or &quot;calculated at
+              checkout&quot;]
             </p>
+            <p>tracking:</p>
             <p>
-              born in india, shaped by nostalgia, and tailored for the future,
-              june of is for the ones who value wearing pieces with tales to
-              tell.
+              once your order is shipped, you will receive a tracking number via
+              email.
             </p>
-            <p>we&apos;re not here to copy tradition, only inspired by it.</p>
           </div>
         </div>
       </main>
