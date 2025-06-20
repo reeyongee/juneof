@@ -6,8 +6,7 @@ interface OrderResponse {
     id: string;
     name: string;
     displayFulfillmentStatus: string;
-    fulfillmentStatus: string;
-    financialStatus: string;
+    displayFinancialStatus: string;
     customer?: {
       id: string;
     };
@@ -73,8 +72,7 @@ export async function POST(request: NextRequest) {
           id
           name
           displayFulfillmentStatus
-          fulfillmentStatus
-          financialStatus
+          displayFinancialStatus
           customer {
             id
           }
