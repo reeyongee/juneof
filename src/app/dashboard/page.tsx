@@ -51,6 +51,7 @@ export default function DashboardPage() {
     isAuthenticated,
     customerData,
     apiClient,
+    tokens,
     login,
     logout,
     isLoading: authIsLoading, // Rename to avoid conflict with local isLoading if any
@@ -315,7 +316,7 @@ export default function DashboardPage() {
   console.log("DashboardPage: Rendering authenticated content");
 
   const renderOrders = () => {
-    return <CustomerOrders config={shopifyConfig} />;
+    return <CustomerOrders config={shopifyConfig} tokens={tokens} />;
   };
 
   const renderAddresses = () => (

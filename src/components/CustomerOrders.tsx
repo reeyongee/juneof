@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/card";
 import {
   ShopifyAuthConfig,
-  getStoredTokens,
+  getTokensUnified,
   CustomerAccountApiClient,
   autoRefreshTokens,
   type TokenStorage,
@@ -62,9 +62,13 @@ interface CustomerOrdersResponse {
 
 interface CustomerOrdersProps {
   config: ShopifyAuthConfig;
+  tokens?: TokenStorage | null;
 }
 
-export default function CustomerOrders({ config }: CustomerOrdersProps) {
+export default function CustomerOrders({
+  config,
+  tokens,
+}: CustomerOrdersProps) {
   const [orders, setOrders] = useState<OrderNode[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -181,24 +185,30 @@ export default function CustomerOrders({ config }: CustomerOrdersProps) {
   useEffect(() => {
     if (hasFetchedRef.current) return;
 
-    console.log("🔍 CustomerOrders: Checking for stored tokens...");
-    const storedTokens = getStoredTokens();
+    const loadTokensAndFetchOrders = async () => {
+      console.log("🔍 CustomerOrders: Checking for stored tokens...");
 
-    if (storedTokens) {
-      // Create API client with the access token
-      const client = new CustomerAccountApiClient({
-        shopId: memoizedConfig.shopId,
-        accessToken: storedTokens.accessToken,
-      });
+      // Use passed tokens first, fallback to unified token retrieval
+      const storedTokens = tokens || (await getTokensUnified());
 
-      // Fetch customer orders immediately
-      console.log("🚀 Fetching customer orders...");
-      fetchCustomerOrdersInternal(client, storedTokens);
-    } else {
-      console.log("❌ No stored tokens found");
-    }
+      if (storedTokens) {
+        // Create API client with the access token
+        const client = new CustomerAccountApiClient({
+          shopId: memoizedConfig.shopId,
+          accessToken: storedTokens.accessToken,
+        });
+
+        // Fetch customer orders immediately
+        console.log("🚀 Fetching customer orders...");
+        fetchCustomerOrdersInternal(client, storedTokens);
+      } else {
+        console.log("❌ No stored tokens found");
+      }
+    };
+
+    loadTokensAndFetchOrders();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [memoizedConfig.shopId]);
+  }, [memoizedConfig.shopId, tokens]);
 
   // Format price function
   const formatPrice = (amount: string, currencyCode: string): string => {
