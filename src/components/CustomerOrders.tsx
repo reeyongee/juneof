@@ -37,8 +37,6 @@ interface OrderNode {
   };
   fulfillmentStatus: string;
   financialStatus: string;
-  canceledAt?: string | null;
-  cancelReason?: string | null;
   lineItems: {
     edges: Array<{
       node: {
@@ -59,6 +57,15 @@ interface OrderNode {
       };
     }>;
   };
+}
+
+interface OrderStatus {
+  id: string;
+  cancelledAt: string | null;
+  cancelReason: string | null;
+  displayFulfillmentStatus: string;
+  displayFinancialStatus: string;
+  isCancelled: boolean;
 }
 
 interface CustomerOrdersResponse {
@@ -89,6 +96,10 @@ export default function CustomerOrders({
   const [reorderingOrderId, setReorderingOrderId] = useState<string | null>(
     null
   );
+  const [orderStatuses, setOrderStatuses] = useState<
+    Record<string, OrderStatus>
+  >({});
+  const [statusLoading, setStatusLoading] = useState(false);
   const hasFetchedRef = useRef(false);
   const { addItemToCart, proceedToCheckout } = useCart();
 
@@ -98,6 +109,39 @@ export default function CustomerOrders({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [config.shopId, config.clientId, config.redirectUri]
   );
+
+  // Fetch order statuses from Admin API
+  const fetchOrderStatuses = useCallback(async (orderIds: string[]) => {
+    if (orderIds.length === 0) return;
+
+    try {
+      setStatusLoading(true);
+      const response = await fetch("/api/customer/order-status", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ orderIds }),
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          `Failed to fetch order statuses: ${response.statusText}`
+        );
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        setOrderStatuses(data.orderStatuses);
+      } else {
+        console.error("Failed to fetch order statuses:", data.error);
+      }
+    } catch (error) {
+      console.error("Error fetching order statuses:", error);
+    } finally {
+      setStatusLoading(false);
+    }
+  }, []);
 
   // Internal function to fetch customer orders
   const fetchCustomerOrdersInternal = useCallback(
@@ -135,8 +179,6 @@ export default function CustomerOrders({
                       }
                       fulfillmentStatus
                       financialStatus
-                      canceledAt
-                      cancelReason
                       lineItems(first: 10) {
                         edges {
                           node {
@@ -191,68 +233,68 @@ export default function CustomerOrders({
           );
           setOrders(orderNodes);
           console.log("✅ Customer orders loaded successfully:", orderNodes);
+
+          // Fetch detailed order statuses from Admin API
+          const orderIds = orderNodes.map((order) => order.id);
+          await fetchOrderStatuses(orderIds);
         } else {
-          throw new Error("No customer orders data returned");
+          console.warn("⚠️ No data received from GraphQL query");
+          setOrders([]);
         }
-      } catch (err) {
-        console.error("Error fetching customer orders:", err);
+      } catch (error) {
+        console.error("❌ Error fetching customer orders:", error);
         setError(
-          err instanceof Error ? err.message : "Failed to fetch customer orders"
+          error instanceof Error ? error.message : "Failed to load orders"
         );
-        hasFetchedRef.current = false; // Allow retry on error
       } finally {
         setLoading(false);
       }
     },
-    [memoizedConfig]
+    [memoizedConfig, fetchOrderStatuses]
   );
 
-  // Load stored tokens on component mount
-  useEffect(() => {
-    if (hasFetchedRef.current) return;
-
-    const loadTokensAndFetchOrders = async () => {
-      console.log("🔍 CustomerOrders: Checking for stored tokens...");
-
-      // Use passed tokens first, fallback to unified token retrieval
-      const storedTokens = tokens || (await getTokensUnified());
-
-      if (storedTokens) {
-        // Create API client with the access token
-        const client = new CustomerAccountApiClient({
-          shopId: memoizedConfig.shopId,
-          accessToken: storedTokens.accessToken,
-        });
-
-        // Fetch customer orders immediately
-        console.log("🚀 Fetching customer orders...");
-        fetchCustomerOrdersInternal(client, storedTokens);
-      } else {
-        console.log("❌ No stored tokens found");
+  // Public function to load tokens and fetch orders
+  const loadTokensAndFetchOrders = useCallback(async () => {
+    try {
+      const tokenData = await getTokensUnified();
+      if (!tokenData) {
+        console.log("⚠️ No tokens available");
+        setError("Please log in to view your orders");
+        return;
       }
-    };
 
-    loadTokensAndFetchOrders();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [memoizedConfig.shopId, tokens]);
-
-  // Format price function
-  const formatPrice = (amount: string, currencyCode: string): string => {
-    const price = parseFloat(amount);
-    if (currencyCode === "INR") {
-      return `₹ ${price.toLocaleString("en-IN", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      })}`;
+      const client = new CustomerAccountApiClient({
+        shopId: memoizedConfig.shopId,
+        accessToken: tokenData.accessToken,
+      });
+      await fetchCustomerOrdersInternal(client, tokenData);
+    } catch (error) {
+      console.error("❌ Error in loadTokensAndFetchOrders:", error);
+      setError("Failed to load orders. Please try again.");
     }
-    return `${currencyCode} ${price.toFixed(2)}`;
+  }, [memoizedConfig, fetchCustomerOrdersInternal]);
+
+  // Effect to load orders when component mounts or tokens change
+  useEffect(() => {
+    if (tokens) {
+      hasFetchedRef.current = false;
+      loadTokensAndFetchOrders();
+    }
+  }, [tokens, loadTokensAndFetchOrders]);
+
+  // Helper functions
+  const formatPrice = (amount: string, currencyCode: string): string => {
+    const numericAmount = parseFloat(amount);
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: currencyCode,
+    }).format(numericAmount);
   };
 
-  // Format date function
   const formatDate = (dateString: string): string => {
-    return new Date(dateString).toLocaleDateString("en-IN", {
+    return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
-      month: "short",
+      month: "long",
       day: "numeric",
     });
   };
@@ -269,6 +311,9 @@ export default function CustomerOrders({
       case "unfulfilled":
       case "unpaid":
         return "text-red-600";
+      case "cancelled":
+      case "canceled":
+        return "text-gray-600";
       default:
         return "text-gray-600";
     }
@@ -284,46 +329,42 @@ export default function CustomerOrders({
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          orderId: orderId,
-        }),
+        body: JSON.stringify({ orderId }),
       });
 
-      const result = await response.json();
+      const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(result.error || "Failed to cancel order");
+      if (response.ok && data.success) {
+        console.log("✅ Order cancelled successfully");
+
+        // Refresh orders to show updated status
+        hasFetchedRef.current = false;
+        await loadTokensAndFetchOrders();
+      } else {
+        console.error("❌ Failed to cancel order:", data.error);
+        setError(data.error || "Failed to cancel order");
       }
-
-      // Show success message and refresh orders
-      console.log("✅ Order cancelled successfully:", result);
-
-      // Refresh the orders list by resetting the fetch flag and calling the fetch function
-      hasFetchedRef.current = false;
-      const storedTokens = tokens || (await getTokensUnified());
-      if (storedTokens) {
-        const client = new CustomerAccountApiClient({
-          shopId: memoizedConfig.shopId,
-          accessToken: storedTokens.accessToken,
-        });
-        fetchCustomerOrdersInternal(client, storedTokens);
-      }
-    } catch (err) {
-      console.error("Error cancelling order:", err);
-      setError(err instanceof Error ? err.message : "Failed to cancel order");
+    } catch (error) {
+      console.error("❌ Error cancelling order:", error);
+      setError("Failed to cancel order. Please try again.");
     } finally {
       setCancellingOrderId(null);
     }
   };
 
-  // Check if order can be cancelled (not fulfilled)
+  // Check if order can be cancelled (not fulfilled and not already cancelled)
   const canCancelOrder = (order: OrderNode) => {
-    return order.fulfillmentStatus !== "FULFILLED";
+    const status = orderStatuses[order.id];
+    return (
+      order.fulfillmentStatus !== "FULFILLED" &&
+      (!status || !status.isCancelled)
+    );
   };
 
   // Check if order is cancelled
   const isCancelledOrder = (order: OrderNode) => {
-    return order.canceledAt !== null && order.canceledAt !== undefined;
+    const status = orderStatuses[order.id];
+    return status?.isCancelled || false;
   };
 
   // Reorder function
@@ -332,77 +373,35 @@ export default function CustomerOrders({
       setReorderingOrderId(order.id);
 
       // Add all line items to cart
-      order.lineItems.edges.forEach(({ node: lineItem }) => {
-        // Extract variant title for size or use a default
-        const size = lineItem.variantTitle || "One Size";
+      for (const { node: lineItem } of order.lineItems.edges) {
+        if (lineItem.variant?.id && lineItem.variant?.product?.handle) {
+          const size = lineItem.variantTitle || "One Size";
 
-        // Create a unique product handle from the product info
-        const productHandle =
-          lineItem.variant?.product?.handle ||
-          lineItem.name.toLowerCase().replace(/\s+/g, "-");
+          const cartItemData = {
+            name: lineItem.name,
+            size: size,
+            price: 0, // Will be fetched from product data
+            imageUrl: lineItem.image?.url || "",
+            variantId: lineItem.variant.id,
+            productHandle: lineItem.variant.product.handle,
+          };
 
-        const cartItem = {
-          name: lineItem.name,
-          size: size,
-          price: 0, // We'll set this to 0 since we don't have price info from orders
-          imageUrl: lineItem.image.url,
-          variantId: lineItem.variant?.id,
-          productHandle: productHandle,
-        };
-
-        // Add each item the number of times specified by quantity
-        for (let i = 0; i < lineItem.quantity; i++) {
-          addItemToCart(cartItem);
+          // Add each item with its quantity
+          for (let i = 0; i < lineItem.quantity; i++) {
+            addItemToCart(cartItemData);
+          }
         }
-      });
+      }
 
-      // Navigate to checkout
-      await proceedToCheckout();
+      // Proceed to checkout
+      proceedToCheckout();
     } catch (error) {
-      console.error("Failed to reorder:", error);
+      console.error("❌ Error reordering items:", error);
+      setError("Failed to reorder items. Please try again.");
     } finally {
       setReorderingOrderId(null);
     }
   };
-
-  if (loading) {
-    return (
-      <div className="space-y-4">
-        {[...Array(3)].map((_, i) => (
-          <Card key={i} className="bg-white border-gray-300 animate-pulse">
-            <CardHeader className="pb-4">
-              <div className="h-4 bg-gray-200 rounded w-1/3"></div>
-              <div className="h-3 bg-gray-200 rounded w-1/4 mt-2"></div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="h-16 bg-gray-200 rounded"></div>
-                <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <p className="text-red-600 lowercase tracking-wider">Error: {error}</p>
-      </div>
-    );
-  }
-
-  if (!orders.length) {
-    return (
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
-        <p className="text-gray-600 lowercase tracking-wider">
-          no orders found
-        </p>
-      </div>
-    );
-  }
 
   // Separate current, past, and cancelled orders
   const currentOrders = orders.filter(
@@ -411,16 +410,67 @@ export default function CustomerOrders({
       (order.fulfillmentStatus !== "FULFILLED" ||
         order.financialStatus !== "PAID")
   );
+
   const pastOrders = orders.filter(
     (order) =>
       !isCancelledOrder(order) &&
       order.fulfillmentStatus === "FULFILLED" &&
       order.financialStatus === "PAID"
   );
+
   const cancelledOrders = orders.filter((order) => isCancelledOrder(order));
+
+  if (loading && orders.length === 0) {
+    return (
+      <div className="flex justify-center items-center py-8">
+        <Loader2 className="h-8 w-8 animate-spin text-gray-600" />
+        <span className="ml-2 text-gray-600 lowercase tracking-wider">
+          loading orders...
+        </span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-red-600 lowercase tracking-wider">{error}</p>
+        <Button
+          onClick={() => {
+            setError(null);
+            hasFetchedRef.current = false;
+            loadTokensAndFetchOrders();
+          }}
+          variant="outline"
+          className="mt-4 lowercase tracking-wider"
+        >
+          try again
+        </Button>
+      </div>
+    );
+  }
+
+  if (orders.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-gray-600 lowercase tracking-wider">
+          no orders found
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
+      {statusLoading && (
+        <div className="flex justify-center items-center py-2">
+          <Loader2 className="h-4 w-4 animate-spin text-gray-600" />
+          <span className="ml-2 text-sm text-gray-600 lowercase tracking-wider">
+            checking order statuses...
+          </span>
+        </div>
+      )}
+
       {/* Current Orders */}
       {currentOrders.length > 0 && (
         <div>
@@ -476,7 +526,7 @@ export default function CustomerOrders({
                             ) : (
                               <>
                                 <X className="mr-1 h-3 w-3" />
-                                cancel order
+                                cancel
                               </>
                             )}
                           </Button>
@@ -560,8 +610,13 @@ export default function CustomerOrders({
                         {order.name}
                       </CardTitle>
                       <CardDescription className="lowercase tracking-wider">
-                        delivered on {formatDate(order.processedAt)}
+                        completed on {formatDate(order.processedAt)}
                       </CardDescription>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm lowercase tracking-wider text-green-600">
+                        completed
+                      </p>
                     </div>
                   </div>
                 </CardHeader>
@@ -631,110 +686,115 @@ export default function CustomerOrders({
             cancelled orders
           </h3>
           <div className="space-y-4">
-            {cancelledOrders.map((order) => (
-              <Card key={order.id} className="bg-white border-gray-300">
-                <CardHeader className="pb-4">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <CardTitle className="text-lg lowercase tracking-wider text-black">
-                        {order.name}
-                      </CardTitle>
-                      <CardDescription className="lowercase tracking-wider">
-                        cancelled on{" "}
-                        {formatDate(order.canceledAt || order.processedAt)}
-                      </CardDescription>
-                      {order.cancelReason && (
-                        <p className="text-sm text-gray-500 lowercase tracking-wider mt-1">
-                          reason:{" "}
-                          {order.cancelReason.toLowerCase().replace("_", " ")}
-                        </p>
-                      )}
-                    </div>
-                    <div className="text-right">
-                      <div className="flex flex-col items-end space-y-2">
-                        <div>
-                          <p className="text-sm lowercase tracking-wider text-red-600">
-                            cancelled
+            {cancelledOrders.map((order) => {
+              const status = orderStatuses[order.id];
+              return (
+                <Card key={order.id} className="bg-white border-gray-300">
+                  <CardHeader className="pb-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <CardTitle className="text-lg lowercase tracking-wider text-black">
+                          {order.name}
+                        </CardTitle>
+                        <CardDescription className="lowercase tracking-wider">
+                          cancelled on{" "}
+                          {formatDate(status?.cancelledAt || order.processedAt)}
+                        </CardDescription>
+                        {status?.cancelReason && (
+                          <p className="text-sm text-gray-500 lowercase tracking-wider mt-1">
+                            reason:{" "}
+                            {status.cancelReason
+                              .toLowerCase()
+                              .replace("_", " ")}
                           </p>
-                        </div>
-                        <Button
-                          onClick={() => reorderItems(order)}
-                          disabled={reorderingOrderId === order.id}
-                          variant="outline"
-                          size="sm"
-                          className="border-blue-300 text-blue-600 hover:bg-blue-50 hover:border-blue-400 text-xs lowercase tracking-wider"
-                        >
-                          {reorderingOrderId === order.id ? (
-                            <>
-                              <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                              reordering...
-                            </>
-                          ) : (
-                            <>
-                              <RotateCcw className="mr-1 h-3 w-3" />
-                              reorder
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {/* Line Items */}
-                    {order.lineItems.edges.map(({ node: item }) => (
-                      <div
-                        key={item.id}
-                        className="flex items-center space-x-4"
-                      >
-                        <div className="w-16 h-16 bg-gray-100 rounded-md flex items-center justify-center overflow-hidden">
-                          {item.image ? (
-                            <Image
-                              src={item.image.url}
-                              alt={item.image.altText || item.name}
-                              width={64}
-                              height={64}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="text-gray-400 text-xs">
-                              No Image
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="font-medium lowercase tracking-wider text-black">
-                            {item.name}
-                          </h4>
-                          {item.variantTitle && (
-                            <p className="text-sm text-gray-500 lowercase tracking-wider">
-                              {item.variantTitle}
-                            </p>
-                          )}
-                          <p className="text-sm text-gray-600 lowercase tracking-wider">
-                            qty: {item.quantity}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-
-                    {/* Order Summary */}
-                    <div className="flex justify-between items-center pt-4 border-t border-gray-200">
-                      <span className="font-medium lowercase tracking-wider text-black">
-                        total
-                      </span>
-                      <span className="font-medium text-black">
-                        {formatPrice(
-                          order.totalPrice.amount,
-                          order.totalPrice.currencyCode
                         )}
-                      </span>
+                      </div>
+                      <div className="text-right">
+                        <div className="flex flex-col items-end space-y-2">
+                          <div>
+                            <p className="text-sm lowercase tracking-wider text-gray-600">
+                              cancelled
+                            </p>
+                          </div>
+                          <Button
+                            onClick={() => reorderItems(order)}
+                            disabled={reorderingOrderId === order.id}
+                            variant="outline"
+                            size="sm"
+                            className="border-blue-300 text-blue-600 hover:bg-blue-50 hover:border-blue-400 text-xs lowercase tracking-wider"
+                          >
+                            {reorderingOrderId === order.id ? (
+                              <>
+                                <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                                reordering...
+                              </>
+                            ) : (
+                              <>
+                                <RotateCcw className="mr-1 h-3 w-3" />
+                                reorder
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {/* Line Items */}
+                      {order.lineItems.edges.map(({ node: item }) => (
+                        <div
+                          key={item.id}
+                          className="flex items-center space-x-4"
+                        >
+                          <div className="w-16 h-16 bg-gray-100 rounded-md flex items-center justify-center overflow-hidden">
+                            {item.image ? (
+                              <Image
+                                src={item.image.url}
+                                alt={item.image.altText || item.name}
+                                width={64}
+                                height={64}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="text-gray-400 text-xs">
+                                No Image
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="font-medium lowercase tracking-wider text-black">
+                              {item.name}
+                            </h4>
+                            {item.variantTitle && (
+                              <p className="text-sm text-gray-500 lowercase tracking-wider">
+                                {item.variantTitle}
+                              </p>
+                            )}
+                            <p className="text-sm text-gray-600 lowercase tracking-wider">
+                              qty: {item.quantity}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+
+                      {/* Order Summary */}
+                      <div className="flex justify-between items-center pt-4 border-t border-gray-200">
+                        <span className="font-medium lowercase tracking-wider text-black">
+                          total
+                        </span>
+                        <span className="font-medium text-black">
+                          {formatPrice(
+                            order.totalPrice.amount,
+                            order.totalPrice.currencyCode
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </div>
       )}
