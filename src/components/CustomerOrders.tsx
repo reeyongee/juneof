@@ -16,7 +16,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { X, Loader2 } from "lucide-react";
+import { X, Loader2, RotateCcw } from "lucide-react";
+import { useCart } from "@/context/CartContext";
 import {
   ShopifyAuthConfig,
   getTokensUnified,
@@ -36,6 +37,8 @@ interface OrderNode {
   };
   fulfillmentStatus: string;
   financialStatus: string;
+  canceledAt?: string | null;
+  cancelReason?: string | null;
   lineItems: {
     edges: Array<{
       node: {
@@ -46,6 +49,12 @@ interface OrderNode {
         image: {
           url: string;
           altText: string;
+        };
+        variant?: {
+          id: string;
+          product?: {
+            handle: string;
+          };
         };
       };
     }>;
@@ -77,7 +86,11 @@ export default function CustomerOrders({
   const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(
     null
   );
+  const [reorderingOrderId, setReorderingOrderId] = useState<string | null>(
+    null
+  );
   const hasFetchedRef = useRef(false);
+  const { addItemToCart, proceedToCheckout } = useCart();
 
   // Memoize config to prevent unnecessary re-renders
   const memoizedConfig = useMemo(
@@ -122,6 +135,8 @@ export default function CustomerOrders({
                       }
                       fulfillmentStatus
                       financialStatus
+                      canceledAt
+                      cancelReason
                       lineItems(first: 10) {
                         edges {
                           node {
@@ -132,6 +147,12 @@ export default function CustomerOrders({
                             image {
                               url
                               altText
+                            }
+                            variant {
+                              id
+                              product {
+                                handle
+                              }
                             }
                           }
                         }
@@ -300,6 +321,50 @@ export default function CustomerOrders({
     return order.fulfillmentStatus !== "FULFILLED";
   };
 
+  // Check if order is cancelled
+  const isCancelledOrder = (order: OrderNode) => {
+    return order.canceledAt !== null && order.canceledAt !== undefined;
+  };
+
+  // Reorder function
+  const reorderItems = async (order: OrderNode) => {
+    try {
+      setReorderingOrderId(order.id);
+
+      // Add all line items to cart
+      order.lineItems.edges.forEach(({ node: lineItem }) => {
+        // Extract variant title for size or use a default
+        const size = lineItem.variantTitle || "One Size";
+
+        // Create a unique product handle from the product info
+        const productHandle =
+          lineItem.variant?.product?.handle ||
+          lineItem.name.toLowerCase().replace(/\s+/g, "-");
+
+        const cartItem = {
+          name: lineItem.name,
+          size: size,
+          price: 0, // We'll set this to 0 since we don't have price info from orders
+          imageUrl: lineItem.image.url,
+          variantId: lineItem.variant?.id,
+          productHandle: productHandle,
+        };
+
+        // Add each item the number of times specified by quantity
+        for (let i = 0; i < lineItem.quantity; i++) {
+          addItemToCart(cartItem);
+        }
+      });
+
+      // Navigate to checkout
+      await proceedToCheckout();
+    } catch (error) {
+      console.error("Failed to reorder:", error);
+    } finally {
+      setReorderingOrderId(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="space-y-4">
@@ -339,17 +404,20 @@ export default function CustomerOrders({
     );
   }
 
-  // Separate current and past orders
+  // Separate current, past, and cancelled orders
   const currentOrders = orders.filter(
     (order) =>
-      order.fulfillmentStatus !== "FULFILLED" ||
-      order.financialStatus !== "PAID"
+      !isCancelledOrder(order) &&
+      (order.fulfillmentStatus !== "FULFILLED" ||
+        order.financialStatus !== "PAID")
   );
   const pastOrders = orders.filter(
     (order) =>
+      !isCancelledOrder(order) &&
       order.fulfillmentStatus === "FULFILLED" &&
       order.financialStatus === "PAID"
   );
+  const cancelledOrders = orders.filter((order) => isCancelledOrder(order));
 
   return (
     <div className="space-y-8">
@@ -494,6 +562,121 @@ export default function CustomerOrders({
                       <CardDescription className="lowercase tracking-wider">
                         delivered on {formatDate(order.processedAt)}
                       </CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {/* Line Items */}
+                    {order.lineItems.edges.map(({ node: item }) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center space-x-4"
+                      >
+                        <div className="w-16 h-16 bg-gray-100 rounded-md flex items-center justify-center overflow-hidden">
+                          {item.image ? (
+                            <Image
+                              src={item.image.url}
+                              alt={item.image.altText || item.name}
+                              width={64}
+                              height={64}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="text-gray-400 text-xs">
+                              No Image
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-medium lowercase tracking-wider text-black">
+                            {item.name}
+                          </h4>
+                          {item.variantTitle && (
+                            <p className="text-sm text-gray-500 lowercase tracking-wider">
+                              {item.variantTitle}
+                            </p>
+                          )}
+                          <p className="text-sm text-gray-600 lowercase tracking-wider">
+                            qty: {item.quantity}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+
+                    {/* Order Summary */}
+                    <div className="flex justify-between items-center pt-4 border-t border-gray-200">
+                      <span className="font-medium lowercase tracking-wider text-black">
+                        total
+                      </span>
+                      <span className="font-medium text-black">
+                        {formatPrice(
+                          order.totalPrice.amount,
+                          order.totalPrice.currencyCode
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Cancelled Orders */}
+      {cancelledOrders.length > 0 && (
+        <div>
+          <h3 className="text-xl font-serif lowercase tracking-widest text-black mb-4">
+            cancelled orders
+          </h3>
+          <div className="space-y-4">
+            {cancelledOrders.map((order) => (
+              <Card key={order.id} className="bg-white border-gray-300">
+                <CardHeader className="pb-4">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <CardTitle className="text-lg lowercase tracking-wider text-black">
+                        {order.name}
+                      </CardTitle>
+                      <CardDescription className="lowercase tracking-wider">
+                        cancelled on{" "}
+                        {formatDate(order.canceledAt || order.processedAt)}
+                      </CardDescription>
+                      {order.cancelReason && (
+                        <p className="text-sm text-gray-500 lowercase tracking-wider mt-1">
+                          reason:{" "}
+                          {order.cancelReason.toLowerCase().replace("_", " ")}
+                        </p>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <div className="flex flex-col items-end space-y-2">
+                        <div>
+                          <p className="text-sm lowercase tracking-wider text-red-600">
+                            cancelled
+                          </p>
+                        </div>
+                        <Button
+                          onClick={() => reorderItems(order)}
+                          disabled={reorderingOrderId === order.id}
+                          variant="outline"
+                          size="sm"
+                          className="border-blue-300 text-blue-600 hover:bg-blue-50 hover:border-blue-400 text-xs lowercase tracking-wider"
+                        >
+                          {reorderingOrderId === order.id ? (
+                            <>
+                              <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                              reordering...
+                            </>
+                          ) : (
+                            <>
+                              <RotateCcw className="mr-1 h-3 w-3" />
+                              reorder
+                            </>
+                          )}
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </CardHeader>
