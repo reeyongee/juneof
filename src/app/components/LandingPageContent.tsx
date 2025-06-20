@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Image from "next/image";
@@ -19,52 +19,8 @@ export default function LandingPageContent() {
   const section3Ref = useRef<HTMLDivElement>(null);
   const section4Ref = useRef<HTMLDivElement>(null);
   const spacerRef = useRef<HTMLDivElement>(null);
-  const [imagesLoaded, setImagesLoaded] = useState(false);
-  const [animationsInitialized, setAnimationsInitialized] = useState(false);
 
-  // Wait for all images to load
   useEffect(() => {
-    const waitForImages = async () => {
-      if (!containerRef.current) return;
-
-      const images = containerRef.current.querySelectorAll("img");
-      const imagePromises = Array.from(images).map((img) => {
-        return new Promise<void>((resolve) => {
-          if (img.complete && img.naturalHeight !== 0) {
-            resolve();
-          } else {
-            const handleLoad = () => {
-              img.removeEventListener("load", handleLoad);
-              img.removeEventListener("error", handleError);
-              resolve();
-            };
-            const handleError = () => {
-              img.removeEventListener("load", handleLoad);
-              img.removeEventListener("error", handleError);
-              console.warn("Image failed to load:", img.src);
-              resolve(); // Resolve anyway to not block the layout
-            };
-            img.addEventListener("load", handleLoad);
-            img.addEventListener("error", handleError);
-          }
-        });
-      });
-
-      await Promise.all(imagePromises);
-
-      // Additional delay to ensure DOM is stable
-      await new Promise((resolve) => setTimeout(resolve, 100));
-
-      setImagesLoaded(true);
-    };
-
-    waitForImages();
-  }, []);
-
-  // Initialize animations only after images are loaded
-  useEffect(() => {
-    if (!imagesLoaded || animationsInitialized) return;
-
     const initializeAnimations = () => {
       if (!containerRef.current) return;
 
@@ -77,11 +33,11 @@ export default function LandingPageContent() {
         // Kill any existing ScrollTriggers to prevent conflicts
         ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
 
-        // Section 1 animations
+        // Section 1 animations - following original approach
         const section1panel = gsap.utils.toArray(".section1 .panel");
         const section1length = section1panel.length * height * 2;
 
-        // Get first panel element with error checking
+        // Get first panel width using DOM query like original
         const firstPanelElement = document.querySelector(
           ".section1 .panel.first"
         ) as HTMLElement;
@@ -90,9 +46,8 @@ export default function LandingPageContent() {
           : 0;
         const section1gap = 40 * (width / 100);
 
-        // Set initial positions with error checking
+        // Set styles directly like original
         if (section1Ref.current) {
-          section1Ref.current.style.top = "0px";
           section1Ref.current.style.height = `${section1length}px`;
 
           const container = section1Ref.current.querySelector(
@@ -112,18 +67,17 @@ export default function LandingPageContent() {
             }px`;
           }
 
-          // Center images vertically with proper error checking
+          // Center images vertically like original
           const images = section1Ref.current.querySelectorAll(".panel img");
           images.forEach((img) => {
             const imgElement = img as HTMLImageElement;
-            if (imgElement.offsetHeight > 0) {
-              imgElement.style.marginTop = `${
-                (height - imgElement.offsetHeight) / 2
-              }px`;
-            }
+            imgElement.style.marginTop = `${
+              (height - imgElement.offsetHeight) / 2
+            }px`;
           });
         }
 
+        // Position sections like original
         if (section2Ref.current) {
           section2Ref.current.style.top = `${section1length - height}px`;
         }
@@ -131,7 +85,7 @@ export default function LandingPageContent() {
           section3Ref.current.style.top = `${section1length}px`;
         }
 
-        // GSAP animations with error handling
+        // GSAP animations exactly like original
         gsap.to(".section1 .container", {
           scrollTrigger: {
             trigger: ".section1",
@@ -147,7 +101,7 @@ export default function LandingPageContent() {
         const lastpanel = document.querySelector(
           ".section1 .panel.last"
         ) as HTMLElement;
-        if (lastpanel && lastpanel.offsetWidth > 0) {
+        if (lastpanel) {
           const lastpanelmove =
             lastpanel.offsetLeft + lastpanel.offsetWidth - width;
           gsap.to(section1panel, {
@@ -164,11 +118,11 @@ export default function LandingPageContent() {
           });
         }
 
-        // Section 3 parallax with error checking
+        // Section 3 parallax like original
         const section3Image = document.querySelector(
           ".section3 .container img"
         ) as HTMLImageElement;
-        if (section3Image && section3Image.offsetHeight > 0) {
+        if (section3Image) {
           gsap.to(".section3 .container img", {
             scrollTrigger: {
               trigger: ".section3 .container",
@@ -181,7 +135,7 @@ export default function LandingPageContent() {
           });
         }
 
-        // Position Section 4 after getting section3 height
+        // Position Section 4 like original
         const section3length = section3Ref.current?.offsetHeight || 0;
         if (section4Ref.current) {
           section4Ref.current.style.top = `${
@@ -189,88 +143,124 @@ export default function LandingPageContent() {
           }px`;
         }
 
-        // Section 4 parallax animations
-        const section4Images = [
-          { selector: ".section4 .pic1", yPercent: -150, scrub: 2 },
-          { selector: ".section4 .pic2", yPercent: -120, scrub: 0.8 },
-          { selector: ".section4 .pic3", yPercent: -130, scrub: 1 },
-          { selector: ".section4 .pic4", yPercent: -140, scrub: 0.5 },
-          { selector: ".section4 .pic5", yPercent: -160, scrub: 0.5 },
-          { selector: ".section4 .pic6", yPercent: -125, scrub: 1.2 },
-          { selector: ".section4 .pic7", yPercent: -145, scrub: 0.7 },
-        ];
-
-        section4Images.forEach(({ selector, yPercent, scrub }) => {
-          const element = document.querySelector(selector);
-          if (element) {
-            gsap.to(selector, {
-              scrollTrigger: {
-                trigger: selector,
-                start: "top bottom",
-                endTrigger: ".section4",
-                end: "bottom top",
-                scrub,
-                markers: false,
-              },
-              yPercent,
-            });
-          }
+        // Section 4 parallax animations exactly like original
+        gsap.to(".section4 .pic1", {
+          scrollTrigger: {
+            trigger: ".section4 .pic1",
+            start: "top bottom",
+            endTrigger: ".section4",
+            end: "bottom top",
+            scrub: 2,
+            markers: false,
+          },
+          yPercent: -150,
+        });
+        gsap.to(".section4 .pic2", {
+          scrollTrigger: {
+            trigger: ".section4 .pic2",
+            start: "top bottom",
+            endTrigger: ".section4",
+            end: "bottom top",
+            scrub: 0.8,
+            markers: false,
+          },
+          yPercent: -120,
+        });
+        gsap.to(".section4 .pic3", {
+          scrollTrigger: {
+            trigger: ".section4 .pic3",
+            start: "top bottom",
+            endTrigger: ".section4",
+            end: "bottom top",
+            scrub: 1,
+            markers: false,
+          },
+          yPercent: -130,
+        });
+        gsap.to(".section4 .pic4", {
+          scrollTrigger: {
+            trigger: ".section4 .pic4",
+            start: "top bottom",
+            endTrigger: ".section4",
+            end: "bottom top",
+            scrub: 0.5,
+            markers: false,
+          },
+          yPercent: -140,
+        });
+        gsap.to(".section4 .pic5", {
+          scrollTrigger: {
+            trigger: ".section4 .pic5",
+            start: "top bottom",
+            endTrigger: ".section4",
+            end: "bottom top",
+            scrub: 0.5,
+            markers: false,
+          },
+          yPercent: -160,
+        });
+        gsap.to(".section4 .pic6", {
+          scrollTrigger: {
+            trigger: ".section4 .pic6",
+            start: "top bottom",
+            endTrigger: ".section4",
+            end: "bottom top",
+            scrub: 1.2,
+            markers: false,
+          },
+          yPercent: -125,
+        });
+        gsap.to(".section4 .pic7", {
+          scrollTrigger: {
+            trigger: ".section4 .pic7",
+            start: "top bottom",
+            endTrigger: ".section4",
+            end: "bottom top",
+            scrub: 0.7,
+            markers: false,
+          },
+          yPercent: -145,
         });
 
-        // Set spacer height
+        // Set spacer height like original
         const section4length = section4Ref.current?.offsetHeight || 0;
         if (spacerRef.current) {
           spacerRef.current.style.height = `${
             section1length + section3length + section4length + height * 0.0001
           }px`;
         }
-
-        setAnimationsInitialized(true);
       } catch (error) {
         console.error("Error initializing animations:", error);
       }
     };
 
-    // Initialize animations
-    initializeAnimations();
+    // Initialize after a short delay to ensure images are loaded
+    const timer = setTimeout(initializeAnimations, 500);
 
-    // Handle resize with debouncing
-    let resizeTimeout: NodeJS.Timeout;
+    // Handle resize
     const handleResize = () => {
-      clearTimeout(resizeTimeout);
-      resizeTimeout = setTimeout(() => {
-        setAnimationsInitialized(false);
-        ScrollTrigger.refresh();
-        initializeAnimations();
-      }, 250); // Debounce resize events
+      ScrollTrigger.refresh();
+      setTimeout(initializeAnimations, 100);
     };
 
     window.addEventListener("resize", handleResize);
 
     return () => {
-      clearTimeout(resizeTimeout);
+      clearTimeout(timer);
       window.removeEventListener("resize", handleResize);
       ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
     };
-  }, [imagesLoaded, animationsInitialized]);
+  }, []);
 
   return (
     <div ref={containerRef} className="relative w-full z-[2]">
       {/* Scroll Indicator */}
       <ScrollIndicator />
 
-      {/* Loading state while images load */}
-      {!imagesLoaded && (
-        <div className="fixed inset-0 bg-[#FDF3E1] z-10 flex items-center justify-center">
-          <div className="text-black text-lg tracking-wider">Loading...</div>
-        </div>
-      )}
-
       {/* Section 1 - Image Panels */}
       <div
         ref={section1Ref}
         className="section1 absolute block w-screen bg-[#FDF3E1] text-black"
-        style={{ opacity: imagesLoaded ? 1 : 0 }}
       >
         <div className="container flex flex-row h-screen overflow-hidden w-screen max-w-none left-0">
           <div className="panel first relative h-screen">
@@ -318,11 +308,7 @@ export default function LandingPageContent() {
       </div>
 
       {/* Section 2 - Sticky Image */}
-      <div
-        ref={section2Ref}
-        className="section2"
-        style={{ opacity: imagesLoaded ? 1 : 0 }}
-      >
+      <div ref={section2Ref} className="section2">
         <div className="container">
           <Image
             src="/landing-images/5.webp"
@@ -338,7 +324,6 @@ export default function LandingPageContent() {
       <div
         ref={section3Ref}
         className="section3 absolute block top-0 left-0 w-screen bg-[#FDF3E1]"
-        style={{ opacity: imagesLoaded ? 1 : 0 }}
       >
         <div className="layout-text layout text box-border py-12 px-[3vw] lg:px-[3vw] max-lg:px-[5vw]">
           <p className="mt-0 mb-48 text-xs font-light">Manifesto</p>
@@ -376,7 +361,6 @@ export default function LandingPageContent() {
       <div
         ref={section4Ref}
         className="section4 absolute block top-0 left-0 w-screen h-screen overflow-hidden bg-[#F8F4EC]"
-        style={{ opacity: imagesLoaded ? 1 : 0 }}
       >
         <Image
           className="pic1 absolute min-w-[150px] max-w-[300px] w-[20vw] top-[50vh] left-[8.5vw]"
