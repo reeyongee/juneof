@@ -15,6 +15,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { X, Loader2 } from "lucide-react";
 import {
   ShopifyAuthConfig,
   getTokensUnified,
@@ -72,6 +74,9 @@ export default function CustomerOrders({
   const [orders, setOrders] = useState<OrderNode[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(
+    null
+  );
   const hasFetchedRef = useRef(false);
 
   // Memoize config to prevent unnecessary re-renders
@@ -248,6 +253,53 @@ export default function CustomerOrders({
     }
   };
 
+  // Cancel order function
+  const cancelOrder = async (orderId: string) => {
+    try {
+      setCancellingOrderId(orderId);
+
+      const response = await fetch("/api/customer/cancel-order", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          orderId: orderId,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to cancel order");
+      }
+
+      // Show success message and refresh orders
+      console.log("✅ Order cancelled successfully:", result);
+
+      // Refresh the orders list by resetting the fetch flag and calling the fetch function
+      hasFetchedRef.current = false;
+      const storedTokens = tokens || (await getTokensUnified());
+      if (storedTokens) {
+        const client = new CustomerAccountApiClient({
+          shopId: memoizedConfig.shopId,
+          accessToken: storedTokens.accessToken,
+        });
+        fetchCustomerOrdersInternal(client, storedTokens);
+      }
+    } catch (err) {
+      console.error("Error cancelling order:", err);
+      setError(err instanceof Error ? err.message : "Failed to cancel order");
+    } finally {
+      setCancellingOrderId(null);
+    }
+  };
+
+  // Check if order can be cancelled (not fulfilled)
+  const canCancelOrder = (order: OrderNode) => {
+    return order.fulfillmentStatus !== "FULFILLED";
+  };
+
   if (loading) {
     return (
       <div className="space-y-4">
@@ -321,22 +373,47 @@ export default function CustomerOrders({
                       </CardDescription>
                     </div>
                     <div className="text-right">
-                      <p
-                        className={`text-sm lowercase tracking-wider ${getStatusColor(
-                          order.fulfillmentStatus
-                        )}`}
-                      >
-                        {order.fulfillmentStatus
-                          .toLowerCase()
-                          .replace("_", " ")}
-                      </p>
-                      <p
-                        className={`text-sm lowercase tracking-wider ${getStatusColor(
-                          order.financialStatus
-                        )}`}
-                      >
-                        {order.financialStatus.toLowerCase()}
-                      </p>
+                      <div className="flex flex-col items-end space-y-2">
+                        <div>
+                          <p
+                            className={`text-sm lowercase tracking-wider ${getStatusColor(
+                              order.fulfillmentStatus
+                            )}`}
+                          >
+                            {order.fulfillmentStatus
+                              .toLowerCase()
+                              .replace("_", " ")}
+                          </p>
+                          <p
+                            className={`text-sm lowercase tracking-wider ${getStatusColor(
+                              order.financialStatus
+                            )}`}
+                          >
+                            {order.financialStatus.toLowerCase()}
+                          </p>
+                        </div>
+                        {canCancelOrder(order) && (
+                          <Button
+                            onClick={() => cancelOrder(order.id)}
+                            disabled={cancellingOrderId === order.id}
+                            variant="outline"
+                            size="sm"
+                            className="border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400 text-xs lowercase tracking-wider"
+                          >
+                            {cancellingOrderId === order.id ? (
+                              <>
+                                <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                                cancelling...
+                              </>
+                            ) : (
+                              <>
+                                <X className="mr-1 h-3 w-3" />
+                                cancel order
+                              </>
+                            )}
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </CardHeader>
