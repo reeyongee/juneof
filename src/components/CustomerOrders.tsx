@@ -786,7 +786,7 @@ export default function CustomerOrders({
 
       {/* Cancel Order Confirmation Dialog */}
       <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md" showCloseButton={false}>
           <DialogHeader>
             <DialogTitle className="lowercase tracking-wider text-black">
               cancel order {orderToCancel?.name}?
@@ -806,12 +806,11 @@ export default function CustomerOrders({
                 setShowCancelDialog(false);
                 setOrderToCancel(null);
               }}
-              className="lowercase tracking-wider"
+              className="lowercase tracking-wider border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400"
             >
               close
             </Button>
             <Button
-              variant="destructive"
               onClick={async () => {
                 if (orderToCancel) {
                   setShowCancelDialog(false);
@@ -820,7 +819,7 @@ export default function CustomerOrders({
                 }
               }}
               disabled={cancellingOrderId === orderToCancel?.id}
-              className="lowercase tracking-wider"
+              className="lowercase tracking-wider border border-red-500 text-red-500 bg-transparent hover:bg-red-500 hover:text-white transition-colors duration-200"
             >
               {cancellingOrderId === orderToCancel?.id ? (
                 <>
