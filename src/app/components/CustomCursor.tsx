@@ -624,6 +624,37 @@ export default function CustomCursor() {
     // For route changes, we don't need to completely reinitialize
     // Just refresh the magnetic listeners and ensure cursor is active
     if (isInitializedRef.current) {
+      // Ensure cursor is active and render loop is running
+      if (!isCursorActiveRef.current) {
+        isCursorActiveRef.current = true;
+        document.body.classList.add("custom-cursor-active");
+
+        // Make sure cursor is visible
+        if (cursorWrapperRef.current) {
+          cursorWrapperRef.current.style.display = "block";
+          gsap.set(cursorWrapperRef.current, { autoAlpha: 1 });
+        }
+
+        // Restart render loop if not running
+        if (!renderLoopRef.current) {
+          startRenderLoop();
+        }
+      }
+
+      // Reset cursor state and capture current mouse position on navigation
+      resetCursorToDefault();
+      captureInitialMousePosition();
+
+      // Add a one-time mouse move listener to immediately update position
+      const handleNavigationMouseMove = (e: MouseEvent) => {
+        mousePos.current = { x: e.clientX, y: e.clientY };
+        currentPos.current = { x: e.clientX, y: e.clientY };
+        document.removeEventListener("mousemove", handleNavigationMouseMove);
+      };
+      document.addEventListener("mousemove", handleNavigationMouseMove, {
+        once: true,
+      });
+
       setTimeout(() => {
         const existingMagneticElements = document.querySelectorAll(
           "[data-magnetic-attached]"
@@ -657,6 +688,9 @@ export default function CustomCursor() {
     showSplash,
     handleMagneticEnter,
     handleMagneticLeave,
+    startRenderLoop,
+    resetCursorToDefault,
+    captureInitialMousePosition,
   ]);
 
   // Handle splash screen visibility changes
