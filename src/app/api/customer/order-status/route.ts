@@ -15,6 +15,16 @@ interface OrderStatusResponse {
   };
 }
 
+interface NodesResponse {
+  nodes: Array<{
+    id: string;
+    cancelledAt: string | null;
+    cancelReason: string | null;
+    displayFulfillmentStatus: string;
+    displayFinancialStatus: string;
+  } | null>;
+}
+
 interface OrderStatus {
   id: string;
   cancelledAt: string | null;
@@ -74,9 +84,81 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Build the query with order IDs using OR operator for multiple IDs
-    const orderIdsQuery = orderIds.map((id) => `id:${id}`).join(" OR ");
-    console.log("Order IDs query for GraphQL:", orderIdsQuery);
+    // Extract numeric IDs from GIDs for the orders query
+    const numericIds = orderIds.map((id) => {
+      // Extract numeric part from gid://shopify/Order/123456
+      const match = id.match(/\/Order\/(\d+)$/);
+      return match ? match[1] : id;
+    });
+
+    console.log("Original GIDs:", orderIds);
+    console.log("Extracted numeric IDs:", numericIds);
+
+    // Try two different approaches based on research
+
+    // Approach 1: Use nodes query with full GIDs (recommended approach)
+    const nodesQuery = `
+      query GetOrdersByNodes($ids: [ID!]!) {
+        nodes(ids: $ids) {
+          ... on Order {
+            id
+            cancelledAt
+            cancelReason
+            displayFulfillmentStatus
+            displayFinancialStatus
+          }
+        }
+      }
+    `;
+
+    console.log("🔍 Trying nodes query approach with full GIDs...");
+    const nodesVariables = { ids: orderIds };
+    console.log(
+      "Nodes query variables:",
+      JSON.stringify(nodesVariables, null, 2)
+    );
+
+    try {
+      const nodesResponse = await client.request<NodesResponse>(
+        nodesQuery,
+        nodesVariables
+      );
+      console.log(
+        "✅ Nodes query successful:",
+        JSON.stringify(nodesResponse, null, 2)
+      );
+
+      // Transform nodes response
+      const orderStatuses = (nodesResponse.nodes || []).reduce(
+        (acc: Record<string, OrderStatus>, node) => {
+          if (node && node.id) {
+            acc[node.id] = {
+              id: node.id,
+              cancelledAt: node.cancelledAt,
+              cancelReason: node.cancelReason,
+              fulfillmentStatus: node.displayFulfillmentStatus,
+              financialStatus: node.displayFinancialStatus,
+              isCancelled: node.cancelledAt !== null,
+            };
+          }
+          return acc;
+        },
+        {} as Record<string, OrderStatus>
+      );
+
+      console.log("✅ Nodes approach successful, returning results");
+      return NextResponse.json({
+        success: true,
+        orderStatuses,
+      });
+    } catch (nodesError) {
+      console.log("❌ Nodes query failed, trying orders query approach...");
+      console.log("Nodes error:", nodesError);
+    }
+
+    // Approach 2: Use orders query with numeric IDs only
+    const orderIdsQuery = numericIds.map((id) => `id:${id}`).join(" OR ");
+    console.log("🔍 Trying orders query with numeric IDs:", orderIdsQuery);
 
     const ordersQuery = `
       query GetOrdersStatus {
@@ -94,37 +176,9 @@ export async function POST(request: NextRequest) {
       }
     `;
 
-    console.log("Executing GraphQL query:", ordersQuery);
-    console.log("Raw order IDs received:", JSON.stringify(orderIds, null, 2));
-
-    // Let's also try a test query to see if we can fetch ANY orders
-    const testQuery = `
-      query TestOrders {
-        orders(first: 5) {
-          edges {
-            node {
-              id
-              name
-              displayFulfillmentStatus
-              displayFinancialStatus
-            }
-          }
-        }
-      }
-    `;
-
-    console.log("Testing with simple orders query first...");
-    const testResponse = await client.request(testQuery);
-    console.log(
-      "Test query result - Recent orders:",
-      JSON.stringify(testResponse, null, 2)
-    );
-
+    console.log("Orders query:", ordersQuery);
     const response = await client.request<OrderStatusResponse>(ordersQuery);
-    console.log(
-      "GraphQL response received:",
-      JSON.stringify(response, null, 2)
-    );
+    console.log("✅ Orders query response:", JSON.stringify(response, null, 2));
     console.log(
       "Number of orders found by Admin API:",
       response.orders.edges.length

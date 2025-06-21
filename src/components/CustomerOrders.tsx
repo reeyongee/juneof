@@ -109,6 +109,8 @@ export default function CustomerOrders({
   const fetchOrderStatuses = useCallback(async (orderIds: string[]) => {
     if (orderIds.length === 0) return;
 
+    console.log("🔍 About to call order status API with IDs:", orderIds);
+
     try {
       setStatusLoading(true);
       const response = await fetch("/api/customer/order-status", {
@@ -219,6 +221,7 @@ export default function CustomerOrders({
 
           // Fetch detailed order statuses from Admin API
           const orderIds = orderNodes.map((order) => order.id);
+          console.log("🎯 Extracted order IDs for status check:", orderIds);
           await fetchOrderStatuses(orderIds);
         } else {
           console.warn("⚠️ No data received from GraphQL query");
