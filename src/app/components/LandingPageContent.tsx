@@ -76,7 +76,6 @@ export default function LandingPageContent() {
 
     // Check that panels have width
     if (!firstPanel?.offsetWidth || !lastPanel?.offsetWidth) {
-      console.log("Panels don't have width yet");
       return false;
     }
 
@@ -84,7 +83,6 @@ export default function LandingPageContent() {
     for (const img of images) {
       const imgElement = img as HTMLImageElement;
       if (!imgElement.offsetHeight || !imgElement.offsetWidth) {
-        console.log("Image doesn't have dimensions yet:", imgElement.src);
         return false;
       }
     }
@@ -102,13 +100,10 @@ export default function LandingPageContent() {
 
       // Validate dimensions before proceeding
       if (!validateDimensions()) {
-        console.log("Dimensions not ready, retrying...");
         // Retry after a short delay
         setTimeout(() => initializeAnimations(), 100);
         return;
       }
-
-      console.log("Initializing animations with proper dimensions");
 
       const width = window.innerWidth;
       const height = window.innerHeight;
@@ -265,7 +260,6 @@ export default function LandingPageContent() {
 
       // Mark animations as initialized
       animationsInitializedRef.current = true;
-      console.log("Animations successfully initialized");
     } catch (error) {
       console.error("Error initializing animations:", error);
       // Retry after a delay if there was an error
@@ -296,7 +290,7 @@ export default function LandingPageContent() {
   useEffect(() => {
     if (!isHydrated || !imagesLoaded) return;
 
-    console.log("All conditions met, initializing animations");
+    // All conditions met, initializing animations
     initializeAnimations();
 
     // Add resize listener

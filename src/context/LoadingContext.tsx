@@ -51,10 +51,6 @@ export const LoadingProvider: React.FC<LoadingProviderProps> = ({
   const timersRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
 
   const startLoading = useCallback((source: string, minDuration = 1000) => {
-    console.log(
-      `LoadingManager: Starting loading for ${source} with min duration ${minDuration}ms`
-    );
-
     activeLoadersRef.current.add(source);
     setIsGlobalLoading(true);
 
@@ -67,18 +63,11 @@ export const LoadingProvider: React.FC<LoadingProviderProps> = ({
     // Set minimum duration timer - auto-stop after min duration + 1s padding
     const paddedMinDuration = minDuration + 1000; // 0.5s start + actual duration + 0.5s end
     const timer = setTimeout(() => {
-      console.log(
-        `LoadingManager: Auto-stopping ${source} after ${paddedMinDuration}ms`
-      );
-
       activeLoadersRef.current.delete(source);
       timersRef.current.delete(source);
 
       // Only stop global loading if no active loaders
       if (activeLoadersRef.current.size === 0) {
-        console.log(
-          "LoadingManager: All loaders stopped, hiding global loading"
-        );
         setIsGlobalLoading(false);
         setLoadingMessage("");
       }
@@ -89,8 +78,6 @@ export const LoadingProvider: React.FC<LoadingProviderProps> = ({
 
   const stopLoading = useCallback(
     (source: string) => {
-      console.log(`LoadingManager: Manually stopping loading for ${source}`);
-
       // Clear timer and remove from active loaders
       const timer = timersRef.current.get(source);
       if (timer) {
@@ -100,16 +87,8 @@ export const LoadingProvider: React.FC<LoadingProviderProps> = ({
       activeLoadersRef.current.delete(source);
       timersRef.current.delete(source);
 
-      console.log(
-        `LoadingManager: Stopped loading for ${source}. Active loaders:`,
-        Array.from(activeLoadersRef.current)
-      );
-
       // Only stop global loading if no active loaders AND auth flow is not active
       if (activeLoadersRef.current.size === 0 && !isAuthFlowActive) {
-        console.log(
-          "LoadingManager: All loaders stopped, hiding global loading"
-        );
         setIsGlobalLoading(false);
         setLoadingMessage("");
       }
@@ -118,7 +97,6 @@ export const LoadingProvider: React.FC<LoadingProviderProps> = ({
   );
 
   const startAuthFlow = useCallback(() => {
-    console.log("LoadingManager: Starting authentication flow");
     setIsAuthFlowActive(true);
     setIsGlobalLoading(true);
     setLoadingMessage("");
@@ -130,7 +108,6 @@ export const LoadingProvider: React.FC<LoadingProviderProps> = ({
   }, []);
 
   const completeAuthFlow = useCallback(() => {
-    console.log("LoadingManager: Completing authentication flow");
     setIsAuthFlowActive(false);
 
     // Clear auth flow state from sessionStorage
@@ -149,7 +126,6 @@ export const LoadingProvider: React.FC<LoadingProviderProps> = ({
   }, []);
 
   const forceCompleteAuthFlow = useCallback(() => {
-    console.log("LoadingManager: Force completing auth flow");
     setIsAuthFlowActive(false);
     if (typeof window !== "undefined") {
       sessionStorage.removeItem("juneof-auth-flow-active");
@@ -180,7 +156,6 @@ export const LoadingProvider: React.FC<LoadingProviderProps> = ({
         (
           window as typeof window & { clearAuthFlow?: () => void }
         ).clearAuthFlow = () => {
-          console.log("Manual auth flow clear triggered");
           clearTimeout(timeoutId);
           forceCompleteAuthFlow();
         };

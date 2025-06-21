@@ -26,23 +26,13 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
 
   // Prevent scrolling when splash screen is visible
   useEffect(() => {
-    console.log("ClientLayout Splash Effect: showSplash is", showSplash);
     if (showSplash) {
-      console.log(
-        "ClientLayout Splash Effect: Setting body.style.overflow = 'hidden'"
-      );
       document.body.style.overflow = "hidden";
     } else {
-      console.log(
-        "ClientLayout Splash Effect: Setting body.style.overflow = 'unset'"
-      );
       document.body.style.overflow = "unset";
     }
 
     return () => {
-      console.log(
-        "ClientLayout Splash Effect: Cleanup, setting body.style.overflow = 'unset'"
-      );
       document.body.style.overflow = "unset";
     };
   }, [showSplash]);
