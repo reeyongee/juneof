@@ -193,9 +193,16 @@ export default function CustomCursor() {
 
   // Render loop for smooth cursor movement
   const render = useCallback(() => {
-    if (!cursorWrapperRef.current || !isCursorActiveRef.current) {
+    if (!cursorWrapperRef.current) {
       renderLoopRef.current = requestAnimationFrame(render);
       return;
+    }
+
+    // Force cursor active if elements exist but state is wrong
+    if (!isCursorActiveRef.current && cursorWrapperRef.current) {
+      isCursorActiveRef.current = true;
+      document.body.classList.add("custom-cursor-active");
+      document.body.style.cursor = "none";
     }
 
     try {
@@ -413,9 +420,18 @@ export default function CustomCursor() {
     const hasFinePointer = window.matchMedia("(pointer: fine)").matches;
     if (!hasFinePointer) return;
 
-    // Prevent multiple initializations
+    // Allow reinitialization for navigation reliability
+    // Reset any existing state first
     if (isInitializedRef.current) {
-      return;
+      // Clean up existing tweens
+      if (enlargeCursorTweenRef.current) {
+        enlargeCursorTweenRef.current.kill();
+        enlargeCursorTweenRef.current = null;
+      }
+      if (magneticTweenRef.current) {
+        magneticTweenRef.current.kill();
+        magneticTweenRef.current = null;
+      }
     }
 
     // Reset cursor state to prevent phantom element issues
@@ -435,6 +451,8 @@ export default function CustomCursor() {
 
     if (!showSplash) {
       document.body.classList.add("custom-cursor-active");
+      // Ensure default cursor is hidden
+      document.body.style.cursor = "none";
       isCursorActiveRef.current = true;
     }
 
@@ -615,82 +633,70 @@ export default function CustomCursor() {
     stopShapeMonitoring,
   ]);
 
-  // Initialize on mount and pathname changes - but be smarter about it
+  // Initialize on mount and reinitialize on pathname changes for bulletproof reliability
   useEffect(() => {
     if (showSplash) {
       return;
     }
 
-    // For route changes, we don't need to completely reinitialize
-    // Just refresh the magnetic listeners and ensure cursor is active
-    if (isInitializedRef.current) {
-      // Ensure cursor is active and render loop is running
-      if (!isCursorActiveRef.current) {
-        isCursorActiveRef.current = true;
-        document.body.classList.add("custom-cursor-active");
+    // Force complete reinitialization on every pathname change
+    // This is more reliable than trying to partially update
 
-        // Make sure cursor is visible
-        if (cursorWrapperRef.current) {
-          cursorWrapperRef.current.style.display = "block";
-          gsap.set(cursorWrapperRef.current, { autoAlpha: 1 });
-        }
+    // First, clean up any existing state
+    stopRenderLoop();
+    stopShapeMonitoring();
 
-        // Restart render loop if not running
-        if (!renderLoopRef.current) {
-          startRenderLoop();
-        }
-      }
+    // Reset initialization flag to allow fresh init
+    isInitializedRef.current = false;
 
-      // Reset cursor state and capture current mouse position on navigation
-      resetCursorToDefault();
-      captureInitialMousePosition();
+    // Reset all cursor state
+    isStuckRef.current = false;
+    stuckToRef.current = null;
+    isCursorActiveRef.current = false;
 
-      // Add a one-time mouse move listener to immediately update position
-      const handleNavigationMouseMove = (e: MouseEvent) => {
-        mousePos.current = { x: e.clientX, y: e.clientY };
-        currentPos.current = { x: e.clientX, y: e.clientY };
-        document.removeEventListener("mousemove", handleNavigationMouseMove);
-      };
-      document.addEventListener("mousemove", handleNavigationMouseMove, {
-        once: true,
+    // Clean up existing magnetic listeners
+    const existingMagneticElements = document.querySelectorAll(
+      "[data-magnetic-attached]"
+    );
+    existingMagneticElements.forEach((element) => {
+      element.removeEventListener("mouseenter", handleMagneticEnter);
+      element.removeEventListener("mouseleave", handleMagneticLeave);
+      element.removeAttribute("data-magnetic-attached");
+    });
+
+    // Small delay to ensure DOM is ready and any transitions are complete
+    const initTimeout = setTimeout(() => {
+      // Fresh initialization
+      const cleanup = initializeCursor();
+
+      // Store cleanup function for this pathname
+      return cleanup;
+    }, 50);
+
+    // Cleanup function
+    return () => {
+      clearTimeout(initTimeout);
+      stopRenderLoop();
+      stopShapeMonitoring();
+
+      // Clean up magnetic listeners
+      const magneticElements = document.querySelectorAll(
+        "[data-magnetic-attached]"
+      );
+      magneticElements.forEach((element) => {
+        element.removeEventListener("mouseenter", handleMagneticEnter);
+        element.removeEventListener("mouseleave", handleMagneticLeave);
+        element.removeAttribute("data-magnetic-attached");
       });
-
-      setTimeout(() => {
-        const existingMagneticElements = document.querySelectorAll(
-          "[data-magnetic-attached]"
-        );
-        existingMagneticElements.forEach((element) => {
-          element.removeEventListener("mouseenter", handleMagneticEnter);
-          element.removeEventListener("mouseleave", handleMagneticLeave);
-          element.removeAttribute("data-magnetic-attached");
-        });
-
-        // Reattach to new elements
-        const magneticElements = document.querySelectorAll("button, a");
-        magneticElements.forEach((element) => {
-          if (!element.hasAttribute("data-magnetic-attached")) {
-            element.addEventListener("mouseenter", handleMagneticEnter);
-            element.addEventListener("mouseleave", handleMagneticLeave);
-            element.setAttribute("data-magnetic-attached", "true");
-          }
-        });
-      }, 100);
-
-      return;
-    }
-
-    // Full initialization only if not initialized yet
-    const cleanup = initializeCursor();
-    return cleanup;
+    };
   }, [
-    initializeCursor,
     pathname,
     showSplash,
+    initializeCursor,
     handleMagneticEnter,
     handleMagneticLeave,
-    startRenderLoop,
-    resetCursorToDefault,
-    captureInitialMousePosition,
+    stopRenderLoop,
+    stopShapeMonitoring,
   ]);
 
   // Handle splash screen visibility changes
@@ -745,6 +751,8 @@ export default function CustomCursor() {
 
       if (isCursorActiveRef.current) {
         document.body.classList.remove("custom-cursor-active");
+        // Restore default cursor
+        document.body.style.cursor = "auto";
         isCursorActiveRef.current = false;
       }
 
