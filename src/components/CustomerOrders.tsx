@@ -490,8 +490,7 @@ export default function CustomerOrders({
                           <p className="text-sm lowercase tracking-wider text-gray-600">
                             we&apos;re working on shipping your product soon.
                             you may cancel the order now. cancellation is not
-                            possible once the order is shipped out. refund in
-                            2-3 working days.
+                            possible once the order is shipped out.
                           </p>
                         )}
                       </div>
@@ -691,19 +690,6 @@ export default function CustomerOrders({
                           </div>
                         </div>
                       ))}
-
-                      {/* Order Summary */}
-                      <div className="flex justify-between items-center pt-4 border-t border-gray-200">
-                        <span className="font-medium lowercase tracking-wider text-black">
-                          total
-                        </span>
-                        <span className="font-medium text-black">
-                          {formatPrice(
-                            order.totalPrice.amount,
-                            order.totalPrice.currencyCode
-                          )}
-                        </span>
-                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -722,10 +708,6 @@ export default function CustomerOrders({
             </DialogTitle>
             <DialogDescription className="lowercase tracking-wider text-gray-600">
               are you sure? you will receive a refund in 2-3 days.
-              <br />
-              <span className="font-medium">
-                note: once fulfilled you cannot cancel this order
-              </span>
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex-col-reverse sm:flex-row sm:justify-end gap-2">
