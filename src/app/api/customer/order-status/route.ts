@@ -95,11 +95,43 @@ export async function POST(request: NextRequest) {
     `;
 
     console.log("Executing GraphQL query:", ordersQuery);
+    console.log("Raw order IDs received:", JSON.stringify(orderIds, null, 2));
+
+    // Let's also try a test query to see if we can fetch ANY orders
+    const testQuery = `
+      query TestOrders {
+        orders(first: 5) {
+          edges {
+            node {
+              id
+              name
+              displayFulfillmentStatus
+              displayFinancialStatus
+            }
+          }
+        }
+      }
+    `;
+
+    console.log("Testing with simple orders query first...");
+    const testResponse = await client.request(testQuery);
+    console.log(
+      "Test query result - Recent orders:",
+      JSON.stringify(testResponse, null, 2)
+    );
 
     const response = await client.request<OrderStatusResponse>(ordersQuery);
     console.log(
       "GraphQL response received:",
       JSON.stringify(response, null, 2)
+    );
+    console.log(
+      "Number of orders found by Admin API:",
+      response.orders.edges.length
+    );
+    console.log(
+      "Order IDs found:",
+      response.orders.edges.map((edge) => edge.node.id)
     );
 
     // Transform the response to a more usable format
