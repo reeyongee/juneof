@@ -8,8 +8,8 @@ interface OrderStatusResponse {
         id: string;
         cancelledAt: string | null;
         cancelReason: string | null;
-        fulfillmentStatus: string;
-        financialStatus: string;
+        displayFulfillmentStatus: string;
+        displayFinancialStatus: string;
       };
     }>;
   };
@@ -72,8 +72,8 @@ export async function POST(request: NextRequest) {
               id
               cancelledAt
               cancelReason
-              fulfillmentStatus
-              financialStatus
+              displayFulfillmentStatus
+              displayFinancialStatus
             }
           }
         }
@@ -88,8 +88,8 @@ export async function POST(request: NextRequest) {
         id: node.id,
         cancelledAt: node.cancelledAt,
         cancelReason: node.cancelReason,
-        fulfillmentStatus: node.fulfillmentStatus,
-        financialStatus: node.financialStatus,
+        fulfillmentStatus: node.displayFulfillmentStatus,
+        financialStatus: node.displayFinancialStatus,
         isCancelled: node.cancelledAt !== null,
       };
       return acc;
