@@ -248,7 +248,7 @@ export default function CustomCursor() {
       });
 
       renderLoopRef.current = requestAnimationFrame(render);
-    } catch (error) {
+    } catch {
       resetCursorToDefault();
       renderLoopRef.current = requestAnimationFrame(render);
     }
@@ -485,7 +485,7 @@ export default function CustomCursor() {
       // Attach magnetic event listeners to buttons and links
       const magneticElements = document.querySelectorAll("button, a");
 
-      magneticElements.forEach((element, index) => {
+      magneticElements.forEach((element) => {
         // Skip if already has magnetic listeners
         if (element.hasAttribute("data-magnetic-attached")) return;
 
@@ -611,7 +611,6 @@ export default function CustomCursor() {
     fullCursorSize,
     easing,
     showSplash,
-    pathname,
     startShapeMonitoring,
     stopShapeMonitoring,
   ]);
