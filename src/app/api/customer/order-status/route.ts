@@ -74,13 +74,13 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Build the query with order IDs
-    const orderIdsString = orderIds.map((id) => `"${id}"`).join(", ");
-    console.log("Order IDs string for query:", orderIdsString);
+    // Build the query with order IDs using OR operator for multiple IDs
+    const orderIdsQuery = orderIds.map((id) => `id:${id}`).join(" OR ");
+    console.log("Order IDs query for GraphQL:", orderIdsQuery);
 
     const ordersQuery = `
       query GetOrdersStatus {
-        orders(first: 50, query: "id:${orderIdsString}") {
+        orders(first: 50, query: "${orderIdsQuery}") {
           edges {
             node {
               id
