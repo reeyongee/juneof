@@ -16,6 +16,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { X, Loader2, RotateCcw } from "lucide-react";
 
 import {
@@ -94,6 +102,8 @@ export default function CustomerOrders({
     Record<string, OrderStatus>
   >({});
   const [statusLoading, setStatusLoading] = useState(false);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [orderToCancel, setOrderToCancel] = useState<OrderNode | null>(null);
   const hasFetchedRef = useRef(false);
   // Note: Cart functions removed since reorder functionality is temporarily disabled
   // const { addItemToCart, proceedToCheckout } = useCart();
@@ -484,7 +494,10 @@ export default function CustomerOrders({
                         </div>
                         {canCancelOrder(order) && (
                           <Button
-                            onClick={() => cancelOrder(order.id)}
+                            onClick={() => {
+                              setOrderToCancel(order);
+                              setShowCancelDialog(true);
+                            }}
                             disabled={cancellingOrderId === order.id}
                             variant="outline"
                             size="sm"
@@ -770,6 +783,57 @@ export default function CustomerOrders({
           </div>
         </div>
       )}
+
+      {/* Cancel Order Confirmation Dialog */}
+      <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="lowercase tracking-wider text-black">
+              cancel order {orderToCancel?.name}?
+            </DialogTitle>
+            <DialogDescription className="lowercase tracking-wider text-gray-600">
+              are you sure? you will receive a refund in 2-3 days.
+              <br />
+              <span className="font-medium">
+                note: once fulfilled you cannot cancel this order
+              </span>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-col-reverse sm:flex-row sm:justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowCancelDialog(false);
+                setOrderToCancel(null);
+              }}
+              className="lowercase tracking-wider"
+            >
+              close
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={async () => {
+                if (orderToCancel) {
+                  setShowCancelDialog(false);
+                  await cancelOrder(orderToCancel.id);
+                  setOrderToCancel(null);
+                }
+              }}
+              disabled={cancellingOrderId === orderToCancel?.id}
+              className="lowercase tracking-wider"
+            >
+              {cancellingOrderId === orderToCancel?.id ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  cancelling...
+                </>
+              ) : (
+                "confirm"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
