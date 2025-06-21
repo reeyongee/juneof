@@ -24,7 +24,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { X, Loader2, RotateCcw } from "lucide-react";
+import { X, Loader2 } from "lucide-react";
 
 import {
   ShopifyAuthConfig,
@@ -95,9 +95,6 @@ export default function CustomerOrders({
   const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(
     null
   );
-  const [reorderingOrderId, setReorderingOrderId] = useState<string | null>(
-    null
-  );
   const [orderStatuses, setOrderStatuses] = useState<
     Record<string, OrderStatus>
   >({});
@@ -105,8 +102,6 @@ export default function CustomerOrders({
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [orderToCancel, setOrderToCancel] = useState<OrderNode | null>(null);
   const hasFetchedRef = useRef(false);
-  // Note: Cart functions removed since reorder functionality is temporarily disabled
-  // const { addItemToCart, proceedToCheckout } = useCart();
 
   // Memoize config to prevent unnecessary re-renders
   const memoizedConfig = useMemo(
@@ -295,26 +290,6 @@ export default function CustomerOrders({
     });
   };
 
-  // Get status color
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "fulfilled":
-      case "paid":
-        return "text-green-600";
-      case "pending":
-      case "partially_fulfilled":
-        return "text-yellow-600";
-      case "unfulfilled":
-      case "unpaid":
-        return "text-red-600";
-      case "cancelled":
-      case "canceled":
-        return "text-gray-600";
-      default:
-        return "text-gray-600";
-    }
-  };
-
   // Cancel order function
   const cancelOrder = async (orderId: string) => {
     try {
@@ -361,28 +336,6 @@ export default function CustomerOrders({
   const isCancelledOrder = (order: OrderNode) => {
     const status = orderStatuses[order.id];
     return status?.isCancelled || false;
-  };
-
-  // Reorder function
-  const reorderItems = async (order: OrderNode) => {
-    try {
-      setReorderingOrderId(order.id);
-
-      // Note: Customer Account API doesn't provide variant IDs or product handles
-      // We'll need to implement a different approach for reordering
-      // For now, show a message directing users to browse the store
-      setError(
-        "Reordering is currently not available. Please browse our store to add items to your cart."
-      );
-
-      // Alternative: Could redirect to a specific collection page or search
-      // window.location.href = "/collections/all";
-    } catch (error) {
-      console.error("❌ Error reordering items:", error);
-      setError("Failed to reorder items. Please try again.");
-    } finally {
-      setReorderingOrderId(null);
-    }
   };
 
   // Separate current, past, and cancelled orders
@@ -472,52 +425,6 @@ export default function CustomerOrders({
                         placed on {formatDate(order.processedAt)}
                       </CardDescription>
                     </div>
-                    <div className="text-right">
-                      <div className="flex flex-col items-end space-y-2">
-                        <div>
-                          <p
-                            className={`text-sm lowercase tracking-wider ${getStatusColor(
-                              order.fulfillmentStatus
-                            )}`}
-                          >
-                            {order.fulfillmentStatus
-                              .toLowerCase()
-                              .replace("_", " ")}
-                          </p>
-                          <p
-                            className={`text-sm lowercase tracking-wider ${getStatusColor(
-                              order.financialStatus
-                            )}`}
-                          >
-                            {order.financialStatus.toLowerCase()}
-                          </p>
-                        </div>
-                        {canCancelOrder(order) && (
-                          <Button
-                            onClick={() => {
-                              setOrderToCancel(order);
-                              setShowCancelDialog(true);
-                            }}
-                            disabled={cancellingOrderId === order.id}
-                            variant="outline"
-                            size="sm"
-                            className="border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400 text-xs lowercase tracking-wider"
-                          >
-                            {cancellingOrderId === order.id ? (
-                              <>
-                                <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                                cancelling...
-                              </>
-                            ) : (
-                              <>
-                                <X className="mr-1 h-3 w-3" />
-                                cancel
-                              </>
-                            )}
-                          </Button>
-                        )}
-                      </div>
-                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -570,6 +477,49 @@ export default function CustomerOrders({
                           order.totalPrice.currencyCode
                         )}
                       </span>
+                    </div>
+
+                    {/* Order Status and Actions */}
+                    <div className="flex justify-between items-start pt-4 border-t border-gray-200">
+                      <div className="flex-1">
+                        {order.fulfillmentStatus === "FULFILLED" ? (
+                          <p className="text-sm lowercase tracking-wider text-green-600">
+                            order shipped!
+                          </p>
+                        ) : (
+                          <p className="text-sm lowercase tracking-wider text-gray-600">
+                            we&apos;re working on shipping your product soon.
+                            you may cancel the order now. cancellation is not
+                            possible once the order is shipped out. refund in
+                            2-3 working days.
+                          </p>
+                        )}
+                      </div>
+                      {order.fulfillmentStatus !== "FULFILLED" &&
+                        canCancelOrder(order) && (
+                          <Button
+                            onClick={() => {
+                              setOrderToCancel(order);
+                              setShowCancelDialog(true);
+                            }}
+                            disabled={cancellingOrderId === order.id}
+                            variant="outline"
+                            size="sm"
+                            className="border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400 text-xs lowercase tracking-wider ml-4"
+                          >
+                            {cancellingOrderId === order.id ? (
+                              <>
+                                <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                                cancelling...
+                              </>
+                            ) : (
+                              <>
+                                <X className="mr-1 h-3 w-3" />
+                                cancel
+                              </>
+                            )}
+                          </Button>
+                        )}
                     </div>
                   </div>
                 </CardContent>
@@ -598,11 +548,6 @@ export default function CustomerOrders({
                         completed on {formatDate(order.processedAt)}
                       </CardDescription>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm lowercase tracking-wider text-green-600">
-                        completed
-                      </p>
-                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -655,6 +600,13 @@ export default function CustomerOrders({
                           order.totalPrice.currencyCode
                         )}
                       </span>
+                    </div>
+
+                    {/* Order Status */}
+                    <div className="pt-4 border-t border-gray-200">
+                      <p className="text-sm lowercase tracking-wider text-green-600">
+                        order shipped!
+                      </p>
                     </div>
                   </div>
                 </CardContent>
@@ -695,32 +647,9 @@ export default function CustomerOrders({
                         )}
                       </div>
                       <div className="text-right">
-                        <div className="flex flex-col items-end space-y-2">
-                          <div>
-                            <p className="text-sm lowercase tracking-wider text-gray-600">
-                              cancelled
-                            </p>
-                          </div>
-                          <Button
-                            onClick={() => reorderItems(order)}
-                            disabled={reorderingOrderId === order.id}
-                            variant="outline"
-                            size="sm"
-                            className="border-blue-300 text-blue-600 hover:bg-blue-50 hover:border-blue-400 text-xs lowercase tracking-wider"
-                          >
-                            {reorderingOrderId === order.id ? (
-                              <>
-                                <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                                reordering...
-                              </>
-                            ) : (
-                              <>
-                                <RotateCcw className="mr-1 h-3 w-3" />
-                                reorder
-                              </>
-                            )}
-                          </Button>
-                        </div>
+                        <p className="text-sm lowercase tracking-wider text-gray-600">
+                          cancelled
+                        </p>
                       </div>
                     </div>
                   </CardHeader>
