@@ -35,8 +35,8 @@ interface OrderNode {
     amount: string;
     currencyCode: string;
   };
-  displayFulfillmentStatus: string;
-  displayFinancialStatus: string;
+  fulfillmentStatus: string;
+  financialStatus: string;
   lineItems: {
     edges: Array<{
       node: {
@@ -172,8 +172,8 @@ export default function CustomerOrders({
                         amount
                         currencyCode
                       }
-                      displayFulfillmentStatus
-                      displayFinancialStatus
+                      fulfillmentStatus
+                      financialStatus
                       lineItems(first: 10) {
                         edges {
                           node {
@@ -339,7 +339,7 @@ export default function CustomerOrders({
   const canCancelOrder = (order: OrderNode) => {
     const status = orderStatuses[order.id];
     return (
-      order.displayFulfillmentStatus !== "FULFILLED" &&
+      order.fulfillmentStatus !== "FULFILLED" &&
       (!status || !status.isCancelled)
     );
   };
@@ -376,15 +376,15 @@ export default function CustomerOrders({
   const currentOrders = orders.filter(
     (order) =>
       !isCancelledOrder(order) &&
-      (order.displayFulfillmentStatus !== "FULFILLED" ||
-        order.displayFinancialStatus !== "PAID")
+      (order.fulfillmentStatus !== "FULFILLED" ||
+        order.financialStatus !== "PAID")
   );
 
   const pastOrders = orders.filter(
     (order) =>
       !isCancelledOrder(order) &&
-      order.displayFulfillmentStatus === "FULFILLED" &&
-      order.displayFinancialStatus === "PAID"
+      order.fulfillmentStatus === "FULFILLED" &&
+      order.financialStatus === "PAID"
   );
 
   const cancelledOrders = orders.filter((order) => isCancelledOrder(order));
@@ -464,19 +464,19 @@ export default function CustomerOrders({
                         <div>
                           <p
                             className={`text-sm lowercase tracking-wider ${getStatusColor(
-                              order.displayFulfillmentStatus
+                              order.fulfillmentStatus
                             )}`}
                           >
-                            {order.displayFulfillmentStatus
+                            {order.fulfillmentStatus
                               .toLowerCase()
                               .replace("_", " ")}
                           </p>
                           <p
                             className={`text-sm lowercase tracking-wider ${getStatusColor(
-                              order.displayFinancialStatus
+                              order.financialStatus
                             )}`}
                           >
-                            {order.displayFinancialStatus.toLowerCase()}
+                            {order.financialStatus.toLowerCase()}
                           </p>
                         </div>
                         {canCancelOrder(order) && (
