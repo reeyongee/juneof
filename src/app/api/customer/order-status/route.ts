@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
 
     // Create GraphQL client for Admin API
     const client = new GraphQLClient(
-      `https://${shopDomain}/admin/api/2024-10/graphql.json`,
+      `https://${shopDomain}/admin/api/2025-04/graphql.json`,
       {
         headers: {
           "X-Shopify-Access-Token": adminApiToken,
