@@ -1,12 +1,42 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import SizeChart from "../../components/SizeChart";
 import WashCareOverlay from "../../components/WashCareOverlay";
 import Image from "next/image";
 import { useCart } from "@/context/CartContext";
 import { ShopifyProductDetails } from "@/lib/shopify";
+
+// Mobile detection hook
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkDevice = () => {
+      const userAgent =
+        navigator.userAgent ||
+        navigator.vendor ||
+        (window as unknown as { opera?: string }).opera ||
+        "";
+      const mobileRegex =
+        /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i;
+      const isMobileDevice = mobileRegex.test(userAgent.toLowerCase());
+      const isSmallScreen = window.innerWidth <= 768;
+
+      setIsMobile(isMobileDevice || isSmallScreen);
+    };
+
+    checkDevice();
+    window.addEventListener("resize", checkDevice);
+
+    return () => {
+      window.removeEventListener("resize", checkDevice);
+    };
+  }, []);
+
+  return isMobile;
+};
 
 interface ProductPageClientProps {
   product: ShopifyProductDetails;
@@ -42,7 +72,15 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
   const [selectedSize, setSelectedSize] = useState("in between");
   const [isSizeChartOpen, setIsSizeChartOpen] = useState(false);
   const [isWashCareOpen, setIsWashCareOpen] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [expandedSections, setExpandedSections] = useState({
+    details: false,
+    sizing: false,
+    care: false,
+  });
   const { addItemToCart } = useCart();
+  const isMobile = useIsMobile();
+  const imageGalleryRef = useRef<HTMLDivElement>(null);
 
   const searchParams = useSearchParams();
 
@@ -61,6 +99,22 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
       setSelectedSize(sizeFromUrl);
     }
   }, [searchParams]); // Include searchParams in dependency array
+
+  // Track scroll position for mobile image gallery
+  useEffect(() => {
+    if (!isMobile || !imageGalleryRef.current) return;
+
+    const gallery = imageGalleryRef.current;
+    const handleScroll = () => {
+      const scrollLeft = gallery.scrollLeft;
+      const itemWidth = gallery.offsetWidth;
+      const currentIndex = Math.round(scrollLeft / itemWidth);
+      setCurrentImageIndex(currentIndex);
+    };
+
+    gallery.addEventListener("scroll", handleScroll);
+    return () => gallery.removeEventListener("scroll", handleScroll);
+  }, [isMobile]);
 
   // Handler to update size selection without URL changes
   const handleSizeSelect = useCallback((newSize: string) => {
@@ -86,9 +140,260 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
     console.log("Added to cart:", productToAdd);
   };
 
+  // Handle image navigation for mobile
+  const handleImageSwipe = (direction: "left" | "right") => {
+    const imageCount = product.images.edges.length || 4; // fallback to 4 for demo images
+    if (direction === "left" && currentImageIndex > 0) {
+      setCurrentImageIndex(currentImageIndex - 1);
+    } else if (direction === "right" && currentImageIndex < imageCount - 1) {
+      setCurrentImageIndex(currentImageIndex + 1);
+    }
+  };
+
+  // Handle section expansion for mobile
+  const toggleSection = (section: keyof typeof expandedSections) => {
+    setExpandedSections((prev) => ({
+      ...prev,
+      [section]: !prev[section],
+    }));
+  };
+
   const price = parseFloat(product.priceRange.minVariantPrice.amount);
   const currencyCode = product.priceRange.minVariantPrice.currencyCode;
 
+  // Get images for rendering
+  const images =
+    product.images.edges.length > 0
+      ? product.images.edges.map((edge) => edge.node)
+      : [
+          {
+            url: "https://picsum.photos/id/11/600/1000",
+            altText: "Product image 1",
+          },
+          {
+            url: "https://picsum.photos/id/22/900/600",
+            altText: "Product image 2",
+          },
+          {
+            url: "https://picsum.photos/id/33/700/800",
+            altText: "Product image 3",
+          },
+          {
+            url: "https://picsum.photos/id/44/850/1200",
+            altText: "Product image 4",
+          },
+        ];
+
+  if (isMobile) {
+    // Mobile Layout
+    return (
+      <>
+        <main className="min-h-screen bg-[#F8F4EC] text-gray-900">
+          {/* Mobile Header */}
+          <div className="sticky top-0 bg-[#F8F4EC] z-10 border-b border-gray-300 p-4">
+            <div className="flex justify-between items-center">
+              <h1 className="text-lg font-medium tracking-widest lowercase">
+                {product.title.toLowerCase()}
+              </h1>
+              <span className="text-lg font-medium">
+                {formatPrice(price, currencyCode)}
+              </span>
+            </div>
+          </div>
+
+          {/* Mobile Image Gallery */}
+          <div className="relative">
+            <div
+              ref={imageGalleryRef}
+              className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide"
+              style={{ scrollBehavior: "smooth" }}
+            >
+              {images.map((image, index) => (
+                <div key={index} className="flex-shrink-0 w-full snap-center">
+                  <Image
+                    src={image.url}
+                    alt={
+                      image.altText || `${product.title} - Image ${index + 1}`
+                    }
+                    width={400}
+                    height={600}
+                    className="w-full h-auto"
+                    priority={index === 0}
+                    draggable={false}
+                  />
+                </div>
+              ))}
+            </div>
+
+            {/* Image Navigation Dots */}
+            <div className="flex justify-center space-x-2 py-4">
+              {images.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => {
+                    setCurrentImageIndex(index);
+                    if (imageGalleryRef.current) {
+                      imageGalleryRef.current.scrollTo({
+                        left: index * imageGalleryRef.current.offsetWidth,
+                        behavior: "smooth",
+                      });
+                    }
+                  }}
+                  className={`w-2 h-2 rounded-full transition-colors ${
+                    index === currentImageIndex ? "bg-gray-900" : "bg-gray-300"
+                  }`}
+                />
+              ))}
+            </div>
+
+            {/* Navigation Arrows */}
+            <button
+              onClick={() => handleImageSwipe("left")}
+              className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 rounded-full p-2 shadow-md"
+              disabled={currentImageIndex === 0}
+            >
+              ←
+            </button>
+            <button
+              onClick={() => handleImageSwipe("right")}
+              className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 rounded-full p-2 shadow-md"
+              disabled={currentImageIndex === images.length - 1}
+            >
+              →
+            </button>
+          </div>
+
+          {/* Mobile Product Info */}
+          <div className="p-4 space-y-6">
+            {/* Size Selection */}
+            <div>
+              <h3 className="text-sm tracking-widest lowercase mb-3 text-gray-700">
+                select size
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {sizes.map((size) => (
+                  <button
+                    key={size}
+                    onClick={() => handleSizeSelect(size)}
+                    className={`px-4 py-2 border rounded-full text-sm tracking-wide lowercase transition-colors ${
+                      selectedSize === size
+                        ? "bg-gray-900 text-white border-gray-900"
+                        : "bg-white text-gray-700 border-gray-300 hover:border-gray-500"
+                    }`}
+                  >
+                    {size}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Expandable Sections */}
+            <div className="space-y-4">
+              {/* Product Details */}
+              <div className="border-b border-gray-200">
+                <button
+                  onClick={() => toggleSection("details")}
+                  className="w-full flex justify-between items-center py-3 text-left"
+                >
+                  <span className="text-sm tracking-widest lowercase">
+                    product details
+                  </span>
+                  <span className="text-lg">
+                    {expandedSections.details ? "−" : "+"}
+                  </span>
+                </button>
+                {expandedSections.details && (
+                  <div className="pb-4 space-y-2 text-sm tracking-wider text-gray-700">
+                    {product.description && (
+                      <p className="lowercase">{product.description}</p>
+                    )}
+                    {product.tags.length > 0 && (
+                      <p className="lowercase">{product.tags.join(" • ")}</p>
+                    )}
+                    {product.vendor && (
+                      <p className="lowercase">by {product.vendor}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Size & Fit */}
+              <div className="border-b border-gray-200">
+                <button
+                  onClick={() => toggleSection("sizing")}
+                  className="w-full flex justify-between items-center py-3 text-left"
+                >
+                  <span className="text-sm tracking-widest lowercase">
+                    size & fit
+                  </span>
+                  <span className="text-lg">
+                    {expandedSections.sizing ? "−" : "+"}
+                  </span>
+                </button>
+                {expandedSections.sizing && (
+                  <div className="pb-4">
+                    <button
+                      onClick={() => setIsSizeChartOpen(true)}
+                      className="text-sm tracking-widest lowercase hover:text-gray-600 transition-colors underline"
+                    >
+                      view size chart
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Care Instructions */}
+              <div className="border-b border-gray-200">
+                <button
+                  onClick={() => toggleSection("care")}
+                  className="w-full flex justify-between items-center py-3 text-left"
+                >
+                  <span className="text-sm tracking-widest lowercase">
+                    care instructions
+                  </span>
+                  <span className="text-lg">
+                    {expandedSections.care ? "−" : "+"}
+                  </span>
+                </button>
+                {expandedSections.care && (
+                  <div className="pb-4">
+                    <button
+                      onClick={() => setIsWashCareOpen(true)}
+                      className="text-sm tracking-widest lowercase hover:text-gray-600 transition-colors underline"
+                    >
+                      view wash care guide
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Sticky Add to Cart - Mobile */}
+          <div className="sticky bottom-0 bg-[#F8F4EC] border-t border-gray-300 p-4">
+            <button
+              className="w-full border border-gray-900 py-4 text-center text-base tracking-widest hover:bg-gray-100 transition-colors lowercase"
+              onClick={handleAddToCart}
+            >
+              add to cart
+            </button>
+          </div>
+        </main>
+
+        {/* Render Overlays */}
+        <SizeChart
+          isOpen={isSizeChartOpen}
+          onClose={() => setIsSizeChartOpen(false)}
+        />
+        <WashCareOverlay
+          isOpen={isWashCareOpen}
+          onClose={() => setIsWashCareOpen(false)}
+        />
+      </>
+    );
+  }
+
+  // Desktop Layout (Original)
   return (
     <>
       <main className="flex min-h-screen bg-[#F8F4EC] text-gray-900">

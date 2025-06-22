@@ -528,3 +528,12 @@ input[type="text"]:invalid:not(:focus):not(:placeholder-shown) {
   margin-top: 4px;
   position: relative;
 }
+
+/* Hide scrollbar for mobile image gallery */
+.scrollbar-hide {
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
+  scrollbar-width: none; /* Firefox */
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Safari and Chrome */
+}
