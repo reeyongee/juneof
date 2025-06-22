@@ -92,6 +92,29 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
     "extra curvy",
   ];
 
+  // Get images for rendering
+  const images =
+    product.images.edges.length > 0
+      ? product.images.edges.map((edge) => edge.node)
+      : [
+          {
+            url: "https://picsum.photos/id/11/600/1000",
+            altText: "Product image 1",
+          },
+          {
+            url: "https://picsum.photos/id/22/900/600",
+            altText: "Product image 2",
+          },
+          {
+            url: "https://picsum.photos/id/33/700/800",
+            altText: "Product image 3",
+          },
+          {
+            url: "https://picsum.photos/id/44/850/1200",
+            altText: "Product image 4",
+          },
+        ];
+
   // Initialize size from URL parameter on mount only
   useEffect(() => {
     const sizeFromUrl = searchParams.get("size");
@@ -100,21 +123,68 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
     }
   }, [searchParams]); // Include searchParams in dependency array
 
-  // Track scroll position for mobile image gallery
+  // Track scroll position for mobile image gallery with looping
   useEffect(() => {
     if (!isMobile || !imageGalleryRef.current) return;
 
     const gallery = imageGalleryRef.current;
+    const imageCount = images.length;
+    let touchStartX = 0;
+    let touchEndX = 0;
+
     const handleScroll = () => {
       const scrollLeft = gallery.scrollLeft;
       const itemWidth = gallery.offsetWidth;
       const currentIndex = Math.round(scrollLeft / itemWidth);
-      setCurrentImageIndex(currentIndex);
+      setCurrentImageIndex(Math.max(0, Math.min(currentIndex, imageCount - 1)));
+    };
+
+    const handleTouchStart = (e: TouchEvent) => {
+      touchStartX = e.changedTouches[0].screenX;
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      touchEndX = e.changedTouches[0].screenX;
+      handleSwipeGesture();
+    };
+
+    const handleSwipeGesture = () => {
+      const swipeThreshold = 50; // Minimum distance for a swipe
+      const swipeDistance = touchStartX - touchEndX;
+
+      if (Math.abs(swipeDistance) > swipeThreshold) {
+        if (swipeDistance > 0) {
+          // Swiped left, go to next image
+          const newIndex =
+            currentImageIndex === imageCount - 1 ? 0 : currentImageIndex + 1;
+          setCurrentImageIndex(newIndex);
+          gallery.scrollTo({
+            left: newIndex * gallery.offsetWidth,
+            behavior: "smooth",
+          });
+        } else {
+          // Swiped right, go to previous image
+          const newIndex =
+            currentImageIndex === 0 ? imageCount - 1 : currentImageIndex - 1;
+          setCurrentImageIndex(newIndex);
+          gallery.scrollTo({
+            left: newIndex * gallery.offsetWidth,
+            behavior: "smooth",
+          });
+        }
+      }
     };
 
     gallery.addEventListener("scroll", handleScroll);
-    return () => gallery.removeEventListener("scroll", handleScroll);
-  }, [isMobile]);
+    gallery.addEventListener("touchstart", handleTouchStart);
+    gallery.addEventListener("touchend", handleTouchEnd);
+
+    return () => {
+      gallery.removeEventListener("scroll", handleScroll);
+      gallery.removeEventListener("touchstart", handleTouchStart);
+      gallery.removeEventListener("touchend", handleTouchEnd);
+    };
+  }, [isMobile, images.length, currentImageIndex]);
 
   // Handler to update size selection without URL changes
   const handleSizeSelect = useCallback((newSize: string) => {
@@ -177,29 +247,6 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
   const price = parseFloat(product.priceRange.minVariantPrice.amount);
   const currencyCode = product.priceRange.minVariantPrice.currencyCode;
 
-  // Get images for rendering
-  const images =
-    product.images.edges.length > 0
-      ? product.images.edges.map((edge) => edge.node)
-      : [
-          {
-            url: "https://picsum.photos/id/11/600/1000",
-            altText: "Product image 1",
-          },
-          {
-            url: "https://picsum.photos/id/22/900/600",
-            altText: "Product image 2",
-          },
-          {
-            url: "https://picsum.photos/id/33/700/800",
-            altText: "Product image 3",
-          },
-          {
-            url: "https://picsum.photos/id/44/850/1200",
-            altText: "Product image 4",
-          },
-        ];
-
   if (isMobile) {
     // Mobile Layout
     return (
@@ -225,10 +272,7 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
               style={{ scrollBehavior: "smooth" }}
             >
               {images.map((image, index) => (
-                <div
-                  key={index}
-                  className="relative flex-shrink-0 w-full snap-center"
-                >
+                <div key={index} className="flex-shrink-0 w-full snap-center">
                   <Image
                     src={image.url}
                     alt={
@@ -236,59 +280,31 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
                     }
                     width={400}
                     height={600}
-                    className="w-full h-auto"
+                    className="w-full h-auto max-h-[70vh] object-cover"
                     priority={index === 0}
                     draggable={false}
                   />
-
-                  {/* Left Navigation Button */}
-                  <button
-                    onClick={() => handleImageSwipe("left")}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white rounded-full p-3 shadow-lg transition-all duration-200 hover:scale-110"
-                    aria-label="Previous image"
-                  >
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 16 16"
-                      fill="none"
-                      className="text-gray-900"
-                    >
-                      <path
-                        d="M10 12L6 8L10 4"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </button>
-
-                  {/* Right Navigation Button */}
-                  <button
-                    onClick={() => handleImageSwipe("right")}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white rounded-full p-3 shadow-lg transition-all duration-200 hover:scale-110"
-                    aria-label="Next image"
-                  >
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 16 16"
-                      fill="none"
-                      className="text-gray-900"
-                    >
-                      <path
-                        d="M6 4L10 8L6 12"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </button>
                 </div>
               ))}
             </div>
+
+            {/* Left Arrow - Fixed Position */}
+            <button
+              onClick={() => handleImageSwipe("left")}
+              className="absolute left-2 top-1/2 -translate-y-1/2 z-10 text-white text-2xl font-bold bg-black/30 hover:bg-black/50 rounded-full w-10 h-10 flex items-center justify-center transition-all"
+              aria-label="Previous image"
+            >
+              ←
+            </button>
+
+            {/* Right Arrow - Fixed Position */}
+            <button
+              onClick={() => handleImageSwipe("right")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 z-10 text-white text-2xl font-bold bg-black/30 hover:bg-black/50 rounded-full w-10 h-10 flex items-center justify-center transition-all"
+              aria-label="Next image"
+            >
+              →
+            </button>
 
             {/* Image Navigation Dots */}
             <div className="flex justify-center space-x-2 py-4">
