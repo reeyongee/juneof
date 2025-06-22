@@ -1,11 +1,45 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useSplash } from "@/context/SplashContext";
 import gsap from "gsap";
 
+// Custom hook to detect mobile devices
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkDevice = () => {
+      const userAgent =
+        navigator.userAgent ||
+        navigator.vendor ||
+        (window as unknown as { opera?: string }).opera ||
+        "";
+      const mobileRegex =
+        /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i;
+      const isMobileDevice = mobileRegex.test(userAgent.toLowerCase());
+      const isSmallScreen = window.innerWidth <= 768; // Consider screens <= 768px as mobile
+
+      setIsMobile(isMobileDevice || isSmallScreen);
+    };
+
+    // Check on mount
+    checkDevice();
+
+    // Check on resize
+    window.addEventListener("resize", checkDevice);
+
+    return () => {
+      window.removeEventListener("resize", checkDevice);
+    };
+  }, []);
+
+  return isMobile;
+};
+
 export default function CustomCursor() {
+  const isMobile = useIsMobile();
   const cursorWrapperRef = useRef<HTMLDivElement>(null);
   const outerCursorRef = useRef<HTMLDivElement>(null);
   const innerCursorRef = useRef<HTMLDivElement>(null);
@@ -743,6 +777,58 @@ export default function CustomCursor() {
     validateAndCorrectCursorShape,
   ]);
 
+  // Handle mobile to desktop transition
+  useEffect(() => {
+    if (isMobile) {
+      // Clean up when going to mobile
+      if (isCursorActiveRef.current) {
+        document.body.classList.remove("custom-cursor-active");
+        document.body.style.cursor = "auto";
+        isCursorActiveRef.current = false;
+      }
+      stopRenderLoop();
+      stopShapeMonitoring();
+    } else {
+      // Reinitialize when coming back from mobile to desktop
+      if (!showSplash && cursorWrapperRef.current) {
+        // Reset initialization flag to allow fresh init
+        isInitializedRef.current = false;
+
+        // Show cursor wrapper
+        cursorWrapperRef.current.style.display = "block";
+        gsap.set(cursorWrapperRef.current, { autoAlpha: 1 });
+
+        // Add cursor active class
+        document.body.classList.add("custom-cursor-active");
+        isCursorActiveRef.current = true;
+
+        // Start render loop
+        startRenderLoop();
+        startShapeMonitoring();
+
+        // Capture initial mouse position for smooth transition
+        captureInitialMousePosition();
+
+        // Initialize cursor with a slight delay to ensure DOM is ready
+        setTimeout(() => {
+          initializeCursor();
+        }, 100);
+
+        // Validate cursor shape after initialization
+        setTimeout(validateAndCorrectCursorShape, 200);
+      }
+    }
+  }, [
+    isMobile,
+    showSplash,
+    startRenderLoop,
+    stopRenderLoop,
+    startShapeMonitoring,
+    stopShapeMonitoring,
+    initializeCursor,
+    validateAndCorrectCursorShape,
+  ]);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -764,6 +850,11 @@ export default function CustomCursor() {
       }
     };
   }, [stopRenderLoop, stopShapeMonitoring]);
+
+  // Don't render cursor on mobile devices
+  if (isMobile) {
+    return null;
+  }
 
   return (
     <div

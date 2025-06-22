@@ -106,16 +106,99 @@ input[type="reset"] {
   }
 }
 
-/* Hide native cursor when custom cursor is active */
-body.custom-cursor-active,
-body.custom-cursor-active * {
-  cursor: none !important;
+/* Restore default cursor behavior on mobile devices and coarse pointers */
+@media (pointer: coarse), (max-width: 768px) {
+  *,
+  *::before,
+  *::after {
+    cursor: auto !important;
+  }
+
+  html,
+  body {
+    cursor: auto !important;
+  }
+
+  /* Ensure interactive elements have proper cursors on mobile */
+  button,
+  a,
+  input[type="button"],
+  input[type="submit"],
+  input[type="reset"],
+  select,
+  textarea,
+  input {
+    cursor: pointer !important;
+  }
+
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="search"],
+  input[type="tel"],
+  input[type="url"],
+  textarea {
+    cursor: text !important;
+  }
 }
 
-/* Hide all cursors during splash screen */
-body.splash-screen-active,
-body.splash-screen-active * {
-  cursor: none !important;
+/* Mobile-specific navbar improvements */
+@media (max-width: 768px) {
+  /* Ensure navbar has enough padding on mobile */
+  header {
+    padding: 0.75rem 1rem;
+  }
+
+  /* Make navbar items more touch-friendly */
+  nav button,
+  nav a {
+    min-height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+  }
+
+  /* Add hover/active states for better mobile interaction feedback */
+  nav button:hover,
+  nav a:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+
+  nav button:active,
+  nav a:active {
+    background-color: rgba(0, 0, 0, 0.1);
+    transform: scale(0.98);
+  }
+
+  /* Improve tap targets on mobile */
+  .cursor-wrapper {
+    display: none !important;
+  }
+
+  /* Ensure icons are properly sized and centered */
+  nav svg {
+    flex-shrink: 0;
+  }
+}
+
+/* Hide native cursor when custom cursor is active (desktop only) */
+@media (pointer: fine) and (min-width: 769px) {
+  body.custom-cursor-active,
+  body.custom-cursor-active * {
+    cursor: none !important;
+  }
+}
+
+/* Hide all cursors during splash screen (desktop only) */
+@media (pointer: fine) and (min-width: 769px) {
+  body.splash-screen-active,
+  body.splash-screen-active * {
+    cursor: none !important;
+  }
 }
 
 /* Regular cursor class for elements that should use circular cursor */
