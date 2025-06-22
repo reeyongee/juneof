@@ -210,32 +210,6 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
     console.log("Added to cart:", productToAdd);
   };
 
-  // Handle image navigation for mobile with looping
-  const handleImageSwipe = (direction: "left" | "right") => {
-    const imageCount = product.images.edges.length || 4; // fallback to 4 for demo images
-    let newIndex;
-
-    if (direction === "left") {
-      // Go to previous image, loop to last if at first
-      newIndex =
-        currentImageIndex === 0 ? imageCount - 1 : currentImageIndex - 1;
-    } else {
-      // Go to next image, loop to first if at last
-      newIndex =
-        currentImageIndex === imageCount - 1 ? 0 : currentImageIndex + 1;
-    }
-
-    setCurrentImageIndex(newIndex);
-
-    // Scroll to the new image
-    if (imageGalleryRef.current) {
-      imageGalleryRef.current.scrollTo({
-        left: newIndex * imageGalleryRef.current.offsetWidth,
-        behavior: "smooth",
-      });
-    }
-  };
-
   // Handle section expansion for mobile
   const toggleSection = (section: keyof typeof expandedSections) => {
     setExpandedSections((prev) => ({
@@ -266,29 +240,6 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
 
           {/* Mobile Image Gallery */}
           <div>
-            {/* Arrow Controls Row */}
-            <div className="flex justify-between items-center px-4 py-2">
-              <button
-                onClick={() => handleImageSwipe("left")}
-                className="z-20 text-gray-700 text-3xl font-light hover:text-gray-900 transition-colors bg-white/80 hover:bg-white rounded-full w-10 h-10 flex items-center justify-center shadow-md"
-                aria-label="Previous image"
-              >
-                ‹
-              </button>
-
-              <div className="text-sm text-gray-500">
-                {currentImageIndex + 1} / {images.length}
-              </div>
-
-              <button
-                onClick={() => handleImageSwipe("right")}
-                className="z-20 text-gray-700 text-3xl font-light hover:text-gray-900 transition-colors bg-white/80 hover:bg-white rounded-full w-10 h-10 flex items-center justify-center shadow-md"
-                aria-label="Next image"
-              >
-                ›
-              </button>
-            </div>
-
             {/* Image Gallery */}
             <div
               ref={imageGalleryRef}
