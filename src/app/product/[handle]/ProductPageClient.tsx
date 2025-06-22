@@ -291,19 +291,19 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
             {/* Left Arrow - Fixed Position */}
             <button
               onClick={() => handleImageSwipe("left")}
-              className="absolute left-2 top-1/2 -translate-y-1/2 z-10 text-white text-2xl font-bold bg-black/30 hover:bg-black/50 rounded-full w-10 h-10 flex items-center justify-center transition-all"
+              className="absolute left-4 top-1/2 -translate-y-1/2 z-10 text-white text-3xl font-light hover:text-gray-200 transition-colors"
               aria-label="Previous image"
             >
-              ←
+              ‹
             </button>
 
             {/* Right Arrow - Fixed Position */}
             <button
               onClick={() => handleImageSwipe("right")}
-              className="absolute right-2 top-1/2 -translate-y-1/2 z-10 text-white text-2xl font-bold bg-black/30 hover:bg-black/50 rounded-full w-10 h-10 flex items-center justify-center transition-all"
+              className="absolute right-4 top-1/2 -translate-y-1/2 z-10 text-white text-3xl font-light hover:text-gray-200 transition-colors"
               aria-label="Next image"
             >
-              →
+              ›
             </button>
 
             {/* Image Navigation Dots */}
