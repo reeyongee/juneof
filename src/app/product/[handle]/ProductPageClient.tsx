@@ -140,13 +140,29 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
     console.log("Added to cart:", productToAdd);
   };
 
-  // Handle image navigation for mobile
+  // Handle image navigation for mobile with looping
   const handleImageSwipe = (direction: "left" | "right") => {
     const imageCount = product.images.edges.length || 4; // fallback to 4 for demo images
-    if (direction === "left" && currentImageIndex > 0) {
-      setCurrentImageIndex(currentImageIndex - 1);
-    } else if (direction === "right" && currentImageIndex < imageCount - 1) {
-      setCurrentImageIndex(currentImageIndex + 1);
+    let newIndex;
+
+    if (direction === "left") {
+      // Go to previous image, loop to last if at first
+      newIndex =
+        currentImageIndex === 0 ? imageCount - 1 : currentImageIndex - 1;
+    } else {
+      // Go to next image, loop to first if at last
+      newIndex =
+        currentImageIndex === imageCount - 1 ? 0 : currentImageIndex + 1;
+    }
+
+    setCurrentImageIndex(newIndex);
+
+    // Scroll to the new image
+    if (imageGalleryRef.current) {
+      imageGalleryRef.current.scrollTo({
+        left: newIndex * imageGalleryRef.current.offsetWidth,
+        behavior: "smooth",
+      });
     }
   };
 
@@ -209,7 +225,10 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
               style={{ scrollBehavior: "smooth" }}
             >
               {images.map((image, index) => (
-                <div key={index} className="flex-shrink-0 w-full snap-center">
+                <div
+                  key={index}
+                  className="relative flex-shrink-0 w-full snap-center"
+                >
                   <Image
                     src={image.url}
                     alt={
@@ -221,6 +240,52 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
                     priority={index === 0}
                     draggable={false}
                   />
+
+                  {/* Left Navigation Button */}
+                  <button
+                    onClick={() => handleImageSwipe("left")}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white rounded-full p-3 shadow-lg transition-all duration-200 hover:scale-110"
+                    aria-label="Previous image"
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 16 16"
+                      fill="none"
+                      className="text-gray-900"
+                    >
+                      <path
+                        d="M10 12L6 8L10 4"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </button>
+
+                  {/* Right Navigation Button */}
+                  <button
+                    onClick={() => handleImageSwipe("right")}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white rounded-full p-3 shadow-lg transition-all duration-200 hover:scale-110"
+                    aria-label="Next image"
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 16 16"
+                      fill="none"
+                      className="text-gray-900"
+                    >
+                      <path
+                        d="M6 4L10 8L6 12"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </button>
                 </div>
               ))}
             </div>
@@ -245,22 +310,6 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
                 />
               ))}
             </div>
-
-            {/* Navigation Arrows */}
-            <button
-              onClick={() => handleImageSwipe("left")}
-              className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 rounded-full p-2 shadow-md"
-              disabled={currentImageIndex === 0}
-            >
-              ←
-            </button>
-            <button
-              onClick={() => handleImageSwipe("right")}
-              className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 rounded-full p-2 shadow-md"
-              disabled={currentImageIndex === images.length - 1}
-            >
-              →
-            </button>
           </div>
 
           {/* Mobile Product Info */}
