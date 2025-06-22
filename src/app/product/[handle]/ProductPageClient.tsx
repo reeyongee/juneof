@@ -265,46 +265,48 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
           </div>
 
           {/* Mobile Image Gallery */}
-          <div className="relative">
-            <div
-              ref={imageGalleryRef}
-              className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide"
-              style={{ scrollBehavior: "smooth" }}
-            >
-              {images.map((image, index) => (
-                <div key={index} className="flex-shrink-0 w-full snap-center">
-                  <Image
-                    src={image.url}
-                    alt={
-                      image.altText || `${product.title} - Image ${index + 1}`
-                    }
-                    width={400}
-                    height={600}
-                    className="w-full h-auto max-h-[70vh] object-cover"
-                    priority={index === 0}
-                    draggable={false}
-                  />
-                </div>
-              ))}
+          <div>
+            <div className="relative">
+              <div
+                ref={imageGalleryRef}
+                className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide"
+                style={{ scrollBehavior: "smooth" }}
+              >
+                {images.map((image, index) => (
+                  <div key={index} className="flex-shrink-0 w-full snap-center">
+                    <Image
+                      src={image.url}
+                      alt={
+                        image.altText || `${product.title} - Image ${index + 1}`
+                      }
+                      width={400}
+                      height={600}
+                      className="w-full h-auto max-h-[70vh] object-cover"
+                      priority={index === 0}
+                      draggable={false}
+                    />
+                  </div>
+                ))}
+              </div>
+
+              {/* Left Arrow - Image Gallery Edge */}
+              <button
+                onClick={() => handleImageSwipe("left")}
+                className="absolute left-2 top-1/2 -translate-y-1/2 z-20 text-white text-4xl font-light hover:text-gray-200 transition-colors bg-black/20 hover:bg-black/40 rounded px-2 py-1"
+                aria-label="Previous image"
+              >
+                ‹
+              </button>
+
+              {/* Right Arrow - Image Gallery Edge */}
+              <button
+                onClick={() => handleImageSwipe("right")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 z-20 text-white text-4xl font-light hover:text-gray-200 transition-colors bg-black/20 hover:bg-black/40 rounded px-2 py-1"
+                aria-label="Next image"
+              >
+                ›
+              </button>
             </div>
-
-            {/* Left Arrow - Image Gallery Edge */}
-            <button
-              onClick={() => handleImageSwipe("left")}
-              className="absolute left-2 top-1/2 -translate-y-1/2 z-20 text-white text-4xl font-light hover:text-gray-200 transition-colors bg-black/20 hover:bg-black/40 rounded px-2 py-1"
-              aria-label="Previous image"
-            >
-              ‹
-            </button>
-
-            {/* Right Arrow - Image Gallery Edge */}
-            <button
-              onClick={() => handleImageSwipe("right")}
-              className="absolute right-2 top-1/2 -translate-y-1/2 z-20 text-white text-4xl font-light hover:text-gray-200 transition-colors bg-black/20 hover:bg-black/40 rounded px-2 py-1"
-              aria-label="Next image"
-            >
-              ›
-            </button>
 
             {/* Image Navigation Dots */}
             <div className="flex justify-center space-x-2 py-4">
