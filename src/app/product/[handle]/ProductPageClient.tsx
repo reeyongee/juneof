@@ -265,7 +265,31 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
           </div>
 
           {/* Mobile Image Gallery */}
-          <div className="relative">
+          <div>
+            {/* Arrow Controls Row */}
+            <div className="flex justify-between items-center px-4 py-2">
+              <button
+                onClick={() => handleImageSwipe("left")}
+                className="z-20 text-gray-700 text-3xl font-light hover:text-gray-900 transition-colors bg-white/80 hover:bg-white rounded-full w-10 h-10 flex items-center justify-center shadow-md"
+                aria-label="Previous image"
+              >
+                ‹
+              </button>
+
+              <div className="text-sm text-gray-500">
+                {currentImageIndex + 1} / {images.length}
+              </div>
+
+              <button
+                onClick={() => handleImageSwipe("right")}
+                className="z-20 text-gray-700 text-3xl font-light hover:text-gray-900 transition-colors bg-white/80 hover:bg-white rounded-full w-10 h-10 flex items-center justify-center shadow-md"
+                aria-label="Next image"
+              >
+                ›
+              </button>
+            </div>
+
+            {/* Image Gallery */}
             <div
               ref={imageGalleryRef}
               className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide"
@@ -287,32 +311,6 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
                 </div>
               ))}
             </div>
-
-            {/* Left Arrow - Image Gallery Edge */}
-            <button
-              onClick={() => handleImageSwipe("left")}
-              className="fixed left-4 z-30 text-white text-4xl font-light hover:text-gray-200 transition-colors bg-black/30 hover:bg-black/50 rounded-full w-12 h-12 flex items-center justify-center"
-              style={{
-                top: "50%",
-                transform: "translateY(-50%)",
-              }}
-              aria-label="Previous image"
-            >
-              ‹
-            </button>
-
-            {/* Right Arrow - Image Gallery Edge */}
-            <button
-              onClick={() => handleImageSwipe("right")}
-              className="fixed right-4 z-30 text-white text-4xl font-light hover:text-gray-200 transition-colors bg-black/30 hover:bg-black/50 rounded-full w-12 h-12 flex items-center justify-center"
-              style={{
-                top: "50%",
-                transform: "translateY(-50%)",
-              }}
-              aria-label="Next image"
-            >
-              ›
-            </button>
 
             {/* Image Navigation Dots */}
             <div className="flex justify-center space-x-2 py-4">
