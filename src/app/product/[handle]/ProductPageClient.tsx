@@ -73,11 +73,7 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
   const [isSizeChartOpen, setIsSizeChartOpen] = useState(false);
   const [isWashCareOpen, setIsWashCareOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [expandedSections, setExpandedSections] = useState({
-    details: false,
-    sizing: false,
-    care: false,
-  });
+
   const { addItemToCart } = useCart();
   const isMobile = useIsMobile();
   const imageGalleryRef = useRef<HTMLDivElement>(null);
@@ -210,14 +206,6 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
     console.log("Added to cart:", productToAdd);
   };
 
-  // Handle section expansion for mobile
-  const toggleSection = (section: keyof typeof expandedSections) => {
-    setExpandedSections((prev) => ({
-      ...prev,
-      [section]: !prev[section],
-    }));
-  };
-
   const price = parseFloat(product.priceRange.minVariantPrice.amount);
   const currencyCode = product.priceRange.minVariantPrice.currencyCode;
 
@@ -309,85 +297,36 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
               </div>
             </div>
 
-            {/* Expandable Sections */}
+            {/* Product Details - Always Visible */}
             <div className="space-y-4">
-              {/* Product Details */}
-              <div className="border-b border-gray-200">
-                <button
-                  onClick={() => toggleSection("details")}
-                  className="w-full flex justify-between items-center py-3 text-left"
-                >
-                  <span className="text-sm tracking-widest lowercase">
-                    product details
-                  </span>
-                  <span className="text-lg">
-                    {expandedSections.details ? "−" : "+"}
-                  </span>
-                </button>
-                {expandedSections.details && (
-                  <div className="pb-4 space-y-2 text-sm tracking-wider text-gray-700">
-                    {product.description && (
-                      <p className="lowercase">{product.description}</p>
-                    )}
-                    {product.tags.length > 0 && (
-                      <p className="lowercase">{product.tags.join(" • ")}</p>
-                    )}
-                    {product.vendor && (
-                      <p className="lowercase">by {product.vendor}</p>
-                    )}
-                  </div>
+              <div className="space-y-2 text-sm tracking-wider text-gray-700">
+                {product.description && (
+                  <p className="lowercase">{product.description}</p>
+                )}
+                {product.tags.length > 0 && (
+                  <p className="lowercase">{product.tags.join(" • ")}</p>
+                )}
+                {product.vendor && (
+                  <p className="lowercase">by {product.vendor}</p>
                 )}
               </div>
+            </div>
 
-              {/* Size & Fit */}
-              <div className="border-b border-gray-200">
-                <button
-                  onClick={() => toggleSection("sizing")}
-                  className="w-full flex justify-between items-center py-3 text-left"
-                >
-                  <span className="text-sm tracking-widest lowercase">
-                    size & fit
-                  </span>
-                  <span className="text-lg">
-                    {expandedSections.sizing ? "−" : "+"}
-                  </span>
-                </button>
-                {expandedSections.sizing && (
-                  <div className="pb-4">
-                    <button
-                      onClick={() => setIsSizeChartOpen(true)}
-                      className="text-sm tracking-widest lowercase hover:text-gray-600 transition-colors underline"
-                    >
-                      view size chart
-                    </button>
-                  </div>
-                )}
-              </div>
+            {/* Direct Action Buttons */}
+            <div className="space-y-3">
+              <button
+                onClick={() => setIsSizeChartOpen(true)}
+                className="w-full border border-gray-300 py-3 text-center text-sm tracking-widest hover:bg-gray-50 transition-colors lowercase"
+              >
+                view size chart
+              </button>
 
-              {/* Care Instructions */}
-              <div className="border-b border-gray-200">
-                <button
-                  onClick={() => toggleSection("care")}
-                  className="w-full flex justify-between items-center py-3 text-left"
-                >
-                  <span className="text-sm tracking-widest lowercase">
-                    care instructions
-                  </span>
-                  <span className="text-lg">
-                    {expandedSections.care ? "−" : "+"}
-                  </span>
-                </button>
-                {expandedSections.care && (
-                  <div className="pb-4">
-                    <button
-                      onClick={() => setIsWashCareOpen(true)}
-                      className="text-sm tracking-widest lowercase hover:text-gray-600 transition-colors underline"
-                    >
-                      view wash care guide
-                    </button>
-                  </div>
-                )}
-              </div>
+              <button
+                onClick={() => setIsWashCareOpen(true)}
+                className="w-full border border-gray-300 py-3 text-center text-sm tracking-widest hover:bg-gray-50 transition-colors lowercase"
+              >
+                view wash care guide
+              </button>
             </div>
           </div>
 
