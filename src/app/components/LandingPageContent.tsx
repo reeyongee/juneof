@@ -5,6 +5,7 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Image from "next/image";
 import ScrollIndicator from "./ScrollIndicator";
+import { useViewportHeight } from "@/hooks/useViewportHeight";
 import "../landing-page.css";
 
 // Register GSAP plugins
@@ -19,6 +20,13 @@ export default function LandingPageContent() {
   const section3Ref = useRef<HTMLDivElement>(null);
   const section4Ref = useRef<HTMLDivElement>(null);
   const spacerRef = useRef<HTMLDivElement>(null);
+
+  // Use our custom viewport height hook
+  const {
+    dimensions,
+    isMobile,
+    isInitialized: isViewportInitialized,
+  } = useViewportHeight();
 
   // Track image loading state
   const [imagesLoaded, setImagesLoaded] = useState(false);
@@ -105,8 +113,16 @@ export default function LandingPageContent() {
         return;
       }
 
-      const width = window.innerWidth;
-      const height = window.innerHeight;
+      const width = dimensions.width;
+      const height = dimensions.height;
+
+      // Log initialization for debugging
+      console.log("[LandingPage] Starting GSAP animations with dimensions:", {
+        width,
+        height,
+        isMobile,
+        source: "useViewportHeight",
+      });
 
       gsap.defaults({ ease: "none", duration: 2 });
 
@@ -268,18 +284,31 @@ export default function LandingPageContent() {
         initializeAnimations();
       }, 500);
     }
-  }, [ensureDOMReady, validateDimensions]);
+  }, [ensureDOMReady, validateDimensions, dimensions, isMobile]);
 
-  // Handle resize with proper debouncing
-  const handleResize = useCallback(() => {
-    animationsInitializedRef.current = false;
-    ScrollTrigger.refresh();
+  // Trigger re-initialization when dimensions change (handled by useViewportHeight)
+  useEffect(() => {
+    if (isViewportInitialized && isHydrated && imagesLoaded) {
+      // Reset animations when viewport dimensions change
+      animationsInitializedRef.current = false;
+      ScrollTrigger.refresh();
 
-    // Debounce resize to avoid excessive calls
-    setTimeout(() => {
-      initializeAnimations();
-    }, 150);
-  }, [initializeAnimations]);
+      // Re-initialize animations with new dimensions
+      const timeoutId = setTimeout(() => {
+        initializeAnimations();
+      }, 50);
+
+      return () => {
+        clearTimeout(timeoutId);
+      };
+    }
+  }, [
+    dimensions,
+    isViewportInitialized,
+    isHydrated,
+    imagesLoaded,
+    initializeAnimations,
+  ]);
 
   // Handle hydration
   useEffect(() => {
@@ -288,25 +317,37 @@ export default function LandingPageContent() {
 
   // Initialize animations when all conditions are met
   useEffect(() => {
-    if (!isHydrated || !imagesLoaded) return;
+    if (!isHydrated || !imagesLoaded || !isViewportInitialized) return;
+
+    // Log initialization for debugging
+    console.log("[LandingPage] Initializing animations:", {
+      isHydrated,
+      imagesLoaded,
+      isViewportInitialized,
+      isMobile,
+      dimensions,
+    });
 
     // All conditions met, initializing animations
     initializeAnimations();
 
-    // Add resize listener
-    window.addEventListener("resize", handleResize);
-
     return () => {
-      window.removeEventListener("resize", handleResize);
       ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
       animationsInitializedRef.current = false;
     };
-  }, [isHydrated, imagesLoaded, initializeAnimations, handleResize]);
+  }, [
+    isHydrated,
+    imagesLoaded,
+    isViewportInitialized,
+    isMobile,
+    dimensions,
+    initializeAnimations,
+  ]);
 
   return (
     <div ref={containerRef} className="relative w-full z-[2]">
       {/* Scroll Indicator */}
-      <ScrollIndicator />
+      {!isMobile && <ScrollIndicator />}
 
       {/* Section 1 - Image Panels */}
       <div
