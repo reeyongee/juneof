@@ -291,9 +291,9 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
             {/* Left Arrow - Image Gallery Edge */}
             <button
               onClick={() => handleImageSwipe("left")}
-              className="absolute left-2 z-20 text-white text-4xl font-light hover:text-gray-200 transition-colors bg-black/20 hover:bg-black/40 rounded px-2 py-1"
+              className="fixed left-4 z-30 text-white text-4xl font-light hover:text-gray-200 transition-colors bg-black/30 hover:bg-black/50 rounded-full w-12 h-12 flex items-center justify-center"
               style={{
-                top: "35vh",
+                top: "50%",
                 transform: "translateY(-50%)",
               }}
               aria-label="Previous image"
@@ -304,9 +304,9 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
             {/* Right Arrow - Image Gallery Edge */}
             <button
               onClick={() => handleImageSwipe("right")}
-              className="absolute right-2 z-20 text-white text-4xl font-light hover:text-gray-200 transition-colors bg-black/20 hover:bg-black/40 rounded px-2 py-1"
+              className="fixed right-4 z-30 text-white text-4xl font-light hover:text-gray-200 transition-colors bg-black/30 hover:bg-black/50 rounded-full w-12 h-12 flex items-center justify-center"
               style={{
-                top: "35vh",
+                top: "50%",
                 transform: "translateY(-50%)",
               }}
               aria-label="Next image"
