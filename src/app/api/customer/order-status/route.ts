@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { authenticateRequest, getCustomerOrders } from "@/lib/api-auth-helpers";
+import { GraphQLClient } from "graphql-request";
+import { authenticateRequest } from "@/lib/api-auth-helpers";
 
 interface OrderStatus {
   id: string;
@@ -8,6 +9,21 @@ interface OrderStatus {
   fulfillmentStatus: string;
   financialStatus: string;
   isCancelled: boolean;
+}
+
+interface Node {
+  id: string;
+  cancelledAt: string | null;
+  cancelReason: string | null;
+  displayFulfillmentStatus: string;
+  displayFinancialStatus: string;
+  customer?: {
+    id: string;
+  };
+}
+
+interface NodesResponse {
+  nodes: (Node | null)[];
 }
 
 export async function POST(request: NextRequest) {
@@ -21,37 +37,68 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { apiClient } = authResult.user;
+    const { customerId } = authResult.user;
     const { orderIds } = await request.json();
 
-    if (!orderIds || !Array.isArray(orderIds)) {
-      return NextResponse.json(
-        { error: "Order IDs array is required" },
-        { status: 400 }
-      );
+    if (!orderIds || !Array.isArray(orderIds) || orderIds.length === 0) {
+      return NextResponse.json({ orderStatuses: {} });
     }
 
-    // Use the secure helper to fetch orders for the authenticated customer
-    const ordersResult = await getCustomerOrders(apiClient, orderIds);
+    // Get environment variables for Admin API
+    const adminApiToken = process.env.SHOPIFY_ADMIN_API_TOKEN;
+    const shopDomain = process.env.NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN;
 
-    if (!ordersResult.success || !ordersResult.orders) {
+    if (!adminApiToken || !shopDomain) {
       return NextResponse.json(
-        { error: ordersResult.error || "Failed to fetch orders" },
+        { error: "Server configuration error" },
         { status: 500 }
       );
     }
 
-    // Transform the response to the required format
-    const orderStatuses = ordersResult.orders.reduce(
-      (acc: Record<string, OrderStatus>, order) => {
-        acc[order.id] = {
-          id: order.id,
-          cancelledAt: order.cancelledAt || null,
-          cancelReason: order.cancelReason || null,
-          fulfillmentStatus: order.fulfillmentStatus,
-          financialStatus: order.financialStatus,
-          isCancelled: order.cancelledAt !== null,
-        };
+    // Create a GraphQL client for the Admin API
+    const adminApiUrl = `https://${shopDomain}/admin/api/2024-10/graphql.json`;
+    const adminClient = new GraphQLClient(adminApiUrl, {
+      headers: {
+        "X-Shopify-Access-Token": adminApiToken,
+        "Content-Type": "application/json",
+      },
+    });
+
+    // Use a 'nodes' query for efficient fetching of multiple orders
+    const nodesQuery = `
+      query GetOrdersByIds($ids: [ID!]!) {
+        nodes(ids: $ids) {
+          ... on Order {
+            id
+            cancelledAt
+            cancelReason
+            displayFulfillmentStatus
+            displayFinancialStatus
+            customer {
+              id
+            }
+          }
+        }
+      }
+    `;
+
+    const nodesResponse = await adminClient.request<NodesResponse>(nodesQuery, {
+      ids: orderIds,
+    });
+
+    const orderStatuses = (nodesResponse.nodes || []).reduce(
+      (acc: Record<string, OrderStatus>, node) => {
+        // Important: Check ownership and ensure node is not null
+        if (node && node.customer?.id === customerId) {
+          acc[node.id] = {
+            id: node.id,
+            cancelledAt: node.cancelledAt,
+            cancelReason: node.cancelReason,
+            fulfillmentStatus: node.displayFulfillmentStatus,
+            financialStatus: node.displayFinancialStatus,
+            isCancelled: node.cancelledAt !== null,
+          };
+        }
         return acc;
       },
       {}
