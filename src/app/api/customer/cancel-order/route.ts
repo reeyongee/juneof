@@ -1,20 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GraphQLClient } from "graphql-request";
-
-interface OrderResponse {
-  order: {
-    id: string;
-    name: string;
-    displayFulfillmentStatus: string;
-    displayFinancialStatus: string;
-    customer?: {
-      id: string;
-    };
-    fulfillments: Array<{
-      status: string;
-    }>;
-  } | null;
-}
+import { authenticateRequest } from "@/lib/api-auth-helpers";
 
 interface CancelResponse {
   orderCancel: {
@@ -32,7 +18,24 @@ interface CancelResponse {
 
 export async function POST(request: NextRequest) {
   try {
-    const { orderId, customerId } = await request.json();
+    const authResult = await authenticateRequest(request);
+
+    if (!authResult.success) {
+      return NextResponse.json(
+        { error: authResult.error },
+        { status: authResult.statusCode }
+      );
+    }
+
+    const { user } = authResult;
+    if (!user) {
+      return NextResponse.json(
+        { error: "User not authenticated" },
+        { status: 401 }
+      );
+    }
+
+    const { orderId } = await request.json();
 
     if (!orderId) {
       return NextResponse.json(
@@ -41,49 +44,50 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get environment variables
+    // Get environment variables for Admin API
     const adminApiToken = process.env.SHOPIFY_ADMIN_API_TOKEN;
     const shopDomain = process.env.NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN;
 
     if (!adminApiToken || !shopDomain) {
-      console.error("Missing environment variables:", {
-        hasAdminToken: !!adminApiToken,
-        hasShopDomain: !!shopDomain,
-      });
       return NextResponse.json(
         { error: "Server configuration error" },
         { status: 500 }
       );
     }
 
-    // Create GraphQL client for Admin API
+    // Create a GraphQL client for the Admin API to check order details
     const adminApiUrl = `https://${shopDomain}/admin/api/2024-10/graphql.json`;
-    const client = new GraphQLClient(adminApiUrl, {
+    const adminClient = new GraphQLClient(adminApiUrl, {
       headers: {
         "X-Shopify-Access-Token": adminApiToken,
         "Content-Type": "application/json",
       },
     });
 
-    // First, check if the order exists and get its fulfillment status
+    // First, check if the order exists and get its customer and fulfillment status
     const orderQuery = `
       query GetOrder($id: ID!) {
         order(id: $id) {
           id
-          name
           displayFulfillmentStatus
-          displayFinancialStatus
           customer {
             id
-          }
-          fulfillments {
-            status
           }
         }
       }
     `;
 
-    const orderResponse = await client.request<OrderResponse>(orderQuery, {
+    interface OrderResponse {
+      order: {
+        id: string;
+        displayFulfillmentStatus: string;
+        customer?: {
+          id: string;
+        };
+      } | null;
+    }
+
+    const orderResponse = await adminClient.request<OrderResponse>(orderQuery, {
       id: orderId,
     });
 
@@ -93,8 +97,8 @@ export async function POST(request: NextRequest) {
 
     const order = orderResponse.order;
 
-    // Check if the order belongs to the customer (if customerId is provided)
-    if (customerId && order.customer?.id !== customerId) {
+    // Securely cross-reference the order's customer ID with the authenticated user's ID
+    if (!order.customer || order.customer.id !== user.customerId) {
       return NextResponse.json(
         { error: "Unauthorized to cancel this order" },
         { status: 403 }
@@ -109,16 +113,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Cancel the order
+    // Cancel the order using the Admin API
     const cancelMutation = `
-      mutation OrderCancel($orderId: ID!, $reason: OrderCancelReason!) {
-        orderCancel(
-          orderId: $orderId
-          reason: $reason
-          refund: true
-          restock: true
-          notifyCustomer: true
-        ) {
+      mutation OrderCancel($orderId: ID!) {
+        orderCancel(orderId: $orderId, reason: CUSTOMER, refund: true, restock: true, notifyCustomer: true) {
           job {
             id
             done
@@ -132,11 +130,10 @@ export async function POST(request: NextRequest) {
       }
     `;
 
-    const cancelResponse = await client.request<CancelResponse>(
+    const cancelResponse = await adminClient.request<CancelResponse>(
       cancelMutation,
       {
         orderId: orderId,
-        reason: "CUSTOMER",
       }
     );
 
@@ -158,7 +155,6 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Cancel order API error:", error);
-
     return NextResponse.json(
       {
         error: "Internal server error",
