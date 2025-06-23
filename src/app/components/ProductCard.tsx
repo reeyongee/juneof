@@ -2,8 +2,38 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { gsap } from "gsap";
+
+// Hook to detect mobile devices
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkDevice = () => {
+      const userAgent =
+        navigator.userAgent ||
+        navigator.vendor ||
+        (window as unknown as { opera?: string }).opera ||
+        "";
+      const mobileRegex =
+        /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i;
+      const isMobileDevice = mobileRegex.test(userAgent.toLowerCase());
+      const isSmallScreen = window.innerWidth <= 768;
+
+      setIsMobile(isMobileDevice || isSmallScreen);
+    };
+
+    checkDevice();
+    window.addEventListener("resize", checkDevice);
+
+    return () => {
+      window.removeEventListener("resize", checkDevice);
+    };
+  }, []);
+
+  return isMobile;
+};
 
 interface ProductCardProps {
   imageUrl: string;
@@ -53,6 +83,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   const cardRef = useRef<HTMLAnchorElement>(null);
   const defaultImageRef = useRef<HTMLDivElement>(null);
   const hoverImageRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (cardRef.current && hoverImageRef.current) {
@@ -107,8 +138,8 @@ const ProductCard: React.FC<ProductCardProps> = ({
     <Link
       href={productUrl}
       ref={cardRef}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
+      onMouseEnter={!isMobile ? handleMouseEnter : undefined}
+      onMouseLeave={!isMobile ? handleMouseLeave : undefined}
       className="block group p-4 text-center scale-90"
     >
       <div className="relative overflow-hidden mb-4 aspect-[2/3]">
