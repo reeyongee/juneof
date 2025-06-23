@@ -70,6 +70,7 @@ export async function POST(request: NextRequest) {
         order(id: $id) {
           id
           displayFulfillmentStatus
+          cancelledAt
           customer {
             id
           }
@@ -81,6 +82,7 @@ export async function POST(request: NextRequest) {
       order: {
         id: string;
         displayFulfillmentStatus: string;
+        cancelledAt: string | null;
         customer?: {
           id: string;
         };
@@ -102,6 +104,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "Unauthorized to cancel this order" },
         { status: 403 }
+      );
+    }
+
+    // Check if the order has already been canceled
+    if (order.cancelledAt) {
+      return NextResponse.json(
+        { error: "This order has already been canceled." },
+        { status: 400 }
       );
     }
 
