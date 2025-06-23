@@ -24,7 +24,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { X, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 import {
   ShopifyAuthConfig,
@@ -326,10 +326,12 @@ export default function CustomerOrders({
   // Check if order can be cancelled (not fulfilled and not already cancelled)
   const canCancelOrder = (order: OrderNode) => {
     const status = orderStatuses[order.id];
-    return (
-      order.fulfillmentStatus !== "FULFILLED" &&
-      (!status || !status.isCancelled)
-    );
+    // To be safe, if status is not loaded yet, assume it's NOT cancellable.
+    if (!status) {
+      return false;
+    }
+
+    return order.fulfillmentStatus !== "FULFILLED" && !status.isCancelled;
   };
 
   // Check if order is cancelled
@@ -482,43 +484,38 @@ export default function CustomerOrders({
                     {/* Order Status and Actions */}
                     <div className="flex justify-between items-start pt-4 border-t border-gray-200">
                       <div className="flex-1">
-                        {order.fulfillmentStatus === "FULFILLED" ? (
+                        {canCancelOrder(order) ? (
+                          <p className="text-sm lowercase tracking-wider text-gray-600">
+                            we&apos;re working on shipping your product soon.
+                            you may cancel the order now. cancellation is not
+                            possible once the order is shipped out.
+                          </p>
+                        ) : order.fulfillmentStatus === "FULFILLED" ? (
                           <p className="text-sm lowercase tracking-wider text-green-600">
                             order shipped!
                           </p>
                         ) : (
                           <p className="text-sm lowercase tracking-wider text-gray-600">
                             we&apos;re working on shipping your product soon.
-                            you may cancel the order now. cancellation is not
-                            possible once the order is shipped out.
                           </p>
                         )}
                       </div>
-                      {order.fulfillmentStatus !== "FULFILLED" &&
-                        canCancelOrder(order) && (
-                          <Button
-                            onClick={() => {
-                              setOrderToCancel(order);
-                              setShowCancelDialog(true);
-                            }}
-                            disabled={cancellingOrderId === order.id}
-                            variant="outline"
-                            size="sm"
-                            className="border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400 text-xs lowercase tracking-wider ml-4"
-                          >
-                            {cancellingOrderId === order.id ? (
-                              <>
-                                <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                                cancelling...
-                              </>
-                            ) : (
-                              <>
-                                <X className="mr-1 h-3 w-3" />
-                                cancel
-                              </>
-                            )}
-                          </Button>
-                        )}
+                      {canCancelOrder(order) && (
+                        <Button
+                          onClick={() => {
+                            setOrderToCancel(order);
+                            setShowCancelDialog(true);
+                          }}
+                          disabled={cancellingOrderId === order.id}
+                          className="ml-4 lowercase tracking-wider"
+                        >
+                          {cancellingOrderId === order.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            "cancel order"
+                          )}
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </CardContent>
