@@ -4,9 +4,12 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import SizeChart from "../../components/SizeChart";
 import WashCareOverlay from "../../components/WashCareOverlay";
+import ExpressInterestOverlay from "../../components/ExpressInterestOverlay";
 import Image from "next/image";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
 import { ShopifyProductDetails } from "@/lib/shopify";
+import { Badge } from "@/components/ui/badge";
 
 // Mobile detection hook
 const useIsMobile = () => {
@@ -72,9 +75,11 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
   const [selectedSize, setSelectedSize] = useState("in between");
   const [isSizeChartOpen, setIsSizeChartOpen] = useState(false);
   const [isWashCareOpen, setIsWashCareOpen] = useState(false);
+  const [isExpressInterestOpen, setIsExpressInterestOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const { addItemToCart } = useCart();
+  const { isAuthenticated } = useAuth();
   const isMobile = useIsMobile();
   const imageGalleryRef = useRef<HTMLDivElement>(null);
 
@@ -206,6 +211,17 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
     console.log("Added to cart:", productToAdd);
   };
 
+  // Handle express interest
+  const handleExpressInterest = () => {
+    if (isAuthenticated) {
+      // TODO: Implement express interest for authenticated users
+      console.log("Express interest for authenticated user:", product.title);
+    } else {
+      // Show overlay for non-authenticated users
+      setIsExpressInterestOpen(true);
+    }
+  };
+
   const price = parseFloat(product.priceRange.minVariantPrice.amount);
   const currencyCode = product.priceRange.minVariantPrice.currencyCode;
 
@@ -223,9 +239,15 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
               <h1 className="text-lg font-medium tracking-widest lowercase">
                 {product.title.toLowerCase()}
               </h1>
-              <span className="text-lg font-medium">
-                {formatPrice(price, currencyCode)}
-              </span>
+              {expressInterest ? (
+                <Badge className="bg-black text-white hover:bg-black/90 px-3 py-1 text-xs font-semibold tracking-widest lowercase border-0">
+                  coming soon!
+                </Badge>
+              ) : (
+                <span className="text-lg font-medium">
+                  {formatPrice(price, currencyCode)}
+                </span>
+              )}
             </div>
           </div>
 
@@ -346,9 +368,11 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
           <div className="sticky bottom-0 bg-[#F8F4EC] border-t border-gray-300 p-4">
             <button
               className="w-full border border-gray-900 py-4 text-center text-base tracking-widest hover:bg-gray-100 transition-colors lowercase"
-              onClick={handleAddToCart}
+              onClick={
+                expressInterest ? handleExpressInterest : handleAddToCart
+              }
             >
-              add to cart
+              {expressInterest ? "express interest!" : "add to cart"}
             </button>
           </div>
         </main>
@@ -361,6 +385,16 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
         <WashCareOverlay
           isOpen={isWashCareOpen}
           onClose={() => setIsWashCareOpen(false)}
+        />
+        <ExpressInterestOverlay
+          isOpen={isExpressInterestOpen}
+          onClose={() => setIsExpressInterestOpen(false)}
+          productName={product.title}
+        />
+        <ExpressInterestOverlay
+          isOpen={isExpressInterestOpen}
+          onClose={() => setIsExpressInterestOpen(false)}
+          productName={product.title}
         />
       </>
     );
@@ -379,9 +413,15 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
                   <h1 className="text-xl font-medium tracking-widest lowercase">
                     {product.title.toLowerCase()}
                   </h1>
-                  <span className="text-lg font-medium">
-                    {formatPrice(price, currencyCode)}
-                  </span>
+                  {expressInterest ? (
+                    <Badge className="bg-black text-white hover:bg-black/90 px-4 py-2 text-sm font-semibold tracking-widest lowercase border-0">
+                      coming soon!
+                    </Badge>
+                  ) : (
+                    <span className="text-lg font-medium">
+                      {formatPrice(price, currencyCode)}
+                    </span>
+                  )}
                 </div>
 
                 {/* Express Interest Message */}
@@ -526,9 +566,9 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
           {/* Add to Cart Button */}
           <button
             className="w-full border border-gray-900 py-3 text-center text-base tracking-widest hover:bg-gray-100 transition-colors lowercase mt-auto"
-            onClick={handleAddToCart}
+            onClick={expressInterest ? handleExpressInterest : handleAddToCart}
           >
-            add to cart
+            {expressInterest ? "express interest!" : "add to cart"}
           </button>
         </div>
       </main>
