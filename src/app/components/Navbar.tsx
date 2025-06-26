@@ -410,7 +410,7 @@ const Navbar: React.FC = () => {
             {/* Group the right-hand navigation items */}
             <div
               className={`flex items-center ${
-                isMobile ? "space-x-2" : "space-x-6"
+                isMobile ? "space-x-1" : "space-x-6"
               } ${isMobile ? "pl-2 pr-0 py-1" : "px-4 py-2"}`}
               onMouseEnter={handleMouseEnter}
               onMouseLeave={handleMouseLeave}
