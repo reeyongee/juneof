@@ -109,6 +109,10 @@ export const GET_FIRST_5_PRODUCTS_QUERY = gql`
               }
             }
           }
+          metafield(namespace: "custom", key: "express_interest") {
+            value
+            type
+          }
         }
       }
     }
@@ -138,6 +142,10 @@ export const GET_PRODUCTS_FOR_LISTING_QUERY = gql`
                 altText
               }
             }
+          }
+          metafield(namespace: "custom", key: "express_interest") {
+            value
+            type
           }
         }
       }
@@ -199,6 +207,10 @@ export const GET_PRODUCT_BY_HANDLE_QUERY = gql`
       tags
       vendor
       productType
+      metafield(namespace: "custom", key: "express_interest") {
+        value
+        type
+      }
     }
   }
 `;
@@ -623,6 +635,10 @@ export interface ShopifyProductNode {
       node: ShopifyProductImage;
     }[];
   };
+  metafield?: {
+    value: string | null;
+    type: string;
+  } | null;
 }
 
 export interface ShopifyProductsData {
@@ -678,6 +694,10 @@ export interface ShopifyProductDetails {
   tags: string[];
   vendor: string;
   productType: string;
+  metafield?: {
+    value: string | null;
+    type: string;
+  } | null;
 }
 
 export interface ShopifyProductByHandleData {
