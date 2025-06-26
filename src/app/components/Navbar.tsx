@@ -109,9 +109,9 @@ const AboutIcon = ({ className }: { className?: string }) => (
     className={className}
   >
     <path
-      d="M12 8V12M12 16H12.01M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z"
+      d="M12 7V7.01M12 10V17"
       stroke="currentColor"
-      strokeWidth="1.5"
+      strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
     />
@@ -250,13 +250,13 @@ const Navbar: React.FC = () => {
       (entries) => {
         entries.forEach((entry) => {
           // Only set transparent if transparency is allowed on current page
-          // When the top of main IS intersecting with viewport (at the top),
-          // make navbar transparent. When scrolled down, make it solid.
-          setTransparent(isTransparencyAllowed && entry.isIntersecting);
+          // When the top of main is NOT intersecting with viewport,
+          // make navbar transparent (meaning we've scrolled down from the top)
+          setTransparent(isTransparencyAllowed && !entry.isIntersecting);
         });
       },
       {
-        rootMargin: "-72px 0px 0px 0px", // Offset by navbar height to trigger when content would be behind navbar
+        rootMargin: "0px", // No offset to detect exactly when we scroll past the top
         threshold: 0,
       }
     );
