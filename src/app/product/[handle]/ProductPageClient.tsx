@@ -235,7 +235,7 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
         <main className="min-h-screen bg-[#F8F4EC] text-gray-900">
           {/* Mobile Header */}
           <div className="sticky top-0 bg-[#F8F4EC] z-10 border-b border-gray-300 p-4">
-            <div className="flex justify-between items-center">
+            <div className="space-y-2">
               <h1 className="text-lg font-medium tracking-widest lowercase">
                 {product.title.toLowerCase()}
               </h1>
@@ -300,27 +300,31 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
 
           {/* Mobile Product Info */}
           <div className="p-4 space-y-6">
-            {/* Size Selection */}
-            <div>
-              <h3 className="text-sm tracking-widest lowercase mb-3 text-gray-700">
-                select size
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                {sizes.map((size) => (
-                  <button
-                    key={size}
-                    onClick={() => handleSizeSelect(size)}
-                    className={`px-4 py-2 border rounded-full text-sm tracking-wide lowercase transition-colors ${
-                      selectedSize === size
-                        ? "bg-gray-900 text-white border-gray-900"
-                        : "bg-white text-gray-700 border-gray-300 hover:border-gray-500"
-                    }`}
-                  >
-                    {size}
-                  </button>
-                ))}
-              </div>
-            </div>
+            {!expressInterest && (
+              <>
+                {/* Size Selection */}
+                <div>
+                  <h3 className="text-sm tracking-widest lowercase mb-3 text-gray-700">
+                    select size
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {sizes.map((size) => (
+                      <button
+                        key={size}
+                        onClick={() => handleSizeSelect(size)}
+                        className={`px-4 py-2 border rounded-full text-sm tracking-wide lowercase transition-colors ${
+                          selectedSize === size
+                            ? "bg-gray-900 text-white border-gray-900"
+                            : "bg-white text-gray-700 border-gray-300 hover:border-gray-500"
+                        }`}
+                      >
+                        {size}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
 
             {/* Product Details - Always Visible */}
             <div className="space-y-4">
@@ -331,28 +335,40 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
                 {product.tags.length > 0 && (
                   <p className="lowercase">{product.tags.join(" • ")}</p>
                 )}
-                {product.vendor && (
-                  <p className="lowercase">by {product.vendor}</p>
-                )}
               </div>
             </div>
 
-            {/* Direct Action Buttons */}
-            <div className="space-y-3">
-              <button
-                onClick={() => setIsSizeChartOpen(true)}
-                className="w-full border border-gray-300 py-3 text-center text-sm tracking-widest hover:bg-gray-50 transition-colors lowercase"
-              >
-                view size chart
-              </button>
+            {/* Express Interest Banner */}
+            {expressInterest && (
+              <div className="bg-gray-50 border border-gray-200 p-4 rounded-lg">
+                <p className="text-sm text-gray-700 tracking-wide lowercase leading-relaxed">
+                  we&apos;re working on bringing you this product as soon as
+                  possible. sign up to be the first to know when it&apos;s
+                  available by clicking on the express interest button!
+                </p>
+              </div>
+            )}
 
-              <button
-                onClick={() => setIsWashCareOpen(true)}
-                className="w-full border border-gray-300 py-3 text-center text-sm tracking-widest hover:bg-gray-50 transition-colors lowercase"
-              >
-                view wash care guide
-              </button>
-            </div>
+            {!expressInterest && (
+              <>
+                {/* Direct Action Buttons */}
+                <div className="space-y-3">
+                  <button
+                    onClick={() => setIsSizeChartOpen(true)}
+                    className="w-full border border-gray-300 py-3 text-center text-sm tracking-widest hover:bg-gray-50 transition-colors lowercase"
+                  >
+                    view size chart
+                  </button>
+
+                  <button
+                    onClick={() => setIsWashCareOpen(true)}
+                    className="w-full border border-gray-300 py-3 text-center text-sm tracking-widest hover:bg-gray-50 transition-colors lowercase"
+                  >
+                    view wash care guide
+                  </button>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Sticky Add to Cart - Mobile */}
@@ -382,11 +398,6 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
           onClose={() => setIsExpressInterestOpen(false)}
           productName={product.title}
         />
-        <ExpressInterestOverlay
-          isOpen={isExpressInterestOpen}
-          onClose={() => setIsExpressInterestOpen(false)}
-          productName={product.title}
-        />
       </>
     );
   }
@@ -400,20 +411,21 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
           <div className="flex flex-col h-full">
             <div className="flex-grow flex flex-col justify-center">
               <div className="space-y-6">
-                <div className="flex justify-between items-center">
-                  <h1 className="text-xl font-medium tracking-widest lowercase">
-                    {product.title.toLowerCase()}
-                  </h1>
-                  {expressInterest ? (
-                    <Badge className="bg-black text-white hover:bg-black/90 px-4 py-2 text-sm font-semibold tracking-widest lowercase border-0">
-                      coming soon!
-                    </Badge>
-                  ) : (
-                    <span className="text-lg font-medium">
-                      {formatPrice(price, currencyCode)}
-                    </span>
-                  )}
-                </div>
+                {/* Product Title */}
+                <h1 className="text-xl font-medium tracking-widest lowercase">
+                  {product.title.toLowerCase()}
+                </h1>
+
+                {/* Price or Coming Soon Badge */}
+                {expressInterest ? (
+                  <Badge className="bg-black text-white hover:bg-black/90 px-4 py-2 text-sm font-semibold tracking-widest lowercase border-0">
+                    coming soon!
+                  </Badge>
+                ) : (
+                  <span className="text-lg font-medium">
+                    {formatPrice(price, currencyCode)}
+                  </span>
+                )}
 
                 {/* Product Information */}
                 <div className="space-y-2 text-sm tracking-wider text-gray-700">
@@ -423,20 +435,30 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
                   {product.tags.length > 0 && (
                     <p className="lowercase">{product.tags.join(" • ")}</p>
                   )}
-                  {product.vendor && (
-                    <p className="lowercase">by {product.vendor}</p>
-                  )}
                 </div>
+
+                {/* Express Interest Banner */}
+                {expressInterest && (
+                  <div className="bg-gray-50 border border-gray-200 p-4 rounded-lg">
+                    <p className="text-sm text-gray-700 tracking-wide lowercase leading-relaxed">
+                      we&apos;re working on bringing you this product as soon as
+                      possible. sign up to be the first to know when it&apos;s
+                      available by clicking on the express interest button!
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 
             {/* Wash Care Button - Positioned at the bottom */}
-            <button
-              onClick={() => setIsWashCareOpen(true)}
-              className="text-sm tracking-widest lowercase hover:text-gray-600 transition-colors mt-auto pt-4 text-left"
-            >
-              wash care
-            </button>
+            {!expressInterest && (
+              <button
+                onClick={() => setIsWashCareOpen(true)}
+                className="text-sm tracking-widest lowercase hover:text-gray-600 transition-colors mt-auto pt-4 text-left"
+              >
+                wash care
+              </button>
+            )}
           </div>
         </div>
 
@@ -516,33 +538,37 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
         {/* Right Column (Sticky) */}
         <div className="sticky top-0 flex h-screen w-1/4 flex-col p-8 border-l border-gray-300">
           <div className="flex-1 flex flex-col justify-center space-y-6">
-            {/* Size Chart Button */}
-            <button
-              onClick={() => setIsSizeChartOpen(true)}
-              className="text-sm tracking-widest lowercase hover:text-gray-600 transition-colors"
-            >
-              size chart
-            </button>
-
-            {/* Divider */}
-            <div className="h-px bg-gray-300 w-full"></div>
-
-            {/* Sizes */}
-            <div className="flex flex-col space-y-3 text-base tracking-widest">
-              {sizes.map((size) => (
+            {!expressInterest && (
+              <>
+                {/* Size Chart Button */}
                 <button
-                  key={size}
-                  onClick={() => handleSizeSelect(size)}
-                  className={`hover:text-gray-600 transition-colors lowercase ${
-                    selectedSize === size
-                      ? "underline font-medium"
-                      : "text-gray-700"
-                  }`}
+                  onClick={() => setIsSizeChartOpen(true)}
+                  className="text-sm tracking-widest lowercase hover:text-gray-600 transition-colors"
                 >
-                  {size}
+                  size chart
                 </button>
-              ))}
-            </div>
+
+                {/* Divider */}
+                <div className="h-px bg-gray-300 w-full"></div>
+
+                {/* Sizes */}
+                <div className="flex flex-col space-y-3 text-base tracking-widest">
+                  {sizes.map((size) => (
+                    <button
+                      key={size}
+                      onClick={() => handleSizeSelect(size)}
+                      className={`hover:text-gray-600 transition-colors lowercase ${
+                        selectedSize === size
+                          ? "underline font-medium"
+                          : "text-gray-700"
+                      }`}
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
 
           {/* Add to Cart Button */}
@@ -563,6 +589,11 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
       <WashCareOverlay
         isOpen={isWashCareOpen}
         onClose={() => setIsWashCareOpen(false)}
+      />
+      <ExpressInterestOverlay
+        isOpen={isExpressInterestOpen}
+        onClose={() => setIsExpressInterestOpen(false)}
+        productName={product.title}
       />
     </>
   );
