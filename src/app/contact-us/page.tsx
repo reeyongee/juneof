@@ -1,14 +1,19 @@
 "use client"; // Required for useEffect and useRef
 
 import { useEffect, useRef, useState, FormEvent } from "react";
-import { BlurScrollEffect_Effect4 } from "@/lib/animations"; // Adjust path if needed
-import gsap from "gsap"; // ScrollTrigger is globally registered
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Loader2 } from "lucide-react";
+import { Loader2, Mail, Phone, MapPin } from "lucide-react";
 import { toast } from "sonner";
+
+// Register GSAP plugins
+if (typeof window !== "undefined") {
+  gsap.registerPlugin(ScrollTrigger);
+}
 
 export default function ContactUsPage() {
   const [firstName, setFirstName] = useState("");
@@ -16,19 +21,11 @@ export default function ContactUsPage() {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const contentRef = useRef<HTMLDivElement>(null);
-  const backgroundRef = useRef<HTMLDivElement>(null); // For parallax background
-  const mainElementRef = useRef<HTMLElement>(null); // For main scroll trigger
+  const backgroundRef = useRef<HTMLDivElement>(null);
+  const mainElementRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    // Existing BlurScrollEffect logic for contentRef
-    if (contentRef.current) {
-      new BlurScrollEffect_Effect4(contentRef.current);
-    }
-  }, []);
-
-  useEffect(() => {
-    // New Parallax Effect for backgroundRef
+    // Parallax Effect for backgroundRef
     if (backgroundRef.current && mainElementRef.current) {
       const tl = gsap.timeline({
         scrollTrigger: {
@@ -45,7 +42,7 @@ export default function ContactUsPage() {
       });
 
       return () => {
-        tl.kill(); // Kill the timeline and its ScrollTrigger
+        tl.kill();
       };
     }
   }, []);
@@ -89,131 +86,212 @@ export default function ContactUsPage() {
   };
 
   return (
-    <div className="relative" style={{ backgroundColor: "#fdf3e1" }}>
-      {/* Clipping container for the parallax image */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+    <div className="relative min-h-screen">
+      {/* Parallax Background */}
+      <div className="absolute inset-0 overflow-hidden">
         <div
           ref={backgroundRef}
-          className="absolute inset-0 z-0 h-[130%] opacity-0"
-        ></div>
+          className="absolute inset-0 h-[130%] bg-cover bg-center opacity-30"
+          style={{
+            backgroundImage: "url('/landing-images/about.jpg')",
+          }}
+        />
       </div>
 
-      <main
-        ref={mainElementRef}
-        className="relative flex min-h-screen text-black pt-24"
-      >
-        {/* Left Column (Sticky Title) */}
-        <div className="relative sticky top-0 z-10 flex h-screen w-[40%] flex-shrink-0 flex-col justify-center p-8 border-r border-gray-300">
-          <h1 className="text-xl font-medium tracking-widest lowercase text-black mix-blend-difference">
-            contact us
-          </h1>
-        </div>
-
-        {/* Right Column (Scrollable Content) */}
-        <div className="relative z-10 flex-grow p-8 bg-[rgba(0,0,0,0.02)] backdrop-blur-md">
-          <div
-            ref={contentRef}
-            className="text-3xl lowercase tracking-wider text-black space-y-4 mix-blend-difference"
-          >
-            {/* Original Content */}
-            <p>
-              questions? write to us at reach@juneof.com or text us on our
-              socials:{" "}
-              <a
-                href="https://www.instagram.com/juneof__"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline hover:opacity-75 no-underline-effect"
-              >
-                instagram
-              </a>
+      <main ref={mainElementRef} className="relative min-h-screen">
+        <div className="container mx-auto px-4 sm:px-8 py-20">
+          {/* Header Section */}
+          <div className="text-center mb-16">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-light mb-6 lowercase tracking-widest text-black">
+              get in touch
+            </h1>
+            <p className="text-lg md:text-xl text-gray-700 max-w-2xl mx-auto lowercase tracking-wider">
+              we&apos;d love to hear from you. send us a message and we&apos;ll
+              respond as soon as possible.
             </p>
+          </div>
 
-            {/* Contact Form */}
-            <div className="pt-8">
-              <form
-                onSubmit={handleSubmit}
-                className="space-y-6 max-w-xl text-sm text-black"
-              >
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <Label
-                      htmlFor="firstName"
-                      className="block mb-1 tracking-widest"
-                    >
-                      first name
-                    </Label>
-                    <Input
-                      type="text"
-                      id="firstName"
-                      value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
-                      required
-                      className="w-full bg-transparent border-gray-400 placeholder:text-gray-500 focus:border-black lowercase"
-                      placeholder="your first name"
-                    />
-                  </div>
-                  <div>
-                    <Label
-                      htmlFor="lastName"
-                      className="block mb-1 tracking-widest"
-                    >
-                      last name
-                    </Label>
-                    <Input
-                      type="text"
-                      id="lastName"
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                      required
-                      className="w-full bg-transparent border-gray-400 placeholder:text-gray-500 focus:border-black lowercase"
-                      placeholder="your last name"
-                    />
+          <div className="max-w-6xl mx-auto">
+            <div className="grid lg:grid-cols-2 gap-12 lg:gap-16">
+              {/* Contact Information */}
+              <div className="space-y-8">
+                <div>
+                  <h2 className="text-2xl md:text-3xl font-light mb-8 lowercase tracking-widest text-black">
+                    reach out
+                  </h2>
+
+                  <div className="space-y-6">
+                    <div className="flex items-center space-x-4">
+                      <div className="bg-black p-3 rounded-full">
+                        <Mail className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600 uppercase tracking-widest">
+                          email
+                        </p>
+                        <p className="text-lg text-black lowercase">
+                          reach@juneof.com
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-4">
+                      <div className="bg-black p-3 rounded-full">
+                        <Phone className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600 uppercase tracking-widest">
+                          phone
+                        </p>
+                        <p className="text-lg text-black lowercase">
+                          +1 (555) 123-4567
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-4">
+                      <div className="bg-black p-3 rounded-full">
+                        <MapPin className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600 uppercase tracking-widest">
+                          location
+                        </p>
+                        <p className="text-lg text-black lowercase">
+                          new york, ny
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div>
-                  <Label htmlFor="email" className="block mb-1 tracking-widest">
-                    email address
-                  </Label>
-                  <Input
-                    type="email"
-                    id="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    className="w-full bg-transparent border-gray-400 placeholder:text-gray-500 focus:border-black lowercase"
-                    placeholder="your email address"
-                  />
+
+                <div className="pt-8">
+                  <h3 className="text-xl font-light mb-4 lowercase tracking-widest text-black">
+                    follow us
+                  </h3>
+                  <div className="flex space-x-4">
+                    <a
+                      href="https://www.instagram.com/juneof__"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-black hover:text-gray-600 transition-colors lowercase tracking-wider"
+                    >
+                      instagram
+                    </a>
+                    <span className="text-gray-400">|</span>
+                    <a
+                      href="#"
+                      className="text-black hover:text-gray-600 transition-colors lowercase tracking-wider"
+                    >
+                      twitter
+                    </a>
+                    <span className="text-gray-400">|</span>
+                    <a
+                      href="#"
+                      className="text-black hover:text-gray-600 transition-colors lowercase tracking-wider"
+                    >
+                      facebook
+                    </a>
+                  </div>
                 </div>
-                <div>
-                  <Label
-                    htmlFor="message"
-                    className="block mb-1 tracking-widest"
+              </div>
+
+              {/* Contact Form */}
+              <div className="bg-white/80 backdrop-blur-sm p-8 rounded-lg shadow-lg">
+                <h2 className="text-2xl md:text-3xl font-light mb-8 lowercase tracking-widest text-black">
+                  send message
+                </h2>
+
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <Label
+                        htmlFor="firstName"
+                        className="block mb-2 text-sm uppercase tracking-widest text-gray-700"
+                      >
+                        first name
+                      </Label>
+                      <Input
+                        type="text"
+                        id="firstName"
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        required
+                        className="w-full bg-transparent border-gray-300 focus:border-black transition-colors lowercase"
+                        placeholder="your first name"
+                      />
+                    </div>
+                    <div>
+                      <Label
+                        htmlFor="lastName"
+                        className="block mb-2 text-sm uppercase tracking-widest text-gray-700"
+                      >
+                        last name
+                      </Label>
+                      <Input
+                        type="text"
+                        id="lastName"
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                        required
+                        className="w-full bg-transparent border-gray-300 focus:border-black transition-colors lowercase"
+                        placeholder="your last name"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label
+                      htmlFor="email"
+                      className="block mb-2 text-sm uppercase tracking-widest text-gray-700"
+                    >
+                      email address
+                    </Label>
+                    <Input
+                      type="email"
+                      id="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className="w-full bg-transparent border-gray-300 focus:border-black transition-colors lowercase"
+                      placeholder="your email address"
+                    />
+                  </div>
+
+                  <div>
+                    <Label
+                      htmlFor="message"
+                      className="block mb-2 text-sm uppercase tracking-widest text-gray-700"
+                    >
+                      message
+                    </Label>
+                    <Textarea
+                      id="message"
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      required
+                      rows={6}
+                      className="w-full bg-transparent border-gray-300 focus:border-black transition-colors resize-none lowercase"
+                      placeholder="type your message here..."
+                    />
+                  </div>
+
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full bg-black text-white hover:bg-gray-800 py-3 px-6 text-base lowercase tracking-wider transition-colors disabled:opacity-70"
                   >
-                    message
-                  </Label>
-                  <Textarea
-                    id="message"
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    required
-                    rows={5}
-                    className="w-full bg-transparent border-gray-400 placeholder:text-gray-500 focus:border-black lowercase resize-none"
-                    placeholder="type your message here..."
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full md:w-auto bg-black text-white hover:bg-gray-800 py-3 px-6 text-base lowercase tracking-wider transition-colors disabled:opacity-70"
-                >
-                  {isSubmitting ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    "reach out"
-                  )}
-                </Button>
-              </form>
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        sending...
+                      </>
+                    ) : (
+                      "send message"
+                    )}
+                  </Button>
+                </form>
+              </div>
             </div>
           </div>
         </div>

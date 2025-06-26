@@ -82,11 +82,12 @@ const ShopButton = () => {
   return (
     <div
       ref={buttonRef}
-      className="fixed bottom-[20%] right-[8%] z-[100] opacity-0"
+      className="fixed bottom-[20%] right-[8%] z-[100]"
+      style={{ opacity: 0 }}
     >
       <Link
         href="/product-listing"
-        className="bg-black text-white px-6 py-3 text-base font-medium tracking-wider lowercase hover:bg-gray-800 transition-colors duration-300 cursor-default"
+        className="bg-black text-white px-6 py-3 text-base font-medium tracking-wider lowercase hover:bg-gray-800 transition-colors duration-300 cursor-pointer"
       >
         shop
       </Link>

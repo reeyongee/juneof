@@ -53,7 +53,7 @@ export default function AboutUsPage() {
         <div className="container mx-auto px-4 sm:px-8 py-20 space-y-32">
           {/* First Paragraph - Left */}
           <div className="flex justify-start">
-            <div className="max-w-[500px] text-left transform -rotate-2">
+            <div className="max-w-[500px] text-left">
               <p className="text-xl sm:text-2xl lg:text-3xl font-light leading-relaxed lowercase tracking-wider">
                 june of was founded with the desire to create beautiful unique
                 and simple garments for all to wear anytime, anywhere.
@@ -63,7 +63,7 @@ export default function AboutUsPage() {
 
           {/* Second Paragraph - Right */}
           <div className="flex justify-end">
-            <div className="max-w-[500px] text-right transform rotate-2">
+            <div className="max-w-[500px] text-right">
               <p className="text-xl sm:text-2xl lg:text-3xl font-light leading-relaxed lowercase tracking-wider">
                 june of is a timeless brand for the modern and classical people
                 who love to express their individuality boldly with styles to
@@ -74,7 +74,7 @@ export default function AboutUsPage() {
 
           {/* Third Paragraph - Left */}
           <div className="flex justify-start">
-            <div className="max-w-[500px] text-left transform -rotate-1">
+            <div className="max-w-[500px] text-left">
               <p className="text-xl sm:text-2xl lg:text-3xl font-light leading-relaxed lowercase tracking-wider">
                 our pieces are crafted with intention, blending heritage
                 techniques with contemporary design to create garments that
@@ -85,7 +85,7 @@ export default function AboutUsPage() {
 
           {/* Fourth Paragraph - Right */}
           <div className="flex justify-end">
-            <div className="max-w-[500px] text-right transform rotate-1">
+            <div className="max-w-[500px] text-right">
               <p className="text-xl sm:text-2xl lg:text-3xl font-light leading-relaxed lowercase tracking-wider">
                 we believe in slow fashion, quality over quantity, and creating
                 pieces that tell stories while honoring the craft and the
