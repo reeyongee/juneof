@@ -76,10 +76,13 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
   const [isSizeChartOpen, setIsSizeChartOpen] = useState(false);
   const [isWashCareOpen, setIsWashCareOpen] = useState(false);
   const [isExpressInterestOpen, setIsExpressInterestOpen] = useState(false);
+  const [expressInterestMessage, setExpressInterestMessage] = useState("");
+  const [isExpressInterestLoading, setIsExpressInterestLoading] =
+    useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const { addItemToCart } = useCart();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, customerData } = useAuth();
   const isMobile = useIsMobile();
   const imageGalleryRef = useRef<HTMLDivElement>(null);
 
@@ -212,10 +215,73 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
   };
 
   // Handle express interest
-  const handleExpressInterest = () => {
-    if (isAuthenticated) {
-      // TODO: Implement express interest for authenticated users
+  const handleExpressInterest = async () => {
+    if (isAuthenticated && customerData) {
+      // Handle authenticated users - call API directly with their data
       console.log("Express interest for authenticated user:", product.title);
+
+      const firstName = customerData.customer.firstName || "";
+      const lastName = customerData.customer.lastName || "";
+      const email = customerData.customer.emailAddress?.emailAddress || "";
+
+      if (!firstName || !lastName || !email) {
+        console.warn("Express Interest: Missing user data, showing overlay");
+        setIsExpressInterestOpen(true);
+        return;
+      }
+
+      try {
+        setIsExpressInterestLoading(true);
+        setExpressInterestMessage("");
+
+        console.log("Express Interest: Submitting for authenticated user", {
+          firstName,
+          lastName,
+          email,
+          productId: product.id,
+        });
+
+        const response = await fetch("/api/customer/express-interest", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            productId: product.id,
+            firstName,
+            lastName,
+            email,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          console.log("Express Interest: Success for authenticated user", data);
+          setExpressInterestMessage(
+            "Thank you! We'll notify you when this product is available."
+          );
+        } else {
+          console.error("Express Interest: Error for authenticated user", data);
+          setExpressInterestMessage(
+            data.message ||
+              data.error ||
+              "Something went wrong. Please try again."
+          );
+        }
+      } catch (error) {
+        console.error(
+          "Express Interest: Network error for authenticated user",
+          error
+        );
+        setExpressInterestMessage(
+          "Network error. Please check your connection and try again."
+        );
+      } finally {
+        setIsExpressInterestLoading(false);
+        // Clear message after 5 seconds
+        setTimeout(() => setExpressInterestMessage(""), 5000);
+      }
     } else {
       // Show overlay for non-authenticated users
       setIsExpressInterestOpen(true);
@@ -235,7 +301,7 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
         <main className="min-h-screen bg-[#F8F4EC] text-gray-900">
           {/* Mobile Header */}
           <div className="sticky top-0 bg-[#F8F4EC] z-10 border-b border-gray-300 p-4">
-            <div className="space-y-2">
+            <div className={expressInterest ? "space-y-2" : "space-y-1"}>
               <h1 className="text-lg font-medium tracking-widest lowercase">
                 {product.title.toLowerCase()}
               </h1>
@@ -374,13 +440,30 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
           {/* Sticky Add to Cart - Mobile */}
           <div className="sticky bottom-0 bg-[#F8F4EC] border-t border-gray-300 p-4">
             <button
-              className="w-full border border-gray-900 py-4 text-center text-base tracking-widest hover:bg-gray-100 transition-colors lowercase"
+              className="w-full border border-gray-900 py-4 text-center text-base tracking-widest hover:bg-gray-100 transition-colors lowercase disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={
                 expressInterest ? handleExpressInterest : handleAddToCart
               }
+              disabled={isExpressInterestLoading}
             >
-              {expressInterest ? "express interest!" : "add to cart"}
+              {expressInterest
+                ? isExpressInterestLoading
+                  ? "submitting..."
+                  : "express interest!"
+                : "add to cart"}
             </button>
+
+            {expressInterestMessage && (
+              <div
+                className={`mt-3 p-3 rounded-lg text-sm tracking-wide lowercase ${
+                  expressInterestMessage.includes("Thank you")
+                    ? "bg-green-50 border border-green-200 text-green-700"
+                    : "bg-red-50 border border-red-200 text-red-700"
+                }`}
+              >
+                {expressInterestMessage}
+              </div>
+            )}
           </div>
         </main>
 
@@ -397,6 +480,7 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
           isOpen={isExpressInterestOpen}
           onClose={() => setIsExpressInterestOpen(false)}
           productName={product.title}
+          productId={product.id}
         />
       </>
     );
@@ -412,7 +496,7 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
             <div className="flex-grow flex flex-col justify-center">
               <div className="space-y-6">
                 {/* Product Title */}
-                <h1 className="text-xl font-medium tracking-widest lowercase">
+                <h1 className="text-xl font-medium tracking-widest lowercase mb-2">
                   {product.title.toLowerCase()}
                 </h1>
 
@@ -422,7 +506,7 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
                     coming soon!
                   </Badge>
                 ) : (
-                  <span className="text-lg font-medium">
+                  <span className="text-lg font-medium mb-6 block">
                     {formatPrice(price, currencyCode)}
                   </span>
                 )}
@@ -572,12 +656,33 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
           </div>
 
           {/* Add to Cart Button */}
-          <button
-            className="w-full border border-gray-900 py-3 text-center text-base tracking-widest hover:bg-gray-100 transition-colors lowercase mt-auto"
-            onClick={expressInterest ? handleExpressInterest : handleAddToCart}
-          >
-            {expressInterest ? "express interest!" : "add to cart"}
-          </button>
+          <div className="mt-auto">
+            <button
+              className="w-full border border-gray-900 py-3 text-center text-base tracking-widest hover:bg-gray-100 transition-colors lowercase disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={
+                expressInterest ? handleExpressInterest : handleAddToCart
+              }
+              disabled={isExpressInterestLoading}
+            >
+              {expressInterest
+                ? isExpressInterestLoading
+                  ? "submitting..."
+                  : "express interest!"
+                : "add to cart"}
+            </button>
+
+            {expressInterestMessage && (
+              <div
+                className={`mt-3 p-3 rounded-lg text-sm tracking-wide lowercase ${
+                  expressInterestMessage.includes("Thank you")
+                    ? "bg-green-50 border border-green-200 text-green-700"
+                    : "bg-red-50 border border-red-200 text-red-700"
+                }`}
+              >
+                {expressInterestMessage}
+              </div>
+            )}
+          </div>
         </div>
       </main>
 
@@ -594,6 +699,7 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
         isOpen={isExpressInterestOpen}
         onClose={() => setIsExpressInterestOpen(false)}
         productName={product.title}
+        productId={product.id}
       />
     </>
   );

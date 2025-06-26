@@ -10,28 +10,80 @@ interface ExpressInterestOverlayProps {
   isOpen: boolean;
   onClose: () => void;
   productName: string;
+  productId: string;
 }
 
 export default function ExpressInterestOverlay({
   isOpen,
   onClose,
   productName,
+  productId,
 }: ExpressInterestOverlayProps) {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement submission logic
-    console.log("Express Interest Submission:", {
-      firstName,
-      lastName,
-      email,
-      productName,
-    });
-    // Close overlay after submission
-    onClose();
+    setIsSubmitting(true);
+    setSubmitMessage("");
+
+    try {
+      console.log("Express Interest Overlay: Submitting data", {
+        firstName,
+        lastName,
+        email,
+        productName,
+        productId,
+      });
+
+      const response = await fetch("/api/customer/express-interest", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          productId,
+          firstName,
+          lastName,
+          email,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        console.log("Express Interest Overlay: Success", data);
+        setSubmitMessage(
+          "Thank you! We'll notify you when this product is available."
+        );
+        // Clear form
+        setFirstName("");
+        setLastName("");
+        setEmail("");
+        // Close overlay after a brief delay
+        setTimeout(() => {
+          onClose();
+          setSubmitMessage("");
+        }, 2000);
+      } else {
+        console.error("Express Interest Overlay: Error", data);
+        setSubmitMessage(
+          data.message ||
+            data.error ||
+            "Something went wrong. Please try again."
+        );
+      }
+    } catch (error) {
+      console.error("Express Interest Overlay: Network error", error);
+      setSubmitMessage(
+        "Network error. Please check your connection and try again."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -125,11 +177,24 @@ export default function ExpressInterestOverlay({
             />
           </div>
 
+          {submitMessage && (
+            <div
+              className={`p-3 rounded-lg text-sm tracking-wide lowercase ${
+                submitMessage.includes("Thank you")
+                  ? "bg-green-50 border border-green-200 text-green-700"
+                  : "bg-red-50 border border-red-200 text-red-700"
+              }`}
+            >
+              {submitMessage}
+            </div>
+          )}
+
           <Button
             type="submit"
-            className="w-full bg-black text-white hover:bg-black/90 py-3 text-sm tracking-widest lowercase border-0 mt-6"
+            disabled={isSubmitting}
+            className="w-full bg-black text-white hover:bg-black/90 py-3 text-sm tracking-widest lowercase border-0 mt-6 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            express interest!
+            {isSubmitting ? "submitting..." : "express interest!"}
           </Button>
         </form>
       </div>
