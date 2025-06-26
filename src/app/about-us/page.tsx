@@ -49,26 +49,49 @@ export default function AboutUsPage() {
         />
       </div>
 
-      <main
-        ref={mainElementRef}
-        className="relative min-h-screen flex items-center justify-center text-white"
-      >
-        <div className="container mx-auto px-4 sm:px-8 py-20 flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-16">
-          {/* First Text Block */}
-          <div className="max-w-[500px] text-center lg:text-left">
-            <p className="text-xl sm:text-2xl lg:text-3xl font-light leading-relaxed lowercase tracking-wider">
-              june of was founded with the desire to create beautiful unique and
-              simple garments for all to wear anytime, anywhere.
-            </p>
+      <main ref={mainElementRef} className="relative min-h-screen text-white">
+        <div className="container mx-auto px-4 sm:px-8 py-20 space-y-32">
+          {/* First Paragraph - Left */}
+          <div className="flex justify-start">
+            <div className="max-w-[500px] text-left transform -rotate-2">
+              <p className="text-xl sm:text-2xl lg:text-3xl font-light leading-relaxed lowercase tracking-wider">
+                june of was founded with the desire to create beautiful unique
+                and simple garments for all to wear anytime, anywhere.
+              </p>
+            </div>
           </div>
 
-          {/* Second Text Block */}
-          <div className="max-w-[500px] text-center lg:text-left lg:ml-16">
-            <p className="text-xl sm:text-2xl lg:text-3xl font-light leading-relaxed lowercase tracking-wider">
-              june of is a timeless brand for the modern and classical people
-              who love to express their individuality boldly with styles to
-              match.
-            </p>
+          {/* Second Paragraph - Right */}
+          <div className="flex justify-end">
+            <div className="max-w-[500px] text-right transform rotate-2">
+              <p className="text-xl sm:text-2xl lg:text-3xl font-light leading-relaxed lowercase tracking-wider">
+                june of is a timeless brand for the modern and classical people
+                who love to express their individuality boldly with styles to
+                match.
+              </p>
+            </div>
+          </div>
+
+          {/* Third Paragraph - Left */}
+          <div className="flex justify-start">
+            <div className="max-w-[500px] text-left transform -rotate-1">
+              <p className="text-xl sm:text-2xl lg:text-3xl font-light leading-relaxed lowercase tracking-wider">
+                our pieces are crafted with intention, blending heritage
+                techniques with contemporary design to create garments that
+                transcend seasons and trends.
+              </p>
+            </div>
+          </div>
+
+          {/* Fourth Paragraph - Right */}
+          <div className="flex justify-end">
+            <div className="max-w-[500px] text-right transform rotate-1">
+              <p className="text-xl sm:text-2xl lg:text-3xl font-light leading-relaxed lowercase tracking-wider">
+                we believe in slow fashion, quality over quantity, and creating
+                pieces that tell stories while honoring the craft and the
+                craftspeople behind them.
+              </p>
+            </div>
           </div>
         </div>
       </main>
