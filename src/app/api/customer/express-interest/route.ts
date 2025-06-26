@@ -177,7 +177,11 @@ export async function POST(request: NextRequest) {
         customerId,
       });
       return NextResponse.json(
-        { message: "You have already expressed interest in this product" },
+        {
+          message:
+            "oops! you've already signed up for this (we see how excited you are - you'll be the first to know we promise!)",
+          isDuplicate: true,
+        },
         { status: 200 }
       );
     }
@@ -276,7 +280,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: "Interest expressed successfully",
+      message: "thank you! you're first in line now! we'll keep you posted.",
       totalInterestedCustomers: updatedCustomers.length,
     });
   } catch (error) {

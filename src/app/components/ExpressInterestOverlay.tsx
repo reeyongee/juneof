@@ -57,7 +57,8 @@ export default function ExpressInterestOverlay({
       if (response.ok) {
         console.log("Express Interest Overlay: Success", data);
         setSubmitMessage(
-          "Thank you! We'll notify you when this product is available."
+          data.message ||
+            "thank you! you're first in line now! we'll keep you posted."
         );
         // Clear form
         setFirstName("");
@@ -180,7 +181,8 @@ export default function ExpressInterestOverlay({
           {submitMessage && (
             <div
               className={`p-3 rounded-lg text-sm tracking-wide lowercase ${
-                submitMessage.includes("Thank you")
+                submitMessage.includes("thank you") &&
+                !submitMessage.includes("oops")
                   ? "bg-green-50 border border-green-200 text-green-700"
                   : "bg-red-50 border border-red-200 text-red-700"
               }`}

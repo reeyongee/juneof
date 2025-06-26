@@ -259,7 +259,8 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
         if (response.ok) {
           console.log("Express Interest: Success for authenticated user", data);
           setExpressInterestMessage(
-            "Thank you! We'll notify you when this product is available."
+            data.message ||
+              "thank you! you're first in line now! we'll keep you posted."
           );
         } else {
           console.error("Express Interest: Error for authenticated user", data);
@@ -456,7 +457,8 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
             {expressInterestMessage && (
               <div
                 className={`mt-3 p-3 rounded-lg text-sm tracking-wide lowercase ${
-                  expressInterestMessage.includes("Thank you")
+                  expressInterestMessage.includes("thank you") &&
+                  !expressInterestMessage.includes("oops")
                     ? "bg-green-50 border border-green-200 text-green-700"
                     : "bg-red-50 border border-red-200 text-red-700"
                 }`}
@@ -674,7 +676,8 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
             {expressInterestMessage && (
               <div
                 className={`mt-3 p-3 rounded-lg text-sm tracking-wide lowercase ${
-                  expressInterestMessage.includes("Thank you")
+                  expressInterestMessage.includes("thank you") &&
+                  !expressInterestMessage.includes("oops")
                     ? "bg-green-50 border border-green-200 text-green-700"
                     : "bg-red-50 border border-red-200 text-red-700"
                 }`}
