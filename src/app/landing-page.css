@@ -38,9 +38,9 @@
 
 /* Specific width constraints for each image based on original design */
 .section1 .container .panel.first img {
-  min-width: 552px; /* 15% smaller: 650px * 0.85 = 552.5px */
-  width: 42.5vw; /* 15% smaller: 50vw * 0.85 = 42.5vw */
-  max-width: 680px; /* 15% smaller: 800px * 0.85 = 680px */
+  min-width: 650px;
+  width: 50vw;
+  max-width: 800px;
 }
 
 .section1 .container .panel img.pic2 {

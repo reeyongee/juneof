@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Loader2, Mail, Phone, MapPin } from "lucide-react";
+import { Loader2, Mail, Phone, Instagram } from "lucide-react";
 import { toast } from "sonner";
 
 // Register GSAP plugins
@@ -114,7 +114,7 @@ export default function ContactUsPage() {
           <div className="max-w-6xl mx-auto">
             <div className="grid lg:grid-cols-2 gap-12 lg:gap-16">
               {/* Contact Information */}
-              <div className="space-y-8">
+              <div className="flex flex-col justify-center h-full">
                 <div>
                   <h2 className="text-2xl md:text-3xl font-light mb-8 lowercase tracking-widest text-black">
                     reach out
@@ -126,7 +126,7 @@ export default function ContactUsPage() {
                         <Mail className="w-5 h-5 text-white" />
                       </div>
                       <div>
-                        <p className="text-sm text-gray-600 uppercase tracking-widest">
+                        <p className="text-sm text-gray-600 lowercase tracking-widest">
                           email
                         </p>
                         <p className="text-lg text-black lowercase">
@@ -140,7 +140,7 @@ export default function ContactUsPage() {
                         <Phone className="w-5 h-5 text-white" />
                       </div>
                       <div>
-                        <p className="text-sm text-gray-600 uppercase tracking-widest">
+                        <p className="text-sm text-gray-600 lowercase tracking-widest">
                           phone
                         </p>
                         <p className="text-lg text-black lowercase">
@@ -151,47 +151,22 @@ export default function ContactUsPage() {
 
                     <div className="flex items-center space-x-4">
                       <div className="bg-black p-3 rounded-full">
-                        <MapPin className="w-5 h-5 text-white" />
+                        <Instagram className="w-5 h-5 text-white" />
                       </div>
                       <div>
-                        <p className="text-sm text-gray-600 uppercase tracking-widest">
-                          location
+                        <p className="text-sm text-gray-600 lowercase tracking-widest">
+                          instagram
                         </p>
-                        <p className="text-lg text-black lowercase">
-                          new york, ny
-                        </p>
+                        <a
+                          href="https://www.instagram.com/juneof__"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-lg text-black lowercase hover:text-gray-600 transition-colors"
+                        >
+                          @juneof__
+                        </a>
                       </div>
                     </div>
-                  </div>
-                </div>
-
-                <div className="pt-8">
-                  <h3 className="text-xl font-light mb-4 lowercase tracking-widest text-black">
-                    follow us
-                  </h3>
-                  <div className="flex space-x-4">
-                    <a
-                      href="https://www.instagram.com/juneof__"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-black hover:text-gray-600 transition-colors lowercase tracking-wider"
-                    >
-                      instagram
-                    </a>
-                    <span className="text-gray-400">|</span>
-                    <a
-                      href="#"
-                      className="text-black hover:text-gray-600 transition-colors lowercase tracking-wider"
-                    >
-                      twitter
-                    </a>
-                    <span className="text-gray-400">|</span>
-                    <a
-                      href="#"
-                      className="text-black hover:text-gray-600 transition-colors lowercase tracking-wider"
-                    >
-                      facebook
-                    </a>
                   </div>
                 </div>
               </div>
@@ -207,7 +182,7 @@ export default function ContactUsPage() {
                     <div>
                       <Label
                         htmlFor="firstName"
-                        className="block mb-2 text-sm uppercase tracking-widest text-gray-700"
+                        className="block mb-2 text-sm lowercase tracking-widest text-gray-700"
                       >
                         first name
                       </Label>
@@ -224,7 +199,7 @@ export default function ContactUsPage() {
                     <div>
                       <Label
                         htmlFor="lastName"
-                        className="block mb-2 text-sm uppercase tracking-widest text-gray-700"
+                        className="block mb-2 text-sm lowercase tracking-widest text-gray-700"
                       >
                         last name
                       </Label>
@@ -243,7 +218,7 @@ export default function ContactUsPage() {
                   <div>
                     <Label
                       htmlFor="email"
-                      className="block mb-2 text-sm uppercase tracking-widest text-gray-700"
+                      className="block mb-2 text-sm lowercase tracking-widest text-gray-700"
                     >
                       email address
                     </Label>
@@ -261,7 +236,7 @@ export default function ContactUsPage() {
                   <div>
                     <Label
                       htmlFor="message"
-                      className="block mb-2 text-sm uppercase tracking-widest text-gray-700"
+                      className="block mb-2 text-sm lowercase tracking-widest text-gray-700"
                     >
                       message
                     </Label>

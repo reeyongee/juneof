@@ -6,7 +6,6 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 
 const ShopButton = () => {
-  const [isVisible, setIsVisible] = useState(false);
   const [hasScrolled, setHasScrolled] = useState(false);
   const buttonRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
@@ -26,7 +25,6 @@ const ShopButton = () => {
 
         // Wait 2 seconds after scroll, then fade in the shop button
         setTimeout(() => {
-          setIsVisible(true);
           if (buttonRef.current) {
             gsap.fromTo(
               buttonRef.current,
@@ -77,7 +75,7 @@ const ShopButton = () => {
     };
   }, [shouldShow, hasScrolled]);
 
-  if (!shouldShow || !isVisible) return null;
+  if (!shouldShow) return null;
 
   return (
     <div

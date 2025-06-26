@@ -64,7 +64,7 @@ export default function TermsAndConditionsPage() {
         <div className="relative z-10 flex-grow p-8 bg-[rgba(0,0,0,0.02)] backdrop-blur-md">
           <div
             ref={contentRef}
-            className="text-3xl lowercase tracking-wider text-black space-y-4 mix-blend-difference"
+            className="text-xl lowercase tracking-wider text-black space-y-4 mix-blend-difference"
           >
             <p>effective date:</p>
             <p>
