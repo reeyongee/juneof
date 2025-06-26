@@ -60,15 +60,22 @@ export default function ExpressInterestOverlay({
           data.message ||
             "thank you! you're first in line now! we'll keep you posted."
         );
-        // Clear form
-        setFirstName("");
-        setLastName("");
-        setEmail("");
-        // Close overlay after a brief delay
-        setTimeout(() => {
-          onClose();
-          setSubmitMessage("");
-        }, 2000);
+
+        // Check if this is a duplicate case
+        const isDuplicate = data.isDuplicate || data.message?.includes("oops");
+
+        if (!isDuplicate) {
+          // Clear form only for successful new submissions
+          setFirstName("");
+          setLastName("");
+          setEmail("");
+          // Close overlay after 6 seconds (3x the original 2 seconds) for success
+          setTimeout(() => {
+            onClose();
+            setSubmitMessage("");
+          }, 6000);
+        }
+        // For duplicates, don't auto-close the overlay so user can read the message
       } else {
         console.error("Express Interest Overlay: Error", data);
         setSubmitMessage(
