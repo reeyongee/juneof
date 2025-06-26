@@ -109,11 +109,8 @@ const AboutIcon = ({ className }: { className?: string }) => (
     className={className}
   >
     <path
-      d="M12 7V7.01M12 10V17"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
+      d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"
+      fill="currentColor"
     />
   </svg>
 );
@@ -334,11 +331,22 @@ const Navbar: React.FC = () => {
     }, HOVER_DELAY_MS);
   };
 
+  // Determine if current page should always be transparent
+  const alwaysTransparentPages = [
+    "/contact-us",
+    "/terms-and-conditions",
+    "/privacy-policy",
+    "/shipping-and-delivery",
+    "/cancellations-and-refund",
+  ];
+  const isAlwaysTransparent = alwaysTransparentPages.includes(pathname);
+
   const dynamicHeaderClasses = `fixed top-0 left-0 right-0 z-50 text-black p-4 transition-all duration-300 ${
     visible ? "translate-y-0" : "-translate-y-full"
   } ${
-    // Navbar transparency based on scroll position and page
-    transparent && !isNavItemHovered && isTransparencyAllowed
+    // Always transparent pages or transparency based on scroll position and page
+    isAlwaysTransparent ||
+    (transparent && !isNavItemHovered && isTransparencyAllowed)
       ? "bg-transparent"
       : "bg-[#F8F4EC]"
   }`;
@@ -354,7 +362,8 @@ const Navbar: React.FC = () => {
 
   // Determine if the navbar is effectively transparent for item styling
   const isEffectivelyTransparent =
-    transparent && !isNavItemHovered && isTransparencyAllowed;
+    isAlwaysTransparent ||
+    (transparent && !isNavItemHovered && isTransparencyAllowed);
 
   return (
     <>
