@@ -322,15 +322,6 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
               </div>
             </div>
 
-            {/* Express Interest Message */}
-            {expressInterest && (
-              <div className="bg-red-50 border border-red-200 p-3 rounded">
-                <p className="text-red-600 font-bold text-sm tracking-wider lowercase">
-                  express_interest true!
-                </p>
-              </div>
-            )}
-
             {/* Product Details - Always Visible */}
             <div className="space-y-4">
               <div className="space-y-2 text-sm tracking-wider text-gray-700">
@@ -423,15 +414,6 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
                     </span>
                   )}
                 </div>
-
-                {/* Express Interest Message */}
-                {expressInterest && (
-                  <div className="bg-red-50 border border-red-200 p-3 rounded">
-                    <p className="text-red-600 font-bold text-sm tracking-wider lowercase">
-                      express_interest true!
-                    </p>
-                  </div>
-                )}
 
                 {/* Product Information */}
                 <div className="space-y-2 text-sm tracking-wider text-gray-700">
