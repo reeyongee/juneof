@@ -36,12 +36,12 @@ export default function LandingPageContent() {
 
   // Critical images that must load before animations
   const criticalImages = [
-    "/landing-images/1.webp",
-    "/landing-images/2.webp",
-    "/landing-images/3.webp",
-    "/landing-images/4.webp", // This is the problematic pic4
-    "/landing-images/5.webp",
-    "/landing-images/6.webp",
+    "/landing-images/1.jpg",
+    "/landing-images/2.jpg",
+    "/landing-images/3.jpg",
+    "/landing-images/4.jpg",
+    "/landing-images/5.jpg",
+    "/landing-images/6.jpg",
   ];
 
   // Handle individual image load
@@ -358,49 +358,49 @@ export default function LandingPageContent() {
           <div className="panel first relative h-screen">
             <Image
               className="pic1 relative block w-full"
-              src="/landing-images/1.webp"
+              src="/landing-images/1.jpg"
               alt="pic1"
               width={800}
               height={600}
               priority
               sizes="(max-width: 768px) 80vw, 50vw"
-              onLoad={() => handleImageLoad("/landing-images/1.webp")}
+              onLoad={() => handleImageLoad("/landing-images/1.jpg")}
             />
           </div>
           <div className="panel relative h-screen">
             <Image
               className="pic2 relative block w-full"
-              src="/landing-images/2.webp"
+              src="/landing-images/2.jpg"
               alt="pic2"
               width={800}
               height={600}
               priority
               sizes="(max-width: 768px) 80vw, 35vw"
-              onLoad={() => handleImageLoad("/landing-images/2.webp")}
+              onLoad={() => handleImageLoad("/landing-images/2.jpg")}
             />
           </div>
           <div className="panel relative h-screen">
             <Image
               className="pic3 relative block w-full"
-              src="/landing-images/3.webp"
+              src="/landing-images/3.jpg"
               alt="pic3"
               width={800}
               height={600}
               priority
               sizes="(max-width: 768px) 80vw, 20vw"
-              onLoad={() => handleImageLoad("/landing-images/3.webp")}
+              onLoad={() => handleImageLoad("/landing-images/3.jpg")}
             />
           </div>
           <div className="panel last relative h-screen">
             <Image
               className="pic4 relative block w-full"
-              src="/landing-images/4.webp"
+              src="/landing-images/4.jpg"
               alt="pic4"
               width={800}
               height={600}
               priority
               sizes="(max-width: 768px) 80vw, 55vw"
-              onLoad={() => handleImageLoad("/landing-images/4.webp")}
+              onLoad={() => handleImageLoad("/landing-images/4.jpg")}
             />
           </div>
         </div>
@@ -410,13 +410,13 @@ export default function LandingPageContent() {
       <div ref={section2Ref} className="section2">
         <div className="container">
           <Image
-            src="/landing-images/5.webp"
+            src="/landing-images/5.jpg"
             alt="pic5"
             width={1800}
             height={1200}
             priority
             sizes="(max-width: 768px) 80vw, 55vw"
-            onLoad={() => handleImageLoad("/landing-images/5.webp")}
+            onLoad={() => handleImageLoad("/landing-images/5.jpg")}
           />
         </div>
       </div>
@@ -449,13 +449,13 @@ export default function LandingPageContent() {
         <div className="container overflow-hidden bg-teal w-screen max-w-none left-0">
           <Image
             className="w-full scale-[1.3]"
-            src="/landing-images/6.webp"
+            src="/landing-images/6.jpg"
             alt="pic6"
             width={1200}
             height={800}
             priority
             sizes="100vw"
-            onLoad={() => handleImageLoad("/landing-images/6.webp")}
+            onLoad={() => handleImageLoad("/landing-images/6.jpg")}
           />
         </div>
       </div>
@@ -467,7 +467,7 @@ export default function LandingPageContent() {
       >
         <Image
           className="pic1 absolute min-w-[150px] max-w-[300px] w-[20vw] top-[50vh] left-[8.5vw]"
-          src="/landing-images/e4.webp"
+          src="/landing-images/e4.jpg"
           alt="pic7"
           width={300}
           height={400}
@@ -475,7 +475,7 @@ export default function LandingPageContent() {
         />
         <Image
           className="pic2 absolute min-w-[150px] max-w-[300px] w-[16vw] top-[90vh] left-[23vw]"
-          src="/landing-images/e1.webp"
+          src="/landing-images/e1.jpg"
           alt="pic8"
           width={300}
           height={400}
@@ -483,7 +483,7 @@ export default function LandingPageContent() {
         />
         <Image
           className="pic3 absolute min-w-[150px] max-w-[300px] w-[20vw] top-[20vh] left-[40vw]"
-          src="/landing-images/e3.webp"
+          src="/landing-images/e3.jpg"
           alt="pic9"
           width={300}
           height={400}
@@ -491,7 +491,7 @@ export default function LandingPageContent() {
         />
         <Image
           className="pic4 absolute min-w-[150px] max-w-[300px] w-[19vw] top-[99vh] left-[80vw]"
-          src="/landing-images/e2.webp"
+          src="/landing-images/e2.jpg"
           alt="pic10"
           width={300}
           height={400}
@@ -499,7 +499,7 @@ export default function LandingPageContent() {
         />
         <Image
           className="pic5 absolute min-w-[150px] max-w-[300px] w-[15vw] top-0 right-0"
-          src="/landing-images/e5.webp"
+          src="/landing-images/e5.jpg"
           alt="pic11"
           width={300}
           height={400}
@@ -507,7 +507,7 @@ export default function LandingPageContent() {
         />
         <Image
           className="pic6 absolute min-w-[150px] max-w-[300px] w-[17vw] top-[70vh] right-[15vw]"
-          src="/landing-images/e3.webp"
+          src="/landing-images/e3.jpg"
           alt="pic12"
           width={300}
           height={400}
@@ -515,7 +515,7 @@ export default function LandingPageContent() {
         />
         <Image
           className="pic7 absolute min-w-[150px] max-w-[300px] w-[16vw] top-[40vh] right-[35vw]"
-          src="/landing-images/e1.webp"
+          src="/landing-images/e1.jpg"
           alt="pic13"
           width={300}
           height={400}
