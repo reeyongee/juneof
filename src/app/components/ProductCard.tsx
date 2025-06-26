@@ -167,14 +167,11 @@ const ProductCard: React.FC<ProductCardProps> = ({
           />
         </div>
       </div>
-      <h3 className="text-lg text-gray-900 lowercase font-medium tracking-widest mb-1">
+      <h3 className="text-lg text-gray-900 lowercase font-medium tracking-widest mb-2">
         {name}
       </h3>
       {expressInterest ? (
-        <Badge
-          variant="secondary"
-          className="text-xs font-medium tracking-wider lowercase"
-        >
+        <Badge className="bg-black text-white hover:bg-black/90 px-4 py-2 text-sm font-semibold tracking-widest lowercase border-0">
           coming soon!
         </Badge>
       ) : (
