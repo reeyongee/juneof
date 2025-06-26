@@ -10,6 +10,11 @@ export default function TermsAndConditionsPage() {
   const mainElementRef = useRef<HTMLElement>(null); // For main scroll trigger
 
   useEffect(() => {
+    // Set page title
+    document.title = "terms & conditions - june of";
+  }, []);
+
+  useEffect(() => {
     // Existing BlurScrollEffect logic for contentRef
     if (contentRef.current) {
       new BlurScrollEffect_Effect4(contentRef.current);
@@ -66,7 +71,7 @@ export default function TermsAndConditionsPage() {
             ref={contentRef}
             className="text-xl lowercase tracking-wider text-black space-y-4 mix-blend-difference"
           >
-            <p>effective date:</p>
+            <p>effective date: june 20, 2025</p>
             <p>
               welcome to june of. by accessing or using our website
               www.juneof.com, you agree to comply with and be bound by the
@@ -114,9 +119,8 @@ export default function TermsAndConditionsPage() {
             <p>⸻</p>
             <p>6. governing law</p>
             <p>
-              these terms are governed by the laws of [insert jurisdiction,
-              e.g., india]. any disputes will be subject to the exclusive
-              jurisdiction of the courts in [insert city, e.g., bangalore].
+              these terms are governed by the laws of india. any disputes will
+              be subject to the exclusive jurisdiction of the courts in india.
             </p>
             <p>⸻</p>
             <p>7. contact</p>

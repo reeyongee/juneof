@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Shipping and Delivery - juneof</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Old Standard TT", serif;
+        background-color: #fdf3e1;
+        color: #000;
+        overflow-x: hidden;
+      }
+
+      .container {
+        position: relative;
+        min-height: 100vh;
+      }
+
+      .main-content {
+        display: flex;
+        min-height: 100vh;
+        padding-top: 6rem;
+      }
+
+      /* Left Column - Sticky Title */
+      .left-column {
+        position: sticky;
+        top: 0;
+        width: 40%;
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        border-right: 1px solid rgba(0, 0, 0, 0.3);
+        flex-shrink: 0;
+      }
+
+      .page-title {
+        font-size: 1.25rem;
+        font-weight: 500;
+        letter-spacing: 0.1em;
+        text-transform: lowercase;
+        color: #000;
+        mix-blend-mode: difference;
+      }
+
+      /* Right Column - Scrollable Content */
+      .right-column {
+        flex-grow: 1;
+        padding: 2rem;
+        background: rgba(0, 0, 0, 0.02);
+        backdrop-filter: blur(16px);
+      }
+
+      .content {
+        font-size: 1.875rem;
+        text-transform: lowercase;
+        letter-spacing: 0.05em;
+        color: #000;
+        line-height: 1.6;
+        mix-blend-mode: difference;
+      }
+
+      .content p {
+        margin-bottom: 1rem;
+      }
+
+      .content .heading {
+        font-weight: 700;
+        margin-top: 2rem;
+        margin-bottom: 1.5rem;
+      }
+
+      /* Back Button */
+      .back-button {
+        position: fixed;
+        top: 2rem;
+        left: 2rem;
+        z-index: 1000;
+        color: #000;
+        text-decoration: none;
+        font-size: 1rem;
+        text-transform: lowercase;
+        letter-spacing: 0.05em;
+        transition: opacity 0.3s ease;
+        background: rgba(253, 243, 225, 0.9);
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+      }
+
+      .back-button:hover {
+        opacity: 0.7;
+      }
+
+      /* Responsive Design */
+      @media (max-width: 1024px) {
+        .main-content {
+          padding-top: 4rem;
+        }
+
+        .content {
+          font-size: 1.5rem;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .main-content {
+          flex-direction: column;
+          padding-top: 2rem;
+        }
+
+        .left-column {
+          position: relative;
+          width: 100%;
+          height: auto;
+          padding: 1.5rem;
+          border-right: none;
+          border-bottom: 1px solid rgba(0, 0, 0, 0.3);
+        }
+
+        .page-title {
+          font-size: 1.125rem;
+        }
+
+        .right-column {
+          padding: 1.5rem;
+        }
+
+        .content {
+          font-size: 1.25rem;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .left-column,
+        .right-column {
+          padding: 1rem;
+        }
+
+        .content {
+          font-size: 1.125rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- Back Button -->
+      <a href="index.html" class="back-button">← back</a>
+
+      <main class="main-content">
+        <!-- Left Column (Sticky Title) -->
+        <div class="left-column">
+          <h1 class="page-title">shipping &amp; returns</h1>
+        </div>
+
+        <!-- Right Column (Scrollable Content) -->
+        <div class="right-column">
+          <div class="content">
+            <p>effective date: june 20, 2025</p>
+            <p>
+              at june of, we want your experience to be smooth and delightful.
+              here's everything you need to know about shipping and returns:
+            </p>
+            <p>⸻</p>
+            <p class="heading">1. shipping</p>
+            <p class="heading">shipping locations:</p>
+            <p>we currently ship pan india.</p>
+            <p class="heading">dispatch time:</p>
+            <p>
+              orders are typically processed and dispatched within 7 working
+              days.
+            </p>
+            <p class="heading">shipping charges:</p>
+            <p>• domestic (india): ₹100</p>
+            <p class="heading">tracking:</p>
+            <p>
+              once your order is shipped, you will receive a tracking number via
+              email.
+            </p>
+          </div>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

@@ -14,6 +14,11 @@ export default function AboutUsPage() {
   const mainElementRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
+    // Set page title
+    document.title = "about us - june of";
+  }, []);
+
+  useEffect(() => {
     // Parallax Effect for backgroundRef
     if (backgroundRef.current && mainElementRef.current) {
       const tl = gsap.timeline({
@@ -42,7 +47,7 @@ export default function AboutUsPage() {
       <div className="absolute inset-0 overflow-hidden">
         <div
           ref={backgroundRef}
-          className="absolute inset-0 h-[130%] bg-cover bg-center"
+          className="absolute inset-0 h-[130%] bg-cover bg-center opacity-30"
           style={{
             backgroundImage: "url('/landing-images/about.jpg')",
           }}

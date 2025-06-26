@@ -10,6 +10,11 @@ export default function CancellationsAndRefundPage() {
   const mainElementRef = useRef<HTMLElement>(null); // For main scroll trigger
 
   useEffect(() => {
+    // Set page title
+    document.title = "cancellations & refund - june of";
+  }, []);
+
+  useEffect(() => {
     // Existing BlurScrollEffect logic for contentRef
     if (contentRef.current) {
       new BlurScrollEffect_Effect4(contentRef.current);
@@ -66,44 +71,44 @@ export default function CancellationsAndRefundPage() {
             ref={contentRef}
             className="text-xl lowercase tracking-wider text-black space-y-4 mix-blend-difference"
           >
-            <p>2. returns &amp; exchanges</p>
+            <p className="font-bold">returns &amp; exchanges</p>
             <p>
               we accept returns or exchanges under the following conditions:
             </p>
-            <p>eligibility:</p>
+            <p className="font-bold">eligibility:</p>
             <p>• request is made within 7 days of receiving the order</p>
             <p>
               • item is unworn, unwashed, and in original condition with tags
             </p>
-            <p>non-returnable items:</p>
+            <p className="font-bold">non-returnable items:</p>
             <p>• sale items</p>
             <p>• custom-made or pre-ordered pieces</p>
-            <p>how to initiate a return:</p>
+            <p className="font-bold">how to initiate a return:</p>
             <p>
               email us at reach@juneof.com with your order number and reason for
               return.
             </p>
-            <p>refunds:</p>
+            <p className="font-bold">refunds:</p>
             <p>
               refunds will be processed to your original payment method within
               [insert timeframe] after receiving and inspecting the returned
               item.
             </p>
             <p>⸻</p>
-            <p>3. damages or issues</p>
+            <p className="font-bold">damages or issues</p>
             <p>
               if your order arrives damaged or defective, please contact us
               within 24 hours with photos and order details.
             </p>
             <p>⸻</p>
-            <p>4. cancellations</p>
+            <p className="font-bold">cancellations</p>
             <p>
               orders can be cancelled within 8 hours of placement. once
               processed, cancellations are not possible. refunds for
               cancellations will be refunded within 7 working days.
             </p>
             <p>⸻</p>
-            <p>5. contact us</p>
+            <p className="font-bold">contact us</p>
             <p>questions? write to us at reach@juneof.com</p>
           </div>
         </div>

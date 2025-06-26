@@ -10,6 +10,11 @@ export default function ShippingAndDeliveryPage() {
   const mainElementRef = useRef<HTMLElement>(null); // For main scroll trigger
 
   useEffect(() => {
+    // Set page title
+    document.title = "shipping & delivery - june of";
+  }, []);
+
+  useEffect(() => {
     // Existing BlurScrollEffect logic for contentRef
     if (contentRef.current) {
       new BlurScrollEffect_Effect4(contentRef.current);
@@ -66,7 +71,7 @@ export default function ShippingAndDeliveryPage() {
             ref={contentRef}
             className="text-xl lowercase tracking-wider text-black space-y-4 mix-blend-difference"
           >
-            <p>effective date:</p>
+            <p>effective date: june 20, 2025</p>
             <p>
               at june of, we want your experience to be smooth and delightful.
               here&apos;s everything you need to know about shipping and
@@ -82,13 +87,7 @@ export default function ShippingAndDeliveryPage() {
               days.
             </p>
             <p>shipping charges:</p>
-            <p>
-              • domestic (india): [insert price or &quot;free above ₹____&quot;]
-            </p>
-            <p>
-              • international: [insert rates or &quot;calculated at
-              checkout&quot;]
-            </p>
+            <p>• domestic (india): ₹100</p>
             <p>tracking:</p>
             <p>
               once your order is shipped, you will receive a tracking number via

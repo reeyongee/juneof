@@ -18,8 +18,14 @@ const oldStandardTT = Old_Standard_TT({
 });
 
 export const metadata: Metadata = {
-  title: "Product Page",
-  description: "A beautiful product page",
+  title: "june of",
+  description:
+    "a timeless brand for the modern and classical people who love to express their individuality boldly with styles to match",
+  icons: {
+    icon: "/favicon.png",
+    shortcut: "/favicon.png",
+    apple: "/favicon.png",
+  },
 };
 
 export default function RootLayout({

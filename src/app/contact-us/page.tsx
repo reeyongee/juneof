@@ -25,6 +25,11 @@ export default function ContactUsPage() {
   const mainElementRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
+    // Set page title
+    document.title = "contact us - june of";
+  }, []);
+
+  useEffect(() => {
     // Parallax Effect for backgroundRef
     if (backgroundRef.current && mainElementRef.current) {
       const tl = gsap.timeline({

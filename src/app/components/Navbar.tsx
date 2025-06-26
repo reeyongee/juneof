@@ -109,11 +109,8 @@ const AboutIcon = ({ className }: { className?: string }) => (
     className={className}
   >
     <path
-      d="M12 16V12M12 8H12.01M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
+      d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"
+      fill="currentColor"
     />
   </svg>
 );
@@ -337,8 +334,8 @@ const Navbar: React.FC = () => {
   const dynamicHeaderClasses = `fixed top-0 left-0 right-0 z-50 text-black p-4 transition-all duration-300 ${
     visible ? "translate-y-0" : "-translate-y-full"
   } ${
-    // Navbar is always transparent on landing page, otherwise normal transparency logic
-    pathname === "/"
+    // Navbar is always transparent on landing page, about us, and contact us pages
+    pathname === "/" || pathname === "/about-us" || pathname === "/contact-us"
       ? "bg-transparent"
       : transparent && !isNavItemHovered
       ? "bg-transparent"
@@ -356,7 +353,9 @@ const Navbar: React.FC = () => {
 
   // Determine if the navbar is effectively transparent for item styling
   const isEffectivelyTransparent =
-    pathname === "/" ? true : transparent && !isNavItemHovered;
+    pathname === "/" || pathname === "/about-us" || pathname === "/contact-us"
+      ? true
+      : transparent && !isNavItemHovered;
 
   return (
     <>
