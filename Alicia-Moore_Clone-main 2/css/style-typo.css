@@ -1,0 +1,53 @@
+@font-face{
+	font-family: FontText;
+	src:	url(../fonts/Neutra-Text.ttf),
+			url(../fonts/Neutra-Text.otf),
+			url(../fonts/Neutra-Text.woff);
+	font-weight: 300;
+	font-style: normal;
+}
+@font-face{
+	font-family: FontText;
+	src:	url(../fonts/NeutraText-Demi.ttf),
+			url(../fonts/NeutraText-Demi.otf),
+			url(../fonts/NeutraText-Demi.woff);
+	font-weight: 400;
+	font-style: normal;
+}
+
+h1{
+	font-family: FontText;
+	font-size: 2rem;
+	font-weight: 400;
+	margin: 0px;
+}
+
+h2{
+
+}
+
+h3{
+}
+
+h4{
+}
+
+h5{
+
+}
+
+h6{
+}
+
+p{
+}
+
+body{
+	font-family: FontText !important;
+	font-size: 12px;
+	color: black;
+	font-weight: 300;
+	font-style: normal;
+	letter-spacing: .2px;
+	line-height: 1.5;
+}

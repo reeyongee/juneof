@@ -1,0 +1,279 @@
+[class^=cursor] {
+  position: fixed;
+  top: -50%;
+  left: 0;
+  translate: -50% -50%;
+  border-radius: 50%;
+  z-index: 9999;
+  pointer-events: none;
+  cursor: none;
+}
+
+.cursor-outer {
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--t);
+  background-color: var(--t);
+  pointer-events: none;
+  cursor: none;
+  mix-blend-mode: difference;
+  transition: scale 0.5s cubic-bezier(0.01, 1.62, 0.63, 0.79);
+}
+
+.cursor-outer p {
+  position: fixed;
+  display: inline;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+  text-align: center;
+  font-family: Fontt2;
+  font-size: 0.5rem;
+  font-weight: bold;
+  line-height: 1.4;
+  color: black;
+  scale: 0;
+  transition: scale 0.1s cubic-bezier(0.01, 1.62, 0.63, 0.79);
+}
+
+.navigation {
+  position: fixed;
+  z-index: 100;
+}
+
+.navi-fragment {
+  position: fixed;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: row;
+  margin: 0px;
+  list-style-type: none;
+  padding: 50px 3vw 0px 3vw;
+  z-index: 100;
+  pointer-events: none;
+}
+.navi-fragment > * a {
+  pointer-events: auto;
+}
+.navi-fragment li {
+  position: relative;
+  margin: 0px 8px;
+  pointer-events: none;
+}
+.navi-fragment li a {
+  color: var(--white);
+}
+.navi-fragment li:first-child {
+  margin-left: 0px;
+}
+.navi-fragment li.denominations {
+  margin-left: auto;
+  margin-right: 0px;
+}
+.navi-fragment li.cart {
+  position: absolute;
+  bottom: 50px;
+  margin-left: 0px;
+  margin-right: 0px;
+}
+.navi-fragment .custom-fragment {
+  position: absolute;
+  display: flex;
+  flex-direction: row;
+  top: 50%;
+  translate: 0 -50%;
+}
+.navi-fragment .custom-fragment .lg-fragment {
+  overflow: hidden;
+}
+.navi-fragment .custom-fragment .lg-fragment a {
+  width: 215px;
+  display: flex;
+  flex-direction: row;
+}
+.navi-fragment .custom-fragment .lg-fragment a span {
+  position: relative;
+  transition: all 0.5s cubic-bezier(0.45, 0, 0.56, 0.84);
+}
+.navi-fragment .custom-fragment .lg-fragment a span svg {
+  width: 100%;
+  fill: var(--white);
+  margin: 0px;
+}
+.navi-fragment .custom-fragment .lg-fragment a span.logo {
+  margin-top: auto;
+  margin-bottom: auto;
+}
+.navi-fragment .custom-fragment .lg-fragment a span.logo-sml {
+  margin-left: 30px;
+}
+.navi-fragment .custom-fragment .lg-fragment a .logo {
+  width: 200px;
+}
+.navi-fragment .custom-fragment .lg-fragment a .logo-sml {
+  width: 28px;
+  height: auto;
+  transition-delay: 0s;
+}
+.navi-fragment.top a {
+  color: black !important;
+}
+.navi-fragment.top .custom-fragment a span svg {
+  fill: black;
+}
+
+.lg-at-small .custom-fragment span.logo {
+  transform: translateX(-200px);
+}
+.lg-at-small .custom-fragment span.logo-sml {
+  transform: translateX(-210px);
+  transition-delay: 1s;
+}
+
+.lg-at-small.hover-to-big .custom-fragment span.logo {
+  transform: translateX(0px);
+}
+.lg-at-small.hover-to-big .custom-fragment span.logo-sml {
+  transform: translateX(0px);
+}
+
+.navigation .top {
+  -webkit-clip-path: var(--polygon);
+  clip-path: var(--polygon);
+}
+
+.footer {
+  position: relative;
+  display: block;
+  width: 100%;
+  z-index: 1;
+}
+.footer p, .footer a {
+  display: inline-block;
+  margin: 0;
+  color: var(--white);
+}
+.footer .footer-position {
+  position: sticky;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  top: 45vh;
+  width: 100%;
+  height: 55vh;
+  background-color: black;
+  padding: 4.5vh 0 50px 58vw;
+}
+.footer .footer-position .shop-follow .shop-tag {
+  display: block;
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+.footer .footer-position .shop-follow .shop-tag li a:after {
+  content: "";
+  position: relative;
+  display: block;
+  width: 0%;
+  height: 1px;
+  border-radius: 10px;
+  background-color: var(--white);
+  transform-origin: bottom right;
+  transition: all 0.2s ease-in-out;
+}
+.footer .footer-position .shop-follow .shop-tag li a:hover:after {
+  width: 100%;
+  transform-origin: bottom left;
+}
+.footer .footer-position .shop-follow .follow-tag {
+  display: flex;
+  flex-direction: column;
+}
+.footer .footer-position .shop-follow .follow-tag .author-tag {
+  display: none;
+}
+.footer .footer-position .subscrible .subscrible-tag {
+  display: flex;
+  border-bottom: 2px solid var(--white);
+  padding-bottom: 10px;
+}
+.footer .footer-position .subscrible .subscrible-tag input {
+  background-color: transparent;
+  width: 100%;
+  border: none;
+  color: var(--white);
+  font-size: 10px;
+}
+.footer .footer-position .subscrible .subscrible-tag input::placeholder {
+  color: var(--white);
+}
+.footer .footer-position .subscrible .subscrible-tag input:valid, .footer .footer-position .subscrible .subscrible-tag input:focus {
+  border: none;
+  stroke: none;
+  outline: none;
+}
+.footer .footer-position .subscrible .subscrible-tag button {
+  background-color: transparent;
+  font-size: 10px;
+  margin-left: 10px;
+  border: none;
+  color: var(--white);
+}
+.footer .footer-position .shop-follow, .footer .footer-position .subscrible {
+  display: flex;
+  gap: 5vw;
+}
+.footer .footer-position .shop-tag, .footer .footer-position .subscrible-tag {
+  width: 18vw;
+}
+
+@media (max-width: 1000px) {
+  .navi-fragment li.denominations {
+    margin-right: 8px;
+  }
+  .navi-fragment li.cart {
+    position: static;
+    margin-left: 8px;
+  }
+  .footer-position {
+    padding-left: 5vw !important;
+    padding-right: 5vw !important;
+  }
+  .footer-position .shop-follow {
+    width: 100%;
+    padding-top: 150px;
+    gap: 10vw !important;
+  }
+  .footer-position .shop-follow .shop-tag {
+    width: 100%;
+  }
+  .footer-position .shop-follow .shop-tag li {
+    margin-bottom: 10px;
+  }
+  .footer-position .shop-follow .follow-tag {
+    width: 100%;
+  }
+  .footer-position .shop-follow .follow-tag p {
+    margin-bottom: 10px;
+  }
+  .footer-position .shop-follow .follow-tag .author-tag {
+    font-size: 10px;
+    margin-top: 25px;
+    display: block !important;
+  }
+  .footer-position .subscrible .subscrible-tag {
+    width: 100%;
+  }
+  .footer-position .subscrible .author-tag {
+    display: none !important;
+  }
+}
+#container {
+  position: relative;
+  width: 100%;
+  z-index: 2;
+}
+
+/*# sourceMappingURL=style-main.css.map */
