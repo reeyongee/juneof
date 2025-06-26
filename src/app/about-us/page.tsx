@@ -47,7 +47,7 @@ export default function AboutUsPage() {
       <div className="absolute inset-0 overflow-hidden">
         <div
           ref={backgroundRef}
-          className="absolute inset-0 h-[130%] bg-cover bg-center opacity-30"
+          className="absolute inset-0 h-[130%] bg-cover bg-center"
           style={{
             backgroundImage: "url('/landing-images/about.jpg')",
           }}
@@ -55,7 +55,7 @@ export default function AboutUsPage() {
       </div>
 
       <main ref={mainElementRef} className="relative min-h-screen text-white">
-        <div className="container mx-auto px-4 sm:px-8 py-20 space-y-32">
+        <div className="container mx-auto px-4 sm:px-8 pt-32 pb-20 space-y-32">
           {/* First Paragraph - Left */}
           <div className="flex justify-start">
             <div className="max-w-[500px] text-left">
