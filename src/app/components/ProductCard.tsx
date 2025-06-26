@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRef, useEffect, useState } from "react";
 import { gsap } from "gsap";
+import { Badge } from "@/components/ui/badge";
 
 // Hook to detect mobile devices
 const useIsMobile = () => {
@@ -42,6 +43,7 @@ interface ProductCardProps {
   price: number;
   productUrl: string;
   currencyCode?: string; // Optional currency code from Shopify
+  expressInterest?: boolean; // Whether to show "coming soon!" banner
 }
 
 // Enhanced price formatter that handles different currencies
@@ -79,6 +81,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   price,
   productUrl,
   currencyCode,
+  expressInterest = false,
 }) => {
   const cardRef = useRef<HTMLAnchorElement>(null);
   const defaultImageRef = useRef<HTMLDivElement>(null);
@@ -167,9 +170,18 @@ const ProductCard: React.FC<ProductCardProps> = ({
       <h3 className="text-lg text-gray-900 lowercase font-medium tracking-widest mb-1">
         {name}
       </h3>
-      <p className="text-sm text-gray-900 font-medium lowercase">
-        {formatPrice(price, currencyCode)}
-      </p>
+      {expressInterest ? (
+        <Badge
+          variant="secondary"
+          className="text-xs font-medium tracking-wider lowercase"
+        >
+          coming soon!
+        </Badge>
+      ) : (
+        <p className="text-sm text-gray-900 font-medium lowercase">
+          {formatPrice(price, currencyCode)}
+        </p>
+      )}
     </Link>
   );
 };

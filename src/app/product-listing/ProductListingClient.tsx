@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import ProductCard from "../components/ProductCard";
 import { useProducts } from "@/context/ProductContext";
 import { ShopifyProductNode } from "@/lib/shopify";
+import { Loader2 } from "lucide-react";
 
 // Function to transform Shopify product data to ProductCard props
 function transformShopifyProduct(product: ShopifyProductNode) {
@@ -21,6 +22,9 @@ function transformShopifyProduct(product: ShopifyProductNode) {
   const price = parseFloat(product.priceRange.minVariantPrice.amount);
   const currencyCode = product.priceRange.minVariantPrice.currencyCode;
 
+  // Check if express interest is enabled for this product
+  const expressInterest = product.metafield?.value === "true";
+
   return {
     imageUrl: primaryImage,
     hoverImageUrl: hoverImage,
@@ -28,25 +32,23 @@ function transformShopifyProduct(product: ShopifyProductNode) {
     price: price,
     productUrl: `/product/${product.handle}`,
     currencyCode: currencyCode,
+    expressInterest: expressInterest,
   };
 }
 
-interface ProductListingClientProps {
-  fallbackProducts: Array<{
-    imageUrl: string;
-    hoverImageUrl: string;
-    name: string;
-    price: number;
-    productUrl: string;
-    currencyCode: string;
-  }>;
-}
-
-export default function ProductListingClient({
-  fallbackProducts,
-}: ProductListingClientProps) {
+export default function ProductListingClient() {
   const { preloadedProducts, isProductsLoaded } = useProducts();
-  const [displayProducts, setDisplayProducts] = useState(fallbackProducts);
+  const [displayProducts, setDisplayProducts] = useState<
+    Array<{
+      imageUrl: string;
+      hoverImageUrl: string;
+      name: string;
+      price: number;
+      productUrl: string;
+      currencyCode: string;
+      expressInterest: boolean;
+    }>
+  >([]);
 
   useEffect(() => {
     if (isProductsLoaded && preloadedProducts.length > 0) {
@@ -58,21 +60,36 @@ export default function ProductListingClient({
     }
   }, [isProductsLoaded, preloadedProducts]);
 
-  const showFallbackMessage =
-    !isProductsLoaded || preloadedProducts.length === 0;
+  // Show loading spinner if products are not loaded yet
+  if (!isProductsLoaded) {
+    return (
+      <main className="min-h-screen bg-[#F8F4EC] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-gray-600" />
+          <p className="text-gray-600 text-sm tracking-wider lowercase">
+            loading products...
+          </p>
+        </div>
+      </main>
+    );
+  }
+
+  // Show loading spinner if no products found (could be a configuration issue)
+  if (isProductsLoaded && preloadedProducts.length === 0) {
+    return (
+      <main className="min-h-screen bg-[#F8F4EC] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-gray-600" />
+          <p className="text-gray-600 text-sm tracking-wider lowercase">
+            loading products...
+          </p>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-[#F8F4EC] p-8">
-      {showFallbackMessage && (
-        <div className="mb-6 p-4 bg-yellow-100 border border-yellow-400">
-          <p className="text-yellow-800">
-            {!isProductsLoaded
-              ? "Loading Shopify products..."
-              : "No Shopify products found. Displaying mock data. Check your Shopify configuration."}
-          </p>
-        </div>
-      )}
-
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 lowercase tracking-widest opacity-0">
           &nbsp;
@@ -81,19 +98,16 @@ export default function ProductListingClient({
       </div>
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-        {displayProducts.map((product, index) => (
+        {displayProducts.map((product) => (
           <ProductCard
-            key={
-              isProductsLoaded && preloadedProducts.length > 0
-                ? `shopify-${product.productUrl}`
-                : `fallback-${index}`
-            }
+            key={`shopify-${product.productUrl}`}
             imageUrl={product.imageUrl}
             hoverImageUrl={product.hoverImageUrl}
             name={product.name}
             price={product.price}
             productUrl={product.productUrl}
             currencyCode={product.currencyCode}
+            expressInterest={product.expressInterest}
           />
         ))}
       </div>
