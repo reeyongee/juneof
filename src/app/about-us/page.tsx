@@ -47,11 +47,13 @@ export default function AboutUsPage() {
       <div className="absolute inset-0 overflow-hidden">
         <div
           ref={backgroundRef}
-          className="absolute inset-0 h-[130%] bg-cover bg-center"
+          className="absolute inset-0 h-[130%] bg-cover bg-center grayscale-[0.3]"
           style={{
             backgroundImage: "url('/about_us.jpg')",
           }}
         />
+        {/* Dark overlay for better text readability */}
+        <div className="absolute inset-0 bg-black bg-opacity-40" />
       </div>
 
       <main ref={mainElementRef} className="relative min-h-screen text-white">
@@ -102,17 +104,7 @@ export default function AboutUsPage() {
                 At june of, sustainability is a habit. From the fabrics we
                 select to the hands that make them, every step is rooted in
                 respect for people and heritage, keeping the bigger picture in
-                mind. We source our fabrics from Jaipur, India, working with
-                natural fibres that carry the richness of the land. But our
-                responsibility doesn&apos;t end with fabric. Each piece arrives
-                in a reusable, hand-woven cotton bag, designed to live beyond
-                its first use. Our tags? They&apos;re intended to live on, made
-                with seed paper tags tied with jute threads, replacing plastic
-                and making room for new life. We produce in small, mindful
-                quantities, making sure every garment receives the attention it
-                deserves and doesn&apos;t end up as dead stock. This approach
-                allows us to stay connected to the craftsmanship and reduce
-                waste at every step.
+                mind.
               </p>
             </div>
           </div>
@@ -120,6 +112,41 @@ export default function AboutUsPage() {
           {/* Fifth Paragraph - Left */}
           <div className="flex justify-start">
             <div className="max-w-[500px] text-left">
+              <p className="text-xl sm:text-2xl lg:text-3xl font-light leading-relaxed lowercase tracking-wider">
+                We source our fabrics from Jaipur, India, working with natural
+                fibres that carry the richness of the land. But our
+                responsibility doesn&apos;t end with fabric.
+              </p>
+            </div>
+          </div>
+
+          {/* Sixth Paragraph - Right */}
+          <div className="flex justify-end">
+            <div className="max-w-[500px] text-right">
+              <p className="text-xl sm:text-2xl lg:text-3xl font-light leading-relaxed lowercase tracking-wider">
+                Each piece arrives in a reusable, hand-woven cotton bag,
+                designed to live beyond its first use. Our tags? They&apos;re
+                intended to live on, made with seed paper tags tied with jute
+                threads, replacing plastic and making room for new life.
+              </p>
+            </div>
+          </div>
+
+          {/* Seventh Paragraph - Left */}
+          <div className="flex justify-start">
+            <div className="max-w-[500px] text-left">
+              <p className="text-xl sm:text-2xl lg:text-3xl font-light leading-relaxed lowercase tracking-wider">
+                We produce in small, mindful quantities, making sure every
+                garment receives the attention it deserves and doesn&apos;t end
+                up as dead stock. This approach allows us to stay connected to
+                the craftsmanship and reduce waste at every step.
+              </p>
+            </div>
+          </div>
+
+          {/* Eighth Paragraph - Right */}
+          <div className="flex justify-end">
+            <div className="max-w-[500px] text-right">
               <p className="text-xl sm:text-2xl lg:text-3xl font-light leading-relaxed lowercase tracking-wider">
                 At its core, June Of is a celebration of heritage; a quiet
                 homage to the artisanal depth of India. We work hand-in-hand
@@ -132,16 +159,16 @@ export default function AboutUsPage() {
             </div>
           </div>
 
-          {/* Sixth Paragraph - Right */}
-          <div className="flex justify-end">
-            <div className="max-w-[500px] text-right">
+          {/* Ninth Paragraph - Left */}
+          <div className="flex justify-start">
+            <div className="max-w-[500px] text-left">
               <p className="text-xl sm:text-2xl lg:text-3xl font-light leading-relaxed lowercase tracking-wider">
                 Want to know more?{" "}
                 <a
                   href="/contact-us"
                   className="underline hover:opacity-75 transition-opacity"
                 >
-                  reach out to us
+                  reach out
                 </a>
               </p>
             </div>

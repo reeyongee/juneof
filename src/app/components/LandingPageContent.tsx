@@ -357,7 +357,7 @@ export default function LandingPageContent() {
         <div className="container flex flex-row h-screen overflow-hidden w-screen max-w-none left-0">
           <div className="panel first relative h-screen">
             <Image
-              className="pic1 relative block w-full"
+              className="pic1 relative block w-full md:w-full max-md:w-[60%] max-md:h-[60%] max-md:object-cover max-md:mx-auto max-md:mt-20"
               src="/landing-images/1.jpg"
               alt="pic1"
               width={800}
