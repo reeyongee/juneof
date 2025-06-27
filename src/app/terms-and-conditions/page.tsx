@@ -71,31 +71,31 @@ export default function TermsAndConditionsPage() {
             ref={contentRef}
             className="text-xl lowercase tracking-wider text-black space-y-4 mix-blend-difference"
           >
-            <p>effective date: june 20, 2025</p>
+            <p className="font-bold">effective date: june 20, 2025</p>
             <p>
               welcome to june of. by accessing or using our website
               www.juneof.com, you agree to comply with and be bound by the
               following terms &amp; conditions. if you do not agree, please do
               not use our services.
             </p>
-            <p>⸻</p>
-            <p>1. use of the site</p>
+
+            <p className="font-bold">1. use of the site</p>
             <p>
               you agree to use the site for lawful purposes only. you may not: •
               attempt to gain unauthorized access to our systems • interfere
               with the site&apos;s operation • copy or distribute any content
               without our consent
             </p>
-            <p>⸻</p>
-            <p>2. product descriptions</p>
+
+            <p className="font-bold">2. product descriptions</p>
             <p>
               we strive to display accurate descriptions and images of our
               products. however, slight variations in colour or fabric may occur
               due to screen settings or natural differences in textile dye
               batches.
             </p>
-            <p>⸻</p>
-            <p>3. orders &amp; payments</p>
+
+            <p className="font-bold">3. orders &amp; payments</p>
             <p>
               all orders are subject to availability and confirmation. we
               reserve the right to cancel or refuse any order for any reason.
@@ -103,29 +103,29 @@ export default function TermsAndConditionsPage() {
             <p>
               prices are listed in inr, and payments are processed via razorpay.
             </p>
-            <p>⸻</p>
-            <p>4. intellectual property</p>
+
+            <p className="font-bold">4. intellectual property</p>
             <p>
               all content on this site—including text, graphics, logos, and
               product designs—is the property of june of and protected under
               applicable copyright and trademark laws.
             </p>
-            <p>⸻</p>
-            <p>5. limitation of liability</p>
+
+            <p className="font-bold">5. limitation of liability</p>
             <p>
               we are not liable for any indirect, incidental, or consequential
               damages resulting from your use of our site or products.
             </p>
-            <p>⸻</p>
-            <p>6. governing law</p>
+
+            <p className="font-bold">6. governing law</p>
             <p>
               these terms are governed by the laws of india. any disputes will
               be subject to the exclusive jurisdiction of the courts in india.
             </p>
-            <p>⸻</p>
-            <p>7. contact</p>
+
+            <p className="font-bold">7. contact</p>
+            <br />
             <p>for any concerns, email us at reach@juneof.com</p>
-            <p>⸻</p>
           </div>
         </div>
       </main>
