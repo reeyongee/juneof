@@ -53,7 +53,7 @@ export default function AboutUsPage() {
           }}
         />
         {/* Dark overlay for better text readability */}
-        <div className="absolute inset-0 bg-black/25" />
+        <div className="absolute inset-0 bg-black/50" />
       </div>
 
       <main ref={mainElementRef} className="relative min-h-screen text-white">

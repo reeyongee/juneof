@@ -352,12 +352,12 @@ export default function LandingPageContent() {
       {/* Section 1 - Image Panels */}
       <div
         ref={section1Ref}
-        className="section1 absolute block w-screen bg-[#FDF3E1] text-black"
+        className="section1 absolute block w-screen bg-[#FDF3E1] text-black md:bg-transparent"
       >
-        <div className="container flex flex-row h-screen max-md:h-auto overflow-hidden w-screen max-w-none left-0">
-          <div className="panel first relative h-screen max-md:h-auto">
+        <div className="container flex flex-row h-screen md:h-screen max-md:h-auto overflow-hidden w-screen max-w-none left-0 max-md:flex-col">
+          <div className="panel first relative h-screen md:h-screen max-md:h-auto max-md:flex max-md:items-center max-md:justify-center max-md:pt-24 max-md:pb-12">
             <Image
-              className="pic1 relative block w-full md:w-full max-md:w-[60%] max-md:h-auto max-md:object-contain max-md:mx-auto max-md:mt-24"
+              className="pic1 relative block w-auto md:w-full max-md:w-[70%] max-md:h-auto"
               src="/landing-images/1.jpg"
               alt="pic1"
               width={800}

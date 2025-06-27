@@ -124,7 +124,7 @@
 
 /* Responsive adjustments */
 @media (max-width: 1000px) {
-  .section1 .panel img {
+  .section1 .panel:not(.first) img {
     min-width: 300px;
     width: 80vw;
   }
