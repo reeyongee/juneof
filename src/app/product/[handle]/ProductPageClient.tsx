@@ -447,7 +447,7 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
             {/* Express Interest Banner */}
             {expressInterest && (
               <div className="bg-gray-50 border border-gray-200 p-4 rounded-lg">
-                <div className="flex items-center gap-3 mb-3">
+                <div className="mb-3">
                   <Badge className="bg-black text-white hover:bg-black/90 px-3 py-1 text-xs font-semibold tracking-widest lowercase border-0">
                     coming soon!
                   </Badge>
@@ -566,7 +566,7 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
                 {/* Express Interest Banner */}
                 {expressInterest && (
                   <div className="bg-gray-50 border border-gray-200 p-4 rounded-lg">
-                    <div className="flex items-center gap-3 mb-3">
+                    <div className="mb-3">
                       <Badge className="bg-black text-white hover:bg-black/90 px-4 py-2 text-sm font-semibold tracking-widest lowercase border-0">
                         coming soon!
                       </Badge>
