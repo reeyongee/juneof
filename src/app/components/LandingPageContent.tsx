@@ -106,13 +106,46 @@ export default function LandingPageContent() {
       // Ensure DOM is ready
       await ensureDOMReady();
 
-      // Validate dimensions before proceeding
+      gsap.defaults({ ease: "none", duration: 2 });
+
+      // Kill any existing ScrollTriggers to prevent conflicts
+      ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
+
+      // If it's mobile, we use a much simpler layout and disable complex animations.
+      if (isMobile) {
+        // Reset any potential inline styles from desktop view
+        const elementsToReset = [
+          section1Ref.current,
+          section2Ref.current,
+          section3Ref.current,
+          section4Ref.current,
+          spacerRef.current,
+          containerRef.current?.querySelector(".section1 .container"),
+          ...Array.from(
+            containerRef.current?.querySelectorAll(
+              ".section1 .panel, .section1 .panel img"
+            ) || []
+          ),
+        ];
+
+        elementsToReset.forEach((el) => {
+          if (el) {
+            (el as HTMLElement).style.cssText = "";
+          }
+        });
+
+        animationsInitializedRef.current = true;
+        return;
+      }
+
+      // Validate dimensions before proceeding for desktop animations
       if (!validateDimensions()) {
         // Retry after a short delay
         setTimeout(() => initializeAnimations(), 100);
         return;
       }
 
+      // --- DESKTOP ANIMATION LOGIC ---
       const width = dimensions.width;
       const height = dimensions.height;
 
@@ -123,11 +156,6 @@ export default function LandingPageContent() {
         isMobile,
         source: "useViewportHeight",
       });
-
-      gsap.defaults({ ease: "none", duration: 2 });
-
-      // Kill any existing ScrollTriggers to prevent conflicts
-      ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
 
       // Section 1 animations - with proper dimension validation
       const section1panel = gsap.utils.toArray(".section1 .panel");
@@ -352,22 +380,23 @@ export default function LandingPageContent() {
       {/* Section 1 - Image Panels */}
       <div
         ref={section1Ref}
-        className="section1 absolute block w-screen bg-[#FDF3E1] text-black md:bg-transparent"
+        className="section1 md:absolute block w-screen bg-[#FDF3E1] text-black max-md:relative"
       >
-        <div className="container flex flex-row h-screen md:h-screen max-md:h-auto overflow-hidden w-screen max-w-none left-0 max-md:flex-col">
-          <div className="panel first relative h-screen md:h-screen max-md:h-auto max-md:flex max-md:items-center max-md:justify-center max-md:pt-24 max-md:pb-12">
+        <div className="container flex flex-row md:h-screen max-md:h-auto overflow-hidden w-screen max-w-none left-0 max-md:flex-col">
+          <div className="panel first relative md:h-screen max-md:h-auto max-md:flex max-md:items-center max-md:justify-center max-md:py-16">
             <Image
-              className="pic1 relative block w-auto md:w-full max-md:w-[70%] max-md:h-auto"
+              className="pic1 relative block w-auto md:w-full max-md:w-[80%] max-md:h-auto"
               src="/landing-images/1.jpg"
               alt="pic1"
               width={800}
               height={600}
               priority
-              sizes="(max-width: 768px) 48vw, 50vw"
+              sizes="80vw"
               onLoad={() => handleImageLoad("/landing-images/1.jpg")}
             />
           </div>
-          <div className="panel relative h-screen">
+          {/* Hide other panels on mobile */}
+          <div className="panel relative h-screen max-md:hidden">
             <Image
               className="pic2 relative block w-full"
               src="/landing-images/2.jpg"
@@ -379,7 +408,7 @@ export default function LandingPageContent() {
               onLoad={() => handleImageLoad("/landing-images/2.jpg")}
             />
           </div>
-          <div className="panel relative h-screen">
+          <div className="panel relative h-screen max-md:hidden">
             <Image
               className="pic3 relative block w-full"
               src="/landing-images/3.jpg"
@@ -391,7 +420,7 @@ export default function LandingPageContent() {
               onLoad={() => handleImageLoad("/landing-images/3.jpg")}
             />
           </div>
-          <div className="panel last relative h-screen">
+          <div className="panel last relative h-screen max-md:hidden">
             <Image
               className="pic4 relative block w-full"
               src="/landing-images/4.jpg"
@@ -407,7 +436,7 @@ export default function LandingPageContent() {
       </div>
 
       {/* Section 2 - Sticky Image */}
-      <div ref={section2Ref} className="section2">
+      <div ref={section2Ref} className="section2 md:absolute max-md:relative">
         <div className="container">
           <Image
             src="/landing-images/5.jpg"
@@ -476,7 +505,7 @@ export default function LandingPageContent() {
           alt="pic7"
           width={300}
           height={400}
-          sizes="(max-width: 768px) 200px, 20vw"
+          sizes="(max-width: 768px) 200px, 16vw"
         />
         <Image
           className="pic2 absolute min-w-[150px] max-w-[300px] w-[16vw] top-[90vh] left-[23vw]"
@@ -528,7 +557,7 @@ export default function LandingPageContent() {
         />
       </div>
 
-      <div ref={spacerRef} id="spacer"></div>
+      <div ref={spacerRef} id="spacer" className="max-md:hidden"></div>
     </div>
   );
 }
