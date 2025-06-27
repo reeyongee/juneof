@@ -72,7 +72,7 @@ const formatPrice = (price: number, currencyCode?: string): string => {
 };
 
 export default function ProductPageClient({ product }: ProductPageClientProps) {
-  const [selectedSize, setSelectedSize] = useState("in between");
+  const [selectedSize, setSelectedSize] = useState<string>("");
   const [isSizeChartOpen, setIsSizeChartOpen] = useState(false);
   const [isWashCareOpen, setIsWashCareOpen] = useState(false);
   const [isExpressInterestOpen, setIsExpressInterestOpen] = useState(false);
@@ -80,6 +80,11 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
   const [isExpressInterestLoading, setIsExpressInterestLoading] =
     useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  // Add state for dynamic express interest checking
+  const [currentExpressInterest, setCurrentExpressInterest] = useState(
+    product.metafield?.value === "true"
+  );
 
   const { addItemToCart } = useCart();
   const { isAuthenticated, customerData } = useAuth();
@@ -292,8 +297,46 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
   const price = parseFloat(product.priceRange.minVariantPrice.amount);
   const currencyCode = product.priceRange.minVariantPrice.currencyCode;
 
-  // Check if express interest is enabled for this product
-  const expressInterest = product.metafield?.value === "true";
+  // Use the dynamic express interest value instead of the static one
+  const expressInterest = currentExpressInterest;
+
+  // Periodically check for metafield updates (every 30 seconds)
+  useEffect(() => {
+    const checkMetafieldUpdates = async () => {
+      try {
+        // Only check if we're currently in express interest mode
+        if (currentExpressInterest) {
+          const response = await fetch(
+            `/api/product/${product.handle}/metafield`
+          );
+          if (response.ok) {
+            const data = await response.json();
+            const newExpressInterest = data.expressInterest === "true";
+
+            if (newExpressInterest !== currentExpressInterest) {
+              console.log(
+                `Express interest status changed for ${product.title}: ${currentExpressInterest} -> ${newExpressInterest}`
+              );
+              setCurrentExpressInterest(newExpressInterest);
+
+              // Optionally refresh the page to get full updated data
+              if (!newExpressInterest) {
+                window.location.reload();
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.warn("Failed to check metafield updates:", error);
+      }
+    };
+
+    // Check immediately and then every 30 seconds
+    checkMetafieldUpdates();
+    const interval = setInterval(checkMetafieldUpdates, 30000);
+
+    return () => clearInterval(interval);
+  }, [currentExpressInterest, product.handle, product.title]);
 
   if (isMobile) {
     // Mobile Layout

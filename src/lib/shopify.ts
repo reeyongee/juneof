@@ -16,17 +16,6 @@ if (!domain || !storefrontAccessToken) {
   );
 }
 
-// Create a new GraphQL client instance
-const storefrontClient = new GraphQLClient(
-  `https://${domain}/api/2025-04/graphql.json`, // Using API version 2025-04. Updated for latest compatibility.
-  {
-    headers: {
-      "X-Shopify-Storefront-Access-Token": storefrontAccessToken,
-      "Content-Type": "application/json",
-    },
-  }
-);
-
 // Define a more specific GraphQL error type
 interface GraphQLError {
   message: string;
@@ -39,10 +28,30 @@ interface GraphQLError {
 // It takes a GraphQL query string and optional variables
 export async function storefrontApiRequest<T = unknown>(
   query: string,
-  variables?: Record<string, unknown>
+  variables?: Record<string, unknown>,
+  options?: { bypassCache?: boolean }
 ): Promise<T> {
   try {
-    const data = await storefrontClient.request<T>(query, variables);
+    // Create headers with optional cache busting
+    const headers: Record<string, string> = {
+      "X-Shopify-Storefront-Access-Token": storefrontAccessToken,
+      "Content-Type": "application/json",
+    };
+
+    // Add cache busting headers if requested
+    if (options?.bypassCache) {
+      headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
+      headers["Pragma"] = "no-cache";
+      headers["Expires"] = "0";
+    }
+
+    // Create a client with updated headers
+    const client = new GraphQLClient(
+      `https://${domain}/api/2025-04/graphql.json`,
+      { headers }
+    );
+
+    const data = await client.request<T>(query, variables);
     return data;
   } catch (error: unknown) {
     // Log the error for more detailed debugging

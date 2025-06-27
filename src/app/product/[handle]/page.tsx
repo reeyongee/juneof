@@ -10,6 +10,11 @@ import {
 } from "@/lib/shopify";
 import ProductPageClient from "./ProductPageClient";
 
+// Force dynamic rendering to ensure fresh data
+export const dynamic = "force-dynamic";
+// Revalidate every 60 seconds
+export const revalidate = 60;
+
 interface ProductPageProps {
   params: Promise<{
     handle: string;
@@ -39,9 +44,11 @@ export default async function ProductPage({ params }: ProductPageProps) {
   let product: ShopifyProductDetails | null = null;
 
   try {
+    // Force fresh data fetch with cache bypass
     const data = await storefrontApiRequest<ShopifyProductByHandleData>(
       GET_PRODUCT_BY_HANDLE_QUERY,
-      { handle }
+      { handle },
+      { bypassCache: true } // Force fresh data to get latest metafield values
     );
 
     if (!data.productByHandle) {
@@ -49,6 +56,12 @@ export default async function ProductPage({ params }: ProductPageProps) {
     }
 
     product = data.productByHandle;
+
+    // Log the current metafield value for debugging
+    console.log(
+      `Product ${handle} express_interest metafield:`,
+      product.metafield?.value
+    );
   } catch (error) {
     console.error("Failed to fetch product:", error);
     notFound();
