@@ -345,15 +345,11 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
         <main className="min-h-screen bg-[#F8F4EC] text-gray-900">
           {/* Mobile Header */}
           <div className="sticky top-0 bg-[#F8F4EC] z-10 border-b border-gray-300 p-4">
-            <div className={expressInterest ? "space-y-2" : "space-y-1"}>
+            <div className="space-y-1">
               <h1 className="text-lg font-medium tracking-widest lowercase">
                 {product.title.toLowerCase()}
               </h1>
-              {expressInterest ? (
-                <Badge className="bg-black text-white hover:bg-black/90 px-3 py-1 text-xs font-semibold tracking-widest lowercase border-0">
-                  coming soon!
-                </Badge>
-              ) : (
+              {!expressInterest && (
                 <span className="text-lg font-medium">
                   {formatPrice(price, currencyCode)}
                 </span>
@@ -451,6 +447,11 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
             {/* Express Interest Banner */}
             {expressInterest && (
               <div className="bg-gray-50 border border-gray-200 p-4 rounded-lg">
+                <div className="flex items-center gap-3 mb-3">
+                  <Badge className="bg-black text-white hover:bg-black/90 px-3 py-1 text-xs font-semibold tracking-widest lowercase border-0">
+                    coming soon!
+                  </Badge>
+                </div>
                 <p className="text-sm text-gray-700 tracking-wide lowercase leading-relaxed">
                   we&apos;re working on bringing you this product as soon as
                   possible. sign up to be the first to know when it&apos;s
@@ -545,12 +546,8 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
                   {product.title.toLowerCase()}
                 </h1>
 
-                {/* Price or Coming Soon Badge */}
-                {expressInterest ? (
-                  <Badge className="bg-black text-white hover:bg-black/90 px-4 py-2 text-sm font-semibold tracking-widest lowercase border-0">
-                    coming soon!
-                  </Badge>
-                ) : (
+                {/* Price - Always show for non-express interest products */}
+                {!expressInterest && (
                   <span className="text-lg font-medium mb-6 block">
                     {formatPrice(price, currencyCode)}
                   </span>
@@ -569,6 +566,11 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
                 {/* Express Interest Banner */}
                 {expressInterest && (
                   <div className="bg-gray-50 border border-gray-200 p-4 rounded-lg">
+                    <div className="flex items-center gap-3 mb-3">
+                      <Badge className="bg-black text-white hover:bg-black/90 px-4 py-2 text-sm font-semibold tracking-widest lowercase border-0">
+                        coming soon!
+                      </Badge>
+                    </div>
                     <p className="text-sm text-gray-700 tracking-wide lowercase leading-relaxed">
                       we&apos;re working on bringing you this product as soon as
                       possible. sign up to be the first to know when it&apos;s
