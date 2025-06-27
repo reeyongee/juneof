@@ -165,17 +165,18 @@ export default function LandingPageContent() {
         }
 
         // Center images vertically with dimension validation
-        if (!isMobile) {
-          const images = section1Ref.current.querySelectorAll(".panel img");
-          images.forEach((img) => {
-            const imgElement = img as HTMLImageElement;
-            if (imgElement.offsetHeight > 0) {
-              imgElement.style.marginTop = `${
-                (height - imgElement.offsetHeight) / 2
-              }px`;
-            }
-          });
-        }
+        const images = section1Ref.current.querySelectorAll(".panel img");
+        images.forEach((img) => {
+          const imgElement = img as HTMLImageElement;
+          // Skip the first image on mobile (pic1), but center all others
+          if (isMobile && imgElement.classList.contains("pic1")) return;
+
+          if (imgElement.offsetHeight > 0) {
+            imgElement.style.marginTop = `${
+              (height - imgElement.offsetHeight) / 2
+            }px`;
+          }
+        });
       }
 
       // Position sections with proper calculations
