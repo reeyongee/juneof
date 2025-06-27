@@ -6,6 +6,7 @@ import React, {
   useState,
   ReactNode,
   useEffect,
+  useRef,
 } from "react";
 import { createCartAndRedirect } from "@/lib/shopify";
 import { toast } from "sonner";
@@ -46,17 +47,97 @@ interface CartProviderProps {
   children: ReactNode;
 }
 
+const GUEST_CART_STORAGE_KEY = "juneof-guest-cart";
+
 export const CartProvider = ({ children }: CartProviderProps) => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const { isAuthenticated, customerData, tokens } = useAuth();
   const { selectedAddressId, addresses } = useAddress();
+  const previousAuthState = useRef<boolean | null>(null);
+  const hasInitialized = useRef(false);
 
-  // Clear cart when user logs out
+  // Initialize cart from localStorage on mount
   useEffect(() => {
-    if (!isAuthenticated) {
-      setCartItems([]);
+    if (typeof window !== "undefined" && !hasInitialized.current) {
+      const savedGuestCart = localStorage.getItem(GUEST_CART_STORAGE_KEY);
+      if (savedGuestCart) {
+        try {
+          const parsedCart = JSON.parse(savedGuestCart);
+          if (Array.isArray(parsedCart)) {
+            setCartItems(parsedCart);
+          }
+        } catch (error) {
+          console.error("Error parsing saved guest cart:", error);
+          localStorage.removeItem(GUEST_CART_STORAGE_KEY);
+        }
+      }
+      hasInitialized.current = true;
     }
+  }, []);
+
+  // Handle authentication state changes
+  useEffect(() => {
+    if (previousAuthState.current === null) {
+      // First time setting auth state, just record it
+      previousAuthState.current = isAuthenticated;
+      return;
+    }
+
+    const wasAuthenticated = previousAuthState.current;
+    const isNowAuthenticated = isAuthenticated;
+
+    if (!wasAuthenticated && isNowAuthenticated) {
+      // User just logged in - restore guest cart if it exists
+      if (typeof window !== "undefined") {
+        const savedGuestCart = localStorage.getItem(GUEST_CART_STORAGE_KEY);
+        if (savedGuestCart) {
+          try {
+            const parsedCart = JSON.parse(savedGuestCart);
+            if (Array.isArray(parsedCart) && parsedCart.length > 0) {
+              setCartItems(parsedCart);
+              // Clear the guest cart from localStorage since user is now authenticated
+              localStorage.removeItem(GUEST_CART_STORAGE_KEY);
+
+              // Show toast notification about cart restoration
+              toast.success("Welcome back!", {
+                description: `Your bag has been restored with ${
+                  parsedCart.length
+                } item${parsedCart.length === 1 ? "" : "s"}`,
+                duration: 3000,
+              });
+            }
+          } catch (error) {
+            console.error("Error restoring guest cart after login:", error);
+            localStorage.removeItem(GUEST_CART_STORAGE_KEY);
+          }
+        }
+      }
+    } else if (wasAuthenticated && !isNowAuthenticated) {
+      // User just logged out - clear cart completely
+      setCartItems([]);
+      // Also clear any guest cart data
+      if (typeof window !== "undefined") {
+        localStorage.removeItem(GUEST_CART_STORAGE_KEY);
+      }
+    }
+
+    previousAuthState.current = isAuthenticated;
   }, [isAuthenticated]);
+
+  // Save cart to localStorage for guest users
+  useEffect(() => {
+    if (
+      typeof window !== "undefined" &&
+      !isAuthenticated &&
+      hasInitialized.current
+    ) {
+      if (cartItems.length > 0) {
+        localStorage.setItem(GUEST_CART_STORAGE_KEY, JSON.stringify(cartItems));
+      } else {
+        localStorage.removeItem(GUEST_CART_STORAGE_KEY);
+      }
+    }
+  }, [cartItems, isAuthenticated]);
 
   const addItemToCart = (newItemData: Omit<CartItem, "id" | "quantity">) => {
     // Determine target quantity based on the state *before* this specific add action.
@@ -152,6 +233,11 @@ export const CartProvider = ({ children }: CartProviderProps) => {
   const clearCart = () => {
     const itemCount = cartItems.length;
     setCartItems([]);
+
+    // Clear guest cart from localStorage as well
+    if (typeof window !== "undefined") {
+      localStorage.removeItem(GUEST_CART_STORAGE_KEY);
+    }
 
     // Show toast notification for clearing cart
     if (itemCount > 0) {
