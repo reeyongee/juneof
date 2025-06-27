@@ -88,8 +88,8 @@ export default function CancellationsAndRefundPage() {
             <p>custom-made or pre-ordered pieces</p> <br />
             <p className="font-bold">how to initiate a return:</p> <br />
             <p>
-              email us at reach@juneof.com or use the "send us a message" form
-              on our
+              email us at reach@juneof.com or use the &quot;send us a
+              message&quot; form on our
               <Link href="/contact-us" className="hover:no-underline">
                 contact us page
               </Link>{" "}
