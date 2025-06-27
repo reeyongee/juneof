@@ -363,7 +363,7 @@ export default function LandingPageContent() {
               width={800}
               height={600}
               priority
-              sizes="(max-width: 768px) 80vw, 50vw"
+              sizes="(max-width: 768px) 48vw, 50vw"
               onLoad={() => handleImageLoad("/landing-images/1.jpg")}
             />
           </div>
@@ -429,16 +429,7 @@ export default function LandingPageContent() {
         <div className="layout-text layout text box-border py-12 px-[3vw] lg:px-[3vw] max-lg:px-[5vw] flex justify-end">
           <div className="w-full md:w-1/2">
             <h1 className="text-3xl font-normal m-0 leading-tight lowercase tracking-widest">
-              lorem ipsum dolor sit amet,
-            </h1>
-            <h1 className="text-3xl font-normal m-0 leading-tight lowercase tracking-widest">
-              consectetur adipiscing elit, sed
-            </h1>
-            <h1 className="text-3xl font-normal m-0 leading-tight lowercase tracking-widest">
-              do eiusmod tempor incididunt ut
-            </h1>
-            <h1 className="text-3xl font-normal m-0 leading-tight lowercase tracking-widest">
-              labore et dolore magna aliqua.
+              a playful homage to the creative depth of India
             </h1>
             <div className="flex flex-col sm:flex-row gap-4 sm:gap-8 mt-12 mb-0">
               <p className="link">

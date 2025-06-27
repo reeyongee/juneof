@@ -98,7 +98,7 @@ export default function ContactUsPage() {
           ref={backgroundRef}
           className="absolute inset-0 h-[130%] bg-cover bg-center opacity-30"
           style={{
-            backgroundImage: "url('/landing-images/about.jpg')",
+            backgroundImage: "url('/contact_us.jpg')",
           }}
         />
       </div>

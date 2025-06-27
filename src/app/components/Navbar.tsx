@@ -344,13 +344,18 @@ const Navbar: React.FC = () => {
 
   // Determine if current page should always be transparent
   const alwaysTransparentPages = [
+    "/",
+    "/product-listing",
+    "/product",
     "/contact-us",
     "/terms-and-conditions",
     "/privacy-policy",
     "/shipping-and-delivery",
     "/cancellations-and-refund",
   ];
-  const isAlwaysTransparent = alwaysTransparentPages.includes(pathname);
+  const isAlwaysTransparent =
+    alwaysTransparentPages.includes(pathname) ||
+    pathname.startsWith("/product/");
 
   const dynamicHeaderClasses = `fixed top-0 left-0 right-0 z-50 text-black p-4 transition-all duration-300 ${
     visible ? "translate-y-0" : "-translate-y-full"
