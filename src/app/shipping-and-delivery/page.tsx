@@ -71,24 +71,23 @@ export default function ShippingAndDeliveryPage() {
             ref={contentRef}
             className="text-xl lowercase tracking-wider text-black space-y-4 mix-blend-difference"
           >
-            <p>effective date: june 20, 2025</p>
+            <p className="font-bold">effective date: june 20, 2025</p>
             <p>
               at june of, we want your experience to be smooth and delightful.
               here&apos;s everything you need to know about shipping and
               returns:
             </p>
-            <p>⸻</p>
-            <p>1. shipping</p>
-            <p>shipping locations:</p>
-            <p>we currently ship pan india.</p>
-            <p>dispatch time:</p>
+            <p className="font-bold">1. shipping</p> <br />
+            <p className="font-bold">shipping locations: </p>
+            <p>we currently ship pan india.</p> <br />
+            <p className="font-bold">dispatch time: </p>
             <p>
               orders are typically processed and dispatched within 7 working
               days.
             </p>
-            <p>shipping charges:</p>
-            <p>• domestic (india): ₹100</p>
-            <p>tracking:</p>
+            <p className="font-bold">shipping charges:</p>
+            <p>domestic (india): ₹100</p> <br />
+            <p className="font-bold">tracking: </p>
             <p>
               once your order is shipped, you will receive a tracking number via
               email.

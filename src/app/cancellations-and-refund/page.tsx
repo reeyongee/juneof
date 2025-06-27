@@ -1,6 +1,7 @@
 "use client"; // Required for useEffect and useRef
 
 import { useEffect, useRef } from "react";
+import Link from "next/link";
 import { BlurScrollEffect_Effect4 } from "@/lib/animations"; // Adjust path if needed
 import gsap from "gsap"; // ScrollTrigger is globally registered
 
@@ -71,45 +72,55 @@ export default function CancellationsAndRefundPage() {
             ref={contentRef}
             className="text-xl lowercase tracking-wider text-black space-y-4 mix-blend-difference"
           >
-            <p className="font-bold">returns &amp; exchanges</p>
+            <p className="font-bold">returns &amp; exchanges</p> <br />
             <p>
               we accept returns or exchanges under the following conditions:
-            </p>
-            <p className="font-bold">eligibility:</p>
-            <p>• request is made within 7 days of receiving the order</p>
+            </p>{" "}
+            <br />
+            <p className="font-bold">eligibility:</p> <br />
+            <p>request is made within 7 days of receiving the order</p>
             <p>
-              • item is unworn, unwashed, and in original condition with tags
-            </p>
-            <p className="font-bold">non-returnable items:</p>
-            <p>• sale items</p>
-            <p>• custom-made or pre-ordered pieces</p>
-            <p className="font-bold">how to initiate a return:</p>
+              item is unworn, unwashed, and in original condition with tags
+            </p>{" "}
+            <br />
+            <p className="font-bold">non-returnable items:</p> <br />
+            <p>sale items</p> <br />
+            <p>custom-made or pre-ordered pieces</p> <br />
+            <p className="font-bold">how to initiate a return:</p> <br />
             <p>
-              email us at reach@juneof.com with your order number and reason for
-              return.
-            </p>
-            <p className="font-bold">refunds:</p>
+              email us at reach@juneof.com or use the "send us a message" form
+              on our
+              <Link href="/contact-us" className="hover:no-underline">
+                contact us page
+              </Link>{" "}
+              with your order number and reason for return.
+            </p>{" "}
+            <br />
+            <p className="font-bold">refunds:</p> <br />
             <p>
               refunds will be processed to your original payment method within
               [insert timeframe] after receiving and inspecting the returned
               item.
             </p>
-            <p>⸻</p>
-            <p className="font-bold">damages or issues</p>
+            <p className="font-bold">damages or issues :</p>
             <p>
               if your order arrives damaged or defective, please contact us
               within 24 hours with photos and order details.
             </p>
-            <p>⸻</p>
-            <p className="font-bold">cancellations</p>
+            <p className="font-bold">cancellations :</p>
             <p>
               orders can be cancelled within 8 hours of placement. once
               processed, cancellations are not possible. refunds for
               cancellations will be refunded within 7 working days.
             </p>
-            <p>⸻</p>
-            <p className="font-bold">contact us</p>
-            <p>questions? write to us at reach@juneof.com</p>
+            <p className="font-bold">contact us :</p> <br />
+            <p>
+              questions? write to us at reach@juneof.com or visit the{" "}
+              <Link href="/contact-us" className="hover:no-underline">
+                contact us page
+              </Link>{" "}
+              to send us a message
+            </p>
           </div>
         </div>
       </main>

@@ -71,7 +71,7 @@ export default function PrivacyPolicyPage() {
             ref={contentRef}
             className="text-xl lowercase tracking-wider text-black space-y-4 mix-blend-difference"
           >
-            <p>last updated: june 20, 2025</p>
+            <p className="font-bold">last updated: june 20, 2025</p>
             <p>
               june of operates this store and website, including all related
               information, content, features, tools, products and services, in
@@ -92,7 +92,9 @@ export default function PrivacyPolicyPage() {
               privacy policy and understand the collection, use, and disclosure
               of your information as described in this privacy policy.
             </p>
-            <p>personal information we collect or process</p>
+            <p className="font-bold">
+              personal information we collect or process
+            </p>
             <p>
               when we use the term &quot;personal information,&quot; we are
               referring to information that identifies or can reasonably be
@@ -139,7 +141,7 @@ export default function PrivacyPolicyPage() {
               with the services, including how and when you interact with or
               navigate the services.
             </p>
-            <p>personal information sources</p>
+            <p className="font-bold">personal information sources</p>
             <p>
               we may collect personal information from the following sources:
             </p>
@@ -178,14 +180,15 @@ export default function PrivacyPolicyPage() {
               this may include using your personal information to better tailor
               and improve the services.
             </p>
+            <p className="font-bold">marketing and advertising.</p>
             <p>
-              marketing and advertising. we use your personal information for
-              marketing and promotional purposes, such as to send marketing,
-              advertising and promotional communications by email, text message
-              or postal mail, and to show you online advertisements for products
-              or services on the services or other websites, including based on
-              items you previously have purchased or added to your cart and
-              other activity on the services.
+              we use your personal information for marketing and promotional
+              purposes, such as to send marketing, advertising and promotional
+              communications by email, text message or postal mail, and to show
+              you online advertisements for products or services on the services
+              or other websites, including based on items you previously have
+              purchased or added to your cart and other activity on the
+              services.
             </p>
             <p>
               security and fraud prevention. we use your personal information to
@@ -204,15 +207,16 @@ export default function PrivacyPolicyPage() {
               provide effective services to you and to maintain our business
               relationship with you.
             </p>
+            <p className="font-bold">legal reasons.</p>
             <p>
-              legal reasons. we use your personal information to comply with
-              applicable law or respond to valid legal process, including
-              requests from law enforcement or government agencies, to
-              investigate or participate in civil discovery, potential or actual
-              litigation, or other adversarial legal proceedings, and to enforce
-              or investigate potential violations of our terms or policies.
+              we use your personal information to comply with applicable law or
+              respond to valid legal process, including requests from law
+              enforcement or government agencies, to investigate or participate
+              in civil discovery, potential or actual litigation, or other
+              adversarial legal proceedings, and to enforce or investigate
+              potential violations of our terms or policies.
             </p>
-            <p>how we disclose personal information</p>
+            <p className="font-bold">how we disclose personal information</p>
             <p>
               in certain circumstances, we may disclose your personal
               information to third parties for legitimate purposes subject to
@@ -250,7 +254,7 @@ export default function PrivacyPolicyPage() {
               and to protect or defend the services, our rights, and the rights
               of our users or others.
             </p>
-            <p>relationship with shopify</p>
+            <p className="font-bold">relationship with shopify</p>
             <p>
               the services are hosted by shopify, which collects and processes
               personal information about your access to and use of the services
@@ -274,7 +278,7 @@ export default function PrivacyPolicyPage() {
               exercise certain rights with respect to your personal information
               here shopify privacy portal link.
             </p>
-            <p>third party websites and links</p>
+            <p className="font-bold">third party websites and links</p>
             <p>
               the services may provide links to websites or other online
               platforms operated by third parties. if you follow links to sites
@@ -291,7 +295,7 @@ export default function PrivacyPolicyPage() {
               imply any endorsement of the content on such platforms or of their
               owners or operators, except as disclosed on the services.
             </p>
-            <p>children&apos;s data</p>
+            <p className="font-bold">children&apos;s data</p>
             <p>
               the services are not intended to be used by children, and we do
               not knowingly collect any personal information about children
@@ -304,7 +308,9 @@ export default function PrivacyPolicyPage() {
               defined in applicable law) personal information of individuals
               under 16 years of age.
             </p>
-            <p>security and retention of your information</p>
+            <p className="font-bold">
+              security and retention of your information
+            </p>
             <p>
               please be aware that no security measures are perfect or
               impenetrable, and we cannot guarantee &quot;perfect
@@ -320,7 +326,7 @@ export default function PrivacyPolicyPage() {
               obligations, resolve disputes or enforce other applicable
               contracts and policies.
             </p>
-            <p>your rights and choices</p>
+            <p className="font-bold">your rights and choices</p>
             <p>
               depending on where you live, you may have some or all of the
               rights listed below in relation to your personal information.
@@ -373,7 +379,7 @@ export default function PrivacyPolicyPage() {
               with us. we will respond to your request in a timely manner as
               required under applicable law.
             </p>
-            <p>complaints</p>
+            <p className="font-bold">complaints</p>
             <p>
               if you have complaints about how we process your personal
               information, please contact us using the contact details provided
@@ -382,7 +388,7 @@ export default function PrivacyPolicyPage() {
               out below, or lodge your complaint with your local data protection
               authority.
             </p>
-            <p>international transfers</p>
+            <p className="font-bold">international transfers</p>
             <p>
               please note that we may transfer, store and process your personal
               information outside the country you live in.
@@ -396,7 +402,7 @@ export default function PrivacyPolicyPage() {
               data transfer is to a country that has been determined to provide
               an adequate level of protection.
             </p>
-            <p>changes to this privacy policy</p>
+            <p className="font-bold">changes to this privacy policy</p>
             <p>
               we may update this privacy policy from time to time, including to
               reflect changes to our practices or for other operational, legal,
@@ -404,7 +410,8 @@ export default function PrivacyPolicyPage() {
               this website, update the &quot;last updated&quot; date and provide
               notice as required by applicable law.
             </p>
-            <p>contact</p>
+            <p className="font-bold">contact</p>
+            <br />
             <p>
               should you have any questions about our privacy practices or this
               privacy policy, or if you would like to exercise any of the rights
