@@ -140,6 +140,21 @@
   }
 }
 
+@media (max-width: 768px) {
+  /* Ensure the first image is substantially smaller on mobile */
+  .section1 .container .panel.first img {
+    min-width: 0 !important;
+    width: 65vw !important; /* roughly two-thirds of screen width */
+    max-width: 400px !important;
+    margin: 0 auto !important; /* center it */
+  }
+
+  /* Prevent excessive top spacing injected by JS */
+  .section1 .container .panel.first img {
+    margin-top: 1rem !important;
+  }
+}
+
 /* Layout text styles */
 .layout-text {
   box-sizing: border-box;
