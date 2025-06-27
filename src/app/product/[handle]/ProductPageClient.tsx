@@ -452,7 +452,7 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
                     coming soon!
                   </Badge>
                 </div>
-                <p className="text-sm text-gray-700 tracking-wide lowercase leading-relaxed">
+                <p className="text-sm text-gray-700 tracking-wide lowercase leading-relaxed text-justify">
                   we&apos;re working on bringing you this product as soon as
                   possible. sign up to be the first to know when it&apos;s
                   available by clicking on the express interest button!
@@ -571,7 +571,7 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
                         coming soon!
                       </Badge>
                     </div>
-                    <p className="text-sm text-gray-700 tracking-wide lowercase leading-relaxed">
+                    <p className="text-sm text-gray-700 tracking-wide lowercase leading-relaxed text-justify">
                       we&apos;re working on bringing you this product as soon as
                       possible. sign up to be the first to know when it&apos;s
                       available by clicking on the express interest button!

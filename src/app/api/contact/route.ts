@@ -5,61 +5,66 @@ export async function POST(request: NextRequest) {
   try {
     const { firstName, lastName, email, message } = await request.json();
 
+    // --- Server-Side Validation ---
     if (!firstName || !lastName || !email || !message) {
       return NextResponse.json(
-        { error: "all fields are required." },
+        { error: "All fields are required." },
         { status: 400 }
       );
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return NextResponse.json(
+        { error: "Invalid email format." },
+        { status: 400 }
+      );
+    }
+    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+      console.error("SMTP environment variables are not set.");
+      return NextResponse.json(
+        { error: "Server configuration error." },
+        { status: 500 }
+      );
+    }
 
-    // Create transporter with Gmail (you can change this to your preferred email service)
+    // --- Nodemailer Transporter Setup ---
+    // This transporter uses your Google Workspace account to send the email.
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
-        user: process.env.SMTP_USER, // Your Gmail address
-        pass: process.env.SMTP_PASS, // Your Gmail app password
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS, // Use the App Password here
       },
     });
 
-    // Email data
-    const emailData = {
-      from: process.env.SMTP_USER, // Your sending email address
-      to: "nairakash05@gmail.com", // Target email address
-      replyTo: email, // User's email for replies
+    // --- Email Content Setup ---
+    const mailOptions = {
+      from: `"${firstName} ${lastName} via Juneof" <${process.env.SMTP_USER}>`,
+      to: "reach@juneof.com", // The email inbox where you want to receive messages
+      replyTo: email, // IMPORTANT: Ensures your replies go to the user
       subject: `New Contact Form Submission from ${firstName} ${lastName}`,
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #333; border-bottom: 2px solid #000; padding-bottom: 10px;">
-            New Contact Form Submission
-          </h2>
-          <div style="margin: 20px 0;">
-            <p><strong>Name:</strong> ${firstName} ${lastName}</p>
-            <p><strong>Email:</strong> <a href="mailto:${email}">${email}</a></p>
-          </div>
-          <div style="margin: 20px 0;">
-            <h3 style="color: #333;">Message:</h3>
-            <div style="background-color: #f5f5f5; padding: 15px; border-left: 4px solid #000; margin: 10px 0;">
-              ${message.replace(/\n/g, "<br>")}
-            </div>
-          </div>
-          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; color: #666; font-size: 14px;">
-            <p>This message was sent from the June Of contact form.</p>
-          </div>
+        <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+          <h2>New Message from Juneof Contact Form</h2>
+          <p><strong>Name:</strong> ${firstName} ${lastName}</p>
+          <p><strong>Email:</strong> <a href="mailto:${email}">${email}</a></p>
+          <hr>
+          <h3>Message:</h3>
+          <p>${message.replace(/\n/g, "<br>")}</p>
         </div>
       `,
     };
 
-    // Send email
-    await transporter.sendMail(emailData);
+    // --- Send Email ---
+    await transporter.sendMail(mailOptions);
 
     return NextResponse.json(
-      { success: true, message: "message sent successfully!" },
+      { success: true, message: "Message sent successfully!" },
       { status: 200 }
     );
   } catch (error) {
     console.error("API Error:", error);
     const errorMessage =
-      error instanceof Error ? error.message : "internal server error.";
+      error instanceof Error ? error.message : "Internal server error.";
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

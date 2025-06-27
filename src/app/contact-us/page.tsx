@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Loader2, Mail, Phone, Instagram } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/context/AuthContext";
 
 // Register GSAP plugins
 if (typeof window !== "undefined") {
@@ -16,6 +17,7 @@ if (typeof window !== "undefined") {
 }
 
 export default function ContactUsPage() {
+  const { isAuthenticated, customerData } = useAuth();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -28,6 +30,24 @@ export default function ContactUsPage() {
     // Set page title
     document.title = "contact us - june of";
   }, []);
+
+  // Prefill form fields for authenticated users
+  useEffect(() => {
+    if (isAuthenticated && customerData?.customer) {
+      const customer = customerData.customer;
+
+      // Only prefill if fields are currently empty (don't override user input)
+      if (!firstName && customer.firstName) {
+        setFirstName(customer.firstName);
+      }
+      if (!lastName && customer.lastName) {
+        setLastName(customer.lastName);
+      }
+      if (!email && customer.emailAddress?.emailAddress) {
+        setEmail(customer.emailAddress.emailAddress);
+      }
+    }
+  }, [isAuthenticated, customerData, firstName, lastName, email]);
 
   useEffect(() => {
     // Parallax Effect for backgroundRef
@@ -71,10 +91,15 @@ export default function ContactUsPage() {
         toast.success("message sent!", {
           description: "we'll get back to you as soon as possible.",
         });
-        setFirstName("");
-        setLastName("");
-        setEmail("");
-        setMessage("");
+        // Only clear message field for authenticated users (keep their info prefilled)
+        if (isAuthenticated) {
+          setMessage("");
+        } else {
+          setFirstName("");
+          setLastName("");
+          setEmail("");
+          setMessage("");
+        }
       } else {
         toast.error("failed to send message.", {
           description: result.error || "please try again.",
@@ -181,6 +206,14 @@ export default function ContactUsPage() {
                 <h2 className="text-2xl md:text-3xl font-light mb-8 lowercase tracking-widest text-black">
                   send message
                 </h2>
+
+                {isAuthenticated && customerData?.customer && (
+                  <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <p className="text-sm text-green-700 lowercase tracking-wide">
+                      welcome back! your information has been prefilled.
+                    </p>
+                  </div>
+                )}
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
