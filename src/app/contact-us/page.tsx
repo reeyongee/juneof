@@ -129,7 +129,7 @@ export default function ContactUsPage() {
       </div>
 
       <main ref={mainElementRef} className="relative min-h-screen">
-        <div className="container mx-auto px-4 sm:px-8 py-20">
+        <div className="container mx-auto px-4 sm:px-8 py-32">
           {/* Header Section */}
           <div className="text-center mb-16">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-light mb-6 lowercase tracking-widest text-black">
