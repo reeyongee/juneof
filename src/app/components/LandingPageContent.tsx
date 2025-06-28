@@ -349,8 +349,8 @@ export default function LandingPageContent() {
 
   return (
     <div ref={containerRef} className="relative w-full z-[2]">
-      {/* Scroll Indicator */}
-      {!isMobile && <ScrollIndicator />}
+      {/* Scroll Indicator - Now shows on both desktop and mobile */}
+      <ScrollIndicator />
 
       {/* Section 1 - Image Panels */}
       <div
@@ -360,25 +360,25 @@ export default function LandingPageContent() {
         <div className="container flex flex-row h-screen md:h-screen max-md:h-auto overflow-hidden w-screen max-w-none left-0 max-md:flex-col">
           <div className="panel first relative h-screen md:h-screen max-md:h-auto max-md:flex max-md:items-center max-md:justify-center max-md:pt-24 max-md:pb-12">
             <Image
-              className="pic1 relative block w-auto md:w-full max-md:w-[70%] max-md:h-auto"
+              className="pic1 relative block w-auto md:w-full max-md:w-[90vw] max-md:h-auto"
               src="/landing-images/1.jpg"
               alt="pic1"
               width={800}
               height={600}
               priority
-              sizes="(max-width: 768px) 48vw, 50vw"
+              sizes="(max-width: 768px) 90vw, 50vw"
               onLoad={() => handleImageLoad("/landing-images/1.jpg")}
             />
           </div>
           <div className="panel relative h-screen">
             <Image
-              className="pic2 relative block w-full"
+              className="pic2 relative block w-full max-md:w-[90%] max-md:mx-auto"
               src="/landing-images/2.jpg"
               alt="pic2"
               width={800}
               height={600}
               priority
-              sizes="(max-width: 768px) 80vw, 35vw"
+              sizes="(max-width: 768px) 72vw, 35vw"
               onLoad={() => handleImageLoad("/landing-images/2.jpg")}
             />
           </div>

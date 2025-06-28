@@ -7,6 +7,8 @@ import Link from "next/link";
 
 const ShopButton = () => {
   const [hasScrolled, setHasScrolled] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+  const [scrollPosition, setScrollPosition] = useState(0);
   const buttonRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
 
@@ -16,28 +18,33 @@ const ShopButton = () => {
   useEffect(() => {
     if (!shouldShow) return;
 
+    // Set initial opacity to 0
+    if (buttonRef.current) {
+      gsap.set(buttonRef.current, { opacity: 0 });
+    }
+
     // Listen for scroll events
     const handleScroll = () => {
       const scrollY = window.scrollY || document.documentElement.scrollTop;
+      setScrollPosition(scrollY);
 
       if (!hasScrolled && scrollY > 10) {
         setHasScrolled(true);
 
-        // Wait 2 seconds after scroll, then fade in the shop button
+        // Wait 1 second after scroll, then fade in the shop button
         setTimeout(() => {
+          setIsVisible(true);
           if (buttonRef.current) {
-            gsap.fromTo(
-              buttonRef.current,
-              { opacity: 0, y: 20 },
-              {
-                opacity: 1,
-                y: 0,
-                duration: 0.8,
-                ease: "power2.out",
-              }
-            );
+            // Set initial opacity to 0, then animate to 1
+            gsap.set(buttonRef.current, { opacity: 0 });
+            gsap.to(buttonRef.current, {
+              opacity: 1,
+              y: 0,
+              duration: 0.8,
+              ease: "power2.out",
+            });
           }
-        }, 2000);
+        }, 1000); // Changed from 2000 to 1000 (1 second)
       }
     };
 
@@ -59,6 +66,7 @@ const ShopButton = () => {
       ).lenis;
       if (lenis) {
         lenis.on("scroll", ({ scroll }: { scroll: number }) => {
+          setScrollPosition(scroll);
           if (!hasScrolled && scroll > 10) {
             handleScroll();
           }
@@ -75,17 +83,31 @@ const ShopButton = () => {
     };
   }, [shouldShow, hasScrolled]);
 
-  if (!shouldShow) return null;
+  if (!shouldShow || !isVisible) return null;
+
+  // Calculate if we're in the first section (sticky) or should scroll with content
+  const firstSectionHeight =
+    typeof window !== "undefined" ? window.innerHeight : 800;
+  const isInFirstSection = scrollPosition < firstSectionHeight;
+
+  // Position classes based on section
+  const positionClasses = isInFirstSection
+    ? "fixed bottom-[20%] right-[8%] max-md:bottom-[10%] max-md:right-[5%]" // Sticky in first section
+    : "absolute bottom-[20%] right-[8%] max-md:bottom-[10%] max-md:right-[5%]"; // Scrolls with content after first section
 
   return (
     <div
       ref={buttonRef}
-      className="fixed bottom-[20%] right-[8%] z-[100]"
-      style={{ opacity: 0 }}
+      className={`${positionClasses} z-[100]`}
+      style={{
+        transform: !isInFirstSection
+          ? `translateY(${scrollPosition - firstSectionHeight}px)`
+          : undefined,
+      }}
     >
       <Link
         href="/product-listing"
-        className="bg-black text-white px-6 py-3 text-base font-medium tracking-wider lowercase hover:bg-gray-800 transition-colors duration-300 cursor-pointer"
+        className="bg-black text-white px-6 py-3 text-base font-medium tracking-wider lowercase hover:bg-gray-800 transition-colors duration-300 cursor-pointer max-md:px-4 max-md:py-2 max-md:text-sm"
       >
         shop
       </Link>
@@ -97,7 +119,7 @@ const ScrollIndicator = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [hasScrolled, setHasScrolled] = useState(false);
   const indicatorRef = useRef<HTMLDivElement>(null);
-  const messageRef = useRef<HTMLDivElement>(null);
+  const arrowRef = useRef<HTMLDivElement>(null);
   const bobbingAnimationRef = useRef<gsap.core.Tween | null>(null);
   const pathname = usePathname();
 
@@ -175,12 +197,12 @@ const ScrollIndicator = () => {
     };
   }, [shouldShow, hasScrolled]);
 
-  // Start bobbing animation when component becomes visible
+  // Start vertical bobbing animation with more prominent movement
   useEffect(() => {
-    if (isVisible && messageRef.current && !bobbingAnimationRef.current) {
-      bobbingAnimationRef.current = gsap.to(messageRef.current, {
-        x: "12px",
-        duration: 1.75,
+    if (isVisible && arrowRef.current && !bobbingAnimationRef.current) {
+      bobbingAnimationRef.current = gsap.to(arrowRef.current, {
+        y: "20px", // Increased from 8px to 20px for more prominent movement
+        duration: 1.2, // Slightly faster for better rhythm
         ease: "sine.inOut",
         yoyo: true,
         repeat: -1,
@@ -201,13 +223,11 @@ const ScrollIndicator = () => {
     <>
       <div
         ref={indicatorRef}
-        className="fixed bottom-[20%] right-[8%] z-[100] pointer-events-none"
+        className="fixed bottom-[15%] right-[8%] z-[100] pointer-events-none max-md:bottom-[5%] max-md:right-[5%]"
       >
-        <div ref={messageRef} className="flex items-center">
-          <div className="text-black text-base font-medium tracking-wider lowercase">
-            swipe down to see more {">"}
-            {">"}
-            {">"}
+        <div ref={arrowRef} className="flex items-center justify-center">
+          <div className="text-black text-6xl font-light max-md:text-5xl leading-none">
+            ↓
           </div>
         </div>
       </div>

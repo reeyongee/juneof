@@ -368,6 +368,8 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
     return (
       <>
         <main className="min-h-screen bg-[#F8F4EC] text-gray-900">
+          {/* Add spacing equivalent to navbar height */}
+          <div className="h-16"></div>
           {/* Mobile Image Gallery */}
           <div>
             {/* Image Gallery */}
@@ -617,6 +619,8 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
 
         {/* Middle Column (Now Scrolls with Page) */}
         <div className="flex-grow p-8">
+          {/* Add spacing equivalent to navbar height */}
+          <div className="h-16"></div>
           <div className="space-y-8">
             {product.images.edges.length > 0 ? (
               product.images.edges.map((imageEdge, index) => {

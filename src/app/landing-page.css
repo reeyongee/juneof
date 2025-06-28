@@ -141,17 +141,17 @@
 }
 
 @media (max-width: 768px) {
-  /* Ensure the first image is substantially smaller on mobile */
+  /* Make the first image bigger on mobile - 40% bigger than before */
   .section1 .container .panel.first img {
     min-width: 0 !important;
-    width: 65vw !important; /* roughly two-thirds of screen width */
-    max-width: 400px !important;
+    width: 90vw !important; /* Much larger - 90% of screen width */
+    max-width: 600px !important; /* Increased max-width */
     margin: 0 auto !important; /* center it */
   }
 
-  /* Prevent excessive top spacing injected by JS */
+  /* Move the first image up 15% higher than before */
   .section1 .container .panel.first img {
-    margin-top: 1rem !important;
+    margin-top: -3rem !important; /* Negative margin to move up */
   }
 }
 
