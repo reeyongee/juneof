@@ -135,138 +135,178 @@ export default function WashCareOverlay({
           </button>
         </div>
 
-        {/* Wash Care Content */}
-        <div className="space-y-6 sm:space-y-8 text-gray-800">
-          {/* Top Product */}
-          <div className="space-y-4">
-            <h3 className="text-base sm:text-lg font-medium tracking-wide lowercase">
-              product:{" "}
-              <span className="underline decoration-1 underline-offset-2">
-                top
-              </span>
-            </h3>
+        {/* Wash Care Content - Reorganized for desktop fit */}
+        <div className="flex flex-col lg:flex-row lg:gap-12 gap-6 text-gray-800">
+          {/* Left Column - Top & Skort */}
+          <div className="lg:w-1/2 space-y-6">
+            {/* Top Product */}
+            <div className="space-y-3">
+              <h3 className="text-base sm:text-lg font-medium tracking-wide lowercase">
+                product: <em className="italic">top</em>
+              </h3>
 
-            <p className="text-sm sm:text-base tracking-wide lowercase">
-              materials used: lined with poplin and made from soft{" "}
-              <span className="underline decoration-1 underline-offset-2">
-                kantha
-              </span>{" "}
-              cotton.
-            </p>
+              <p className="text-sm sm:text-base tracking-wide lowercase">
+                materials used: lined with poplin and made from soft{" "}
+                <em className="italic">kantha</em> cotton.
+              </p>
 
-            <ul className="space-y-2 text-sm sm:text-base tracking-wide lowercase ml-4">
-              <li className="flex items-start">
-                <span className="mr-3">•</span>
-                <span>gentle machine wash in cold water</span>
-              </li>
-              <li className="flex items-start">
-                <span className="mr-3">•</span>
-                <span>
-                  wash with similar{" "}
-                  <span className="underline decoration-1 underline-offset-2">
-                    colours
+              <ul className="space-y-1 text-sm tracking-wide lowercase ml-4">
+                <li className="flex items-start">
+                  <span className="mr-3">•</span>
+                  <span>gentle machine wash in cold water</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="mr-3">•</span>
+                  <span>
+                    wash with similar <em className="italic">colours</em>
                   </span>
-                </span>
-              </li>
-              <li className="flex items-start">
-                <span className="mr-3">•</span>
-                <span>mild detergent only</span>
-              </li>
-              <li className="flex items-start">
-                <span className="mr-3">•</span>
-                <span>do not bleach or tumble dry</span>
-              </li>
-              <li className="flex items-start">
-                <span className="mr-3">•</span>
-                <span>line dry in shade</span>
-              </li>
-              <li className="flex items-start">
-                <span className="mr-3">•</span>
-                <span>iron on low, inside out</span>
-              </li>
-            </ul>
+                </li>
+                <li className="flex items-start">
+                  <span className="mr-3">•</span>
+                  <span>mild detergent only</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="mr-3">•</span>
+                  <span>do not bleach or tumble dry</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="mr-3">•</span>
+                  <span>line dry in shade</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="mr-3">•</span>
+                  <span>iron on low, inside out</span>
+                </li>
+              </ul>
 
-            <p className="text-sm sm:text-base tracking-wide lowercase italic pt-2">
-              soft, flexible, and low-maintenance.
-            </p>
+              <p className="text-sm tracking-wide lowercase italic pt-1">
+                soft, flexible, and low-maintenance.
+              </p>
+            </div>
+
+            {/* Divider */}
+            <div className="border-t border-gray-300"></div>
+
+            {/* Skort Product */}
+            <div className="space-y-3">
+              <h3 className="text-base sm:text-lg font-medium tracking-wide lowercase">
+                product: <em className="italic">skort</em>
+              </h3>
+
+              <p className="text-sm sm:text-base tracking-wide lowercase">
+                materials used: made from soft{" "}
+                <em className="italic">kantha</em> cotton, shorts lined with
+                voile, fastened with a zipper.
+              </p>
+
+              <ul className="space-y-1 text-sm tracking-wide lowercase ml-4">
+                <li className="flex items-start">
+                  <span className="mr-3">•</span>
+                  <span>gentle machine wash in cold water</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="mr-3">•</span>
+                  <span>zip up before washing</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="mr-3">•</span>
+                  <span>
+                    wash with similar <em className="italic">colours</em>
+                  </span>
+                </li>
+                <li className="flex items-start">
+                  <span className="mr-3">•</span>
+                  <span>mild detergent only</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="mr-3">•</span>
+                  <span>no bleach, no tumble dry</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="mr-3">•</span>
+                  <span>line dry in shade</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="mr-3">•</span>
+                  <span>iron on low, avoiding the zipper</span>
+                </li>
+              </ul>
+
+              <p className="text-sm tracking-wide lowercase italic pt-1">
+                built for movement, made to last.
+              </p>
+            </div>
           </div>
 
-          {/* Divider */}
-          <div className="border-t border-gray-300"></div>
+          {/* Right Column - Summer Jacket & Care Tips */}
+          <div className="lg:w-1/2 space-y-6">
+            {/* Summer Jacket Product */}
+            <div className="space-y-3">
+              <h3 className="text-base sm:text-lg font-medium tracking-wide lowercase">
+                product: <em className="italic">summer jacket</em>
+              </h3>
 
-          {/* Skort Product */}
-          <div className="space-y-4">
-            <h3 className="text-base sm:text-lg font-medium tracking-wide lowercase">
-              product:{" "}
-              <span className="underline decoration-1 underline-offset-2">
-                skort
-              </span>
-            </h3>
+              <p className="text-sm sm:text-base tracking-wide lowercase italic">
+                (wash care instructions coming soon)
+              </p>
+            </div>
 
-            <p className="text-sm sm:text-base tracking-wide lowercase">
-              materials used: made from soft{" "}
-              <span className="underline decoration-1 underline-offset-2">
-                kantha
-              </span>{" "}
-              cotton, shorts lined with voile, fastened with a zipper.
-            </p>
+            {/* Divider */}
+            <div className="border-t border-gray-300"></div>
 
-            <ul className="space-y-2 text-sm sm:text-base tracking-wide lowercase ml-4">
-              <li className="flex items-start">
-                <span className="mr-3">•</span>
-                <span>gentle machine wash in cold water</span>
-              </li>
-              <li className="flex items-start">
-                <span className="mr-3">•</span>
-                <span>zip up before washing</span>
-              </li>
-              <li className="flex items-start">
-                <span className="mr-3">•</span>
-                <span>
-                  wash with similar{" "}
-                  <span className="underline decoration-1 underline-offset-2">
-                    colours
-                  </span>
-                </span>
-              </li>
-              <li className="flex items-start">
-                <span className="mr-3">•</span>
-                <span>mild detergent only</span>
-              </li>
-              <li className="flex items-start">
-                <span className="mr-3">•</span>
-                <span>no bleach, no tumble dry</span>
-              </li>
-              <li className="flex items-start">
-                <span className="mr-3">•</span>
-                <span>line dry in shade</span>
-              </li>
-              <li className="flex items-start">
-                <span className="mr-3">•</span>
-                <span>iron on low, avoiding the zipper</span>
-              </li>
-            </ul>
+            {/* General Care Tips */}
+            <div className="space-y-3">
+              <h3 className="text-base sm:text-lg font-medium tracking-wide lowercase">
+                general care tips
+              </h3>
 
-            <p className="text-sm sm:text-base tracking-wide lowercase italic pt-2">
-              built for movement, made to last.
-            </p>
-          </div>
+              <ul className="space-y-1 text-sm tracking-wide lowercase ml-4">
+                <li className="flex items-start">
+                  <span className="mr-3">•</span>
+                  <span>always check care labels before washing</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="mr-3">•</span>
+                  <span>turn garments inside out to protect fabric</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="mr-3">•</span>
+                  <span>use mesh laundry bags for delicate items</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="mr-3">•</span>
+                  <span>store properly to maintain shape</span>
+                </li>
+              </ul>
+            </div>
 
-          {/* Divider */}
-          <div className="border-t border-gray-300"></div>
+            {/* Divider */}
+            <div className="border-t border-gray-300"></div>
 
-          {/* Summer Jacket Product */}
-          <div className="space-y-4 pb-4">
-            <h3 className="text-base sm:text-lg font-medium tracking-wide lowercase">
-              product:{" "}
-              <span className="underline decoration-1 underline-offset-2">
-                summer jacket
-              </span>
-            </h3>
+            {/* Contact for Care Questions */}
+            <div className="space-y-3">
+              <h3 className="text-base sm:text-lg font-medium tracking-wide lowercase">
+                care questions?
+              </h3>
 
-            <p className="text-sm sm:text-base tracking-wide lowercase italic">
-              (wash care instructions coming soon)
-            </p>
+              <p className="text-sm tracking-wide lowercase text-gray-600">
+                need help with care instructions? reach out to us on{" "}
+                <a
+                  href="mailto:reach@juneof.com"
+                  className="underline decoration-1 underline-offset-2 hover:text-gray-800 transition-colors"
+                >
+                  reach@juneof.com
+                </a>{" "}
+                or{" "}
+                <a
+                  href="/contact-us"
+                  className="underline decoration-1 underline-offset-2 hover:text-gray-800 transition-colors"
+                >
+                  contact us
+                </a>{" "}
+                and we&apos;ll help you out.
+              </p>
+            </div>
           </div>
         </div>
       </div>
