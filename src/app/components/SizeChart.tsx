@@ -138,22 +138,219 @@ export default function SizeChart({ isOpen, onClose }: SizeChartProps) {
       {/* Size Chart Content */}
       <div
         ref={contentRef}
-        className="relative w-full bg-[#F8F4EC] p-8"
+        className="relative w-full bg-[#F8F4EC] p-8 max-h-[90vh] overflow-y-auto"
         // transform classes removed - GSAP controls position
       >
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl tracking-widest lowercase">size chart</h2>
+        <div className="flex justify-between items-center mb-8">
+          <h2 className="text-2xl tracking-widest lowercase font-serif">
+            size guide
+          </h2>
           <button
             onClick={handleCloseStart} // Trigger close animation start
-            className="text-gray-600 hover:text-gray-900 transition-colors lowercase tracking-widest"
+            className="text-gray-600 hover:text-gray-900 transition-colors lowercase tracking-widest text-sm"
           >
             close
           </button>
         </div>
 
-        {/* Placeholder content */}
-        <div className="h-96 flex items-center justify-center text-gray-500 lowercase">
-          size chart content will go here
+        {/* Two-column layout */}
+        <div className="flex flex-col lg:flex-row gap-12 lg:gap-16">
+          {/* Left Column - Copy */}
+          <div className="lg:w-1/2 space-y-6">
+            <div className="space-y-4 text-gray-800 leading-relaxed">
+              <p className="text-base tracking-wide">
+                We design for{" "}
+                <em className="italic font-medium">real bodies</em>—from Extra
+                Petite to Extra Curvy and every in-between.
+              </p>
+
+              <p className="text-base tracking-wide">
+                <span className="underline decoration-2 underline-offset-4 font-medium">
+                  june of
+                </span>{" "}
+                pieces are made to celebrate your shape, not squeeze it into a
+                mould.
+              </p>
+
+              <p className="text-base tracking-wide">
+                Each silhouette is thoughtfully{" "}
+                <em className="italic font-medium">tailored</em> for comfort,
+                movement, and confidence.
+              </p>
+            </div>
+
+            <div className="pt-4 border-t border-gray-300">
+              <h3 className="text-lg font-medium tracking-wide lowercase mb-3">
+                Not sure what fits you best?
+              </h3>
+              <p className="text-base tracking-wide text-gray-700 mb-4">
+                Check our measurement chart below
+              </p>
+            </div>
+
+            <div className="pt-6">
+              <p className="text-sm tracking-wide text-gray-600">
+                Still confused about which size?
+              </p>
+              <p className="text-sm tracking-wide text-gray-600">
+                Chat with us on{" "}
+                <a
+                  href="mailto:reach@juneof.com"
+                  className="underline decoration-1 underline-offset-2 hover:text-gray-800 transition-colors"
+                >
+                  reach@juneof.com
+                </a>
+                /our socials and we&apos;ll help you out.
+              </p>
+            </div>
+          </div>
+
+          {/* Right Column - Tables */}
+          <div className="lg:w-1/2 space-y-8">
+            {/* Top Table */}
+            <div>
+              <h3 className="text-lg font-medium tracking-wide lowercase mb-4 text-center">
+                Top
+              </h3>
+              <div className="overflow-hidden border border-gray-300">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-gray-100">
+                      <th className="px-4 py-3 text-left font-medium tracking-wide lowercase border-r border-gray-300">
+                        Size
+                      </th>
+                      <th className="px-4 py-3 text-left font-medium tracking-wide lowercase border-r border-gray-300">
+                        Bust Range (in)
+                      </th>
+                      <th className="px-4 py-3 text-left font-medium tracking-wide lowercase">
+                        Updated waist
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-t border-gray-300">
+                      <td className="px-4 py-3 border-r border-gray-300 lowercase tracking-wide">
+                        Extra petite
+                      </td>
+                      <td className="px-4 py-3 border-r border-gray-300 tracking-wide">
+                        30-33
+                      </td>
+                      <td className="px-4 py-3 tracking-wide">24-26</td>
+                    </tr>
+                    <tr className="border-t border-gray-300">
+                      <td className="px-4 py-3 border-r border-gray-300 lowercase tracking-wide">
+                        Petite
+                      </td>
+                      <td className="px-4 py-3 border-r border-gray-300 tracking-wide">
+                        33-36
+                      </td>
+                      <td className="px-4 py-3 tracking-wide">26-28</td>
+                    </tr>
+                    <tr className="border-t border-gray-300">
+                      <td className="px-4 py-3 border-r border-gray-300 lowercase tracking-wide">
+                        in-between
+                      </td>
+                      <td className="px-4 py-3 border-r border-gray-300 tracking-wide">
+                        36-39
+                      </td>
+                      <td className="px-4 py-3 tracking-wide">28-31</td>
+                    </tr>
+                    <tr className="border-t border-gray-300">
+                      <td className="px-4 py-3 border-r border-gray-300 lowercase tracking-wide">
+                        Curvy
+                      </td>
+                      <td className="px-4 py-3 border-r border-gray-300 tracking-wide">
+                        39-41
+                      </td>
+                      <td className="px-4 py-3 tracking-wide">31-34</td>
+                    </tr>
+                    <tr className="border-t border-gray-300">
+                      <td className="px-4 py-3 border-r border-gray-300 lowercase tracking-wide">
+                        Extra curvy
+                      </td>
+                      <td className="px-4 py-3 border-r border-gray-300 tracking-wide">
+                        41-44
+                      </td>
+                      <td className="px-4 py-3 tracking-wide">34-38</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Skort Table */}
+            <div>
+              <h3 className="text-lg font-medium tracking-wide lowercase mb-4 text-center">
+                Skort
+              </h3>
+              <div className="overflow-hidden border border-gray-300">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-gray-100">
+                      <th className="px-4 py-3 text-left font-medium tracking-wide lowercase border-r border-gray-300"></th>
+                      <th className="px-4 py-3 text-center font-medium tracking-wide lowercase border-r border-gray-300">
+                        Extra petite
+                      </th>
+                      <th className="px-4 py-3 text-center font-medium tracking-wide lowercase border-r border-gray-300">
+                        petite
+                      </th>
+                      <th className="px-4 py-3 text-center font-medium tracking-wide lowercase border-r border-gray-300">
+                        in-between
+                      </th>
+                      <th className="px-4 py-3 text-center font-medium tracking-wide lowercase border-r border-gray-300">
+                        curvy
+                      </th>
+                      <th className="px-4 py-3 text-center font-medium tracking-wide lowercase">
+                        Extra curvy
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-t border-gray-300">
+                      <td className="px-4 py-3 border-r border-gray-300 lowercase tracking-wide font-medium">
+                        Waist
+                      </td>
+                      <td className="px-4 py-3 border-r border-gray-300 text-center tracking-wide">
+                        26
+                      </td>
+                      <td className="px-4 py-3 border-r border-gray-300 text-center tracking-wide">
+                        28
+                      </td>
+                      <td className="px-4 py-3 border-r border-gray-300 text-center tracking-wide">
+                        30
+                      </td>
+                      <td className="px-4 py-3 border-r border-gray-300 text-center tracking-wide">
+                        32
+                      </td>
+                      <td className="px-4 py-3 text-center tracking-wide">
+                        34
+                      </td>
+                    </tr>
+                    <tr className="border-t border-gray-300">
+                      <td className="px-4 py-3 border-r border-gray-300 lowercase tracking-wide font-medium">
+                        Hips
+                      </td>
+                      <td className="px-4 py-3 border-r border-gray-300 text-center tracking-wide">
+                        36.5
+                      </td>
+                      <td className="px-4 py-3 border-r border-gray-300 text-center tracking-wide">
+                        38.5
+                      </td>
+                      <td className="px-4 py-3 border-r border-gray-300 text-center tracking-wide">
+                        40.5
+                      </td>
+                      <td className="px-4 py-3 border-r border-gray-300 text-center tracking-wide">
+                        42.5
+                      </td>
+                      <td className="px-4 py-3 text-center tracking-wide">
+                        44
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>,
