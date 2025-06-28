@@ -370,9 +370,9 @@ export default function LandingPageContent() {
               onLoad={() => handleImageLoad("/landing-images/1.jpg")}
             />
           </div>
-          <div className="panel relative h-screen">
+          <div className="panel relative h-screen max-md:h-auto max-md:flex max-md:items-center max-md:justify-center max-md:pt-24 max-md:pb-12">
             <Image
-              className="pic2 relative block w-full max-md:w-[90%] max-md:mx-auto"
+              className="pic2 relative block w-full"
               src="/landing-images/2.jpg"
               alt="pic2"
               width={800}
@@ -382,7 +382,7 @@ export default function LandingPageContent() {
               onLoad={() => handleImageLoad("/landing-images/2.jpg")}
             />
           </div>
-          <div className="panel relative h-screen">
+          <div className="panel relative h-screen max-md:h-auto max-md:flex max-md:items-center max-md:justify-center max-md:pt-24 max-md:pb-12">
             <Image
               className="pic3 relative block w-full"
               src="/landing-images/3.jpg"

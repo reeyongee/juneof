@@ -169,9 +169,9 @@ export default function SplashScreen({ onLoadComplete }: SplashScreenProps) {
         fadeOut ? "opacity-0" : "opacity-100"
       }`}
     >
-      {/* Logo - Top Left Corner, Much Smaller on Mobile */}
-      <div className="absolute top-6 left-6 md:top-8 md:left-8 lg:top-12 lg:left-12">
-        <div className="relative w-32 h-32 md:w-[28rem] md:h-[28rem] lg:w-[32rem] lg:h-[32rem] xl:w-[36rem] xl:h-[36rem] 2xl:w-[40rem] 2xl:h-[40rem] splash-logo">
+      {/* Logo - Bigger and Lower on Mobile */}
+      <div className="absolute top-16 left-6 md:top-8 md:left-8 lg:top-12 lg:left-12">
+        <div className="relative w-64 h-64 md:w-[28rem] md:h-[28rem] lg:w-[32rem] lg:h-[32rem] xl:w-[36rem] xl:h-[36rem] 2xl:w-[40rem] 2xl:h-[40rem] splash-logo">
           <Image
             src="/juneof-logo.svg"
             alt="Juneof Logo"

@@ -153,6 +153,25 @@
   .section1 .container .panel.first img {
     margin-top: -3rem !important; /* Negative margin to move up */
   }
+
+  /* Apply the same positioning to pic2 and pic3 to match the first image - make them marginally bigger */
+  .section1 .container .panel img.pic2 {
+    margin-top: -3rem !important; /* Same negative margin as first image */
+    width: 77vw !important; /* 57vw + 20vw = 77vw */
+    min-width: 0 !important; /* Override the min-width from 1000px rule */
+    max-width: none !important; /* Override any max-width constraints */
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  .section1 .container .panel img.pic3 {
+    margin-top: -3rem !important; /* Same negative margin as first image */
+    width: 95vw !important; /* Marginally bigger than original mobile size */
+    min-width: 0 !important; /* Override the min-width from 1000px rule */
+    max-width: none !important; /* Override any max-width constraints */
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
 }
 
 /* Layout text styles */
