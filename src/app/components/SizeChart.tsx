@@ -158,49 +158,30 @@ export default function SizeChart({ isOpen, onClose }: SizeChartProps) {
           {/* Left Column - Copy */}
           <div className="lg:w-1/2 space-y-6">
             <div className="space-y-4 text-gray-800 leading-relaxed">
-              <p className="text-base tracking-wide">
-                We design for{" "}
-                <em className="italic font-medium">real bodies</em>—from Extra
-                Petite to Extra Curvy and every in-between.
+              <p className="text-base tracking-wide lowercase">
+                we design for{" "}
+                <em className="italic font-medium">real bodies</em>—from extra
+                petite to extra curvy and every in-between.
               </p>
 
-              <p className="text-base tracking-wide">
-                <span className="underline decoration-2 underline-offset-4 font-medium">
-                  june of
-                </span>{" "}
-                pieces are made to celebrate your shape, not squeeze it into a
-                mould.
+              <p className="text-base tracking-wide lowercase">
+                june of pieces are made to celebrate your shape, not squeeze it
+                into a mould.
               </p>
 
-              <p className="text-base tracking-wide">
-                Each silhouette is thoughtfully{" "}
-                <em className="italic font-medium">tailored</em> for comfort,
-                movement, and confidence.
+              <p className="text-base tracking-wide lowercase">
+                each silhouette is{" "}
+                <em className="italic font-medium">thoughtfully</em> tailored
+                for comfort, movement, and confidence.
               </p>
             </div>
 
-            <div className="pt-4 border-t border-gray-300">
-              <h3 className="text-lg font-medium tracking-wide lowercase mb-3">
-                Not sure what fits you best?
-              </h3>
-              <p className="text-base tracking-wide text-gray-700 mb-4">
-                Check our measurement chart below
+            <div className="pt-8 border-t border-gray-300">
+              <p className="text-base font-bold tracking-wide lowercase mb-4">
+                not sure what fits you best?
               </p>
-            </div>
-
-            <div className="pt-6">
-              <p className="text-sm tracking-wide text-gray-600">
-                Still confused about which size?
-              </p>
-              <p className="text-sm tracking-wide text-gray-600">
-                Chat with us on{" "}
-                <a
-                  href="mailto:reach@juneof.com"
-                  className="underline decoration-1 underline-offset-2 hover:text-gray-800 transition-colors"
-                >
-                  reach@juneof.com
-                </a>
-                /our socials and we&apos;ll help you out.
+              <p className="text-base tracking-wide text-gray-700 lowercase">
+                check our measurement chart below
               </p>
             </div>
           </div>
@@ -351,6 +332,30 @@ export default function SizeChart({ isOpen, onClose }: SizeChartProps) {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Bottom section - Still confused */}
+        <div className="pt-8 mt-8 border-t border-gray-300">
+          <p className="text-sm tracking-wide text-gray-600 lowercase mb-2">
+            still confused about which size?
+          </p>
+          <p className="text-sm tracking-wide text-gray-600 lowercase">
+            chat with us on{" "}
+            <a
+              href="mailto:reach@juneof.com"
+              className="underline decoration-1 underline-offset-2 hover:text-gray-800 transition-colors"
+            >
+              reach@juneof.com
+            </a>
+            /our socials or{" "}
+            <a
+              href="/contact-us"
+              className="underline decoration-1 underline-offset-2 hover:text-gray-800 transition-colors"
+            >
+              send us a message on the contact us page
+            </a>{" "}
+            and we&apos;ll help you out.
+          </p>
         </div>
       </div>
     </div>,
