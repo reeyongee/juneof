@@ -18,11 +18,6 @@ export default function NotFound() {
         {/* Quirky On-Brand Message */}
         <div className="space-y-4">
           <p className="text-gray-700 tracking-wider lowercase leading-relaxed">
-            looks like this page decided to take an unscheduled vacation to the
-            creative depths of india... without telling us.
-          </p>
-
-          <p className="text-gray-600 tracking-wider lowercase text-sm leading-relaxed">
             don&apos;t worry though, our other pages are still here, patiently
             waiting to show you something beautiful.
           </p>
