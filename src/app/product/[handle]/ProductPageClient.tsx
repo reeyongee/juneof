@@ -10,6 +10,7 @@ import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 import { ShopifyProductDetails } from "@/lib/shopify";
 import { Badge } from "@/components/ui/badge";
+import * as pixel from "@/lib/meta-pixel"; // Import the pixel helper
 
 // Mobile detection hook
 const useIsMobile = () => {
@@ -92,6 +93,19 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
   const imageGalleryRef = useRef<HTMLDivElement>(null);
 
   const searchParams = useSearchParams();
+
+  // Track ViewContent event when the product data is available
+  useEffect(() => {
+    if (product && pixel.PIXEL_ID) {
+      pixel.track("ViewContent", {
+        content_name: product.title,
+        content_ids: [product.id], // Using Shopify's GID
+        content_type: "product",
+        currency: product.priceRange.minVariantPrice.currencyCode,
+        value: parseFloat(product.priceRange.minVariantPrice.amount),
+      });
+    }
+  }, [product]);
 
   const sizes = [
     "extra petite",
@@ -217,6 +231,17 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
     };
     addItemToCart(productToAdd);
     console.log("Added to cart:", productToAdd);
+
+    // Track AddToCart event
+    if (pixel.PIXEL_ID) {
+      pixel.track("AddToCart", {
+        content_name: product.title,
+        content_ids: [product.id],
+        content_type: "product",
+        currency: product.priceRange.minVariantPrice.currencyCode,
+        value: parseFloat(product.priceRange.minVariantPrice.amount),
+      });
+    }
   };
 
   // Handle express interest

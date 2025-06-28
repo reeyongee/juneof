@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { usePathname, useSearchParams } from "next/navigation"; // Import useSearchParams
 import SplashScreen from "./SplashScreen";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
@@ -11,6 +12,7 @@ import { AddressProvider } from "@/context/AddressContext";
 import { CartProvider } from "@/context/CartContext";
 import { Toaster } from "@/components/ui/sonner";
 import PostLoginRedirect from "@/components/PostLoginRedirect";
+import * as pixel from "@/lib/meta-pixel"; // Import the pixel helper
 
 interface ClientLayoutProps {
   children: React.ReactNode;
@@ -19,10 +21,20 @@ interface ClientLayoutProps {
 export default function ClientLayout({ children }: ClientLayoutProps) {
   const { showSplash, setShowSplash } = useSplash();
   const { isGlobalLoading } = useLoading();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   const handleLoadComplete = () => {
     setShowSplash(false);
   };
+
+  // Track PageView events
+  useEffect(() => {
+    // This check ensures fbq is available before tracking
+    if (pixel.PIXEL_ID) {
+      pixel.pageview();
+    }
+  }, [pathname, searchParams]); // Re-fire on path or query param change
 
   // Prevent scrolling when splash screen is visible
   useEffect(() => {

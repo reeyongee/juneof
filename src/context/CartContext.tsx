@@ -12,6 +12,7 @@ import { createCartAndRedirect } from "@/lib/shopify";
 import { toast } from "sonner";
 import { useAuth } from "./AuthContext";
 import { useAddress } from "./AddressContext";
+import * as pixel from "@/lib/meta-pixel"; // Import the pixel helper
 
 export interface CartItem {
   id: string; // Unique ID for the cart item (e.g., productID + size)
@@ -297,6 +298,21 @@ export const CartProvider = ({ children }: CartProviderProps) => {
             phone: selectedAddress.phoneNumber || undefined,
           }
         : undefined;
+
+      // Track InitiateCheckout event just before redirecting
+      if (pixel.PIXEL_ID && cartItems.length > 0) {
+        const subtotal = cartItems.reduce(
+          (sum, item) => sum + item.price * item.quantity,
+          0
+        );
+        pixel.track("InitiateCheckout", {
+          content_ids: cartItems.map((item) => item.productHandle || item.id),
+          content_type: "product_group", // Use product_group for multiple items
+          num_items: cartItems.reduce((sum, item) => sum + item.quantity, 0),
+          currency: "INR", // Assuming INR
+          value: subtotal,
+        });
+      }
 
       await createCartAndRedirect(
         cartItems,
