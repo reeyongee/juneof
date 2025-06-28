@@ -204,7 +204,7 @@ export default function ContactUsPage() {
               {/* Contact Form */}
               <div className="bg-white/80 backdrop-blur-sm p-8 rounded-lg shadow-lg">
                 <h2 className="text-2xl md:text-3xl font-light mb-8 lowercase tracking-widest text-black">
-                  send message
+                  send us a message
                 </h2>
 
                 {isAuthenticated && customerData?.customer && (

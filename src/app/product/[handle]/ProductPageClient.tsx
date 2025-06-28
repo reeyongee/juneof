@@ -343,20 +343,6 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
     return (
       <>
         <main className="min-h-screen bg-[#F8F4EC] text-gray-900">
-          {/* Mobile Header */}
-          <div className="sticky top-0 bg-[#F8F4EC] z-10 border-b border-gray-300 p-4">
-            <div className="space-y-1">
-              <h1 className="text-lg font-medium tracking-widest lowercase">
-                {product.title.toLowerCase()}
-              </h1>
-              {!expressInterest && (
-                <span className="text-lg font-medium">
-                  {formatPrice(price, currencyCode)}
-                </span>
-              )}
-            </div>
-          </div>
-
           {/* Mobile Image Gallery */}
           <div>
             {/* Image Gallery */}
@@ -406,6 +392,17 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
 
           {/* Mobile Product Info */}
           <div className="p-4 space-y-6">
+            {/* Product Title and Price - Now below images */}
+            <div className="space-y-2">
+              <h1 className="text-lg font-medium tracking-widest lowercase">
+                {product.title.toLowerCase()}
+              </h1>
+              {!expressInterest && (
+                <span className="text-lg font-medium">
+                  {formatPrice(price, currencyCode)}
+                </span>
+              )}
+            </div>
             {!expressInterest && (
               <>
                 {/* Size Selection */}
