@@ -827,6 +827,7 @@ export default function CustomCursor() {
     stopShapeMonitoring,
     initializeCursor,
     validateAndCorrectCursorShape,
+    captureInitialMousePosition,
   ]);
 
   // Cleanup on unmount

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { usePathname, useSearchParams } from "next/navigation"; // Import useSearchParams
 import SplashScreen from "./SplashScreen";
 import Navbar from "./Navbar";
@@ -18,15 +18,10 @@ interface ClientLayoutProps {
   children: React.ReactNode;
 }
 
-export default function ClientLayout({ children }: ClientLayoutProps) {
-  const { showSplash, setShowSplash } = useSplash();
-  const { isGlobalLoading } = useLoading();
+// Component that uses useSearchParams - needs to be wrapped in Suspense
+function PageViewTracker() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-
-  const handleLoadComplete = () => {
-    setShowSplash(false);
-  };
 
   // Track PageView events
   useEffect(() => {
@@ -35,6 +30,17 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
       pixel.pageview();
     }
   }, [pathname, searchParams]); // Re-fire on path or query param change
+
+  return null;
+}
+
+export default function ClientLayout({ children }: ClientLayoutProps) {
+  const { showSplash, setShowSplash } = useSplash();
+  const { isGlobalLoading } = useLoading();
+
+  const handleLoadComplete = () => {
+    setShowSplash(false);
+  };
 
   // Prevent scrolling when splash screen is visible
   useEffect(() => {
@@ -54,6 +60,9 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
       <CartProvider>
         <CustomCursor />
         <PostLoginRedirect />
+        <Suspense fallback={null}>
+          <PageViewTracker />
+        </Suspense>
         {showSplash && <SplashScreen onLoadComplete={handleLoadComplete} />}
 
         <div

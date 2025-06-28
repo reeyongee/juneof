@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import Lenis from "lenis";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -53,7 +53,7 @@ export default function LenisProvider({ children }: LenisProviderProps) {
   const isMobile = useIsMobile();
 
   // Function to initialize Lenis
-  const initializeLenis = () => {
+  const initializeLenis = useCallback(() => {
     if (lenisRef.current || isMobile) return; // Don't initialize if already exists or on mobile
 
     const lenis = new Lenis({
@@ -82,7 +82,7 @@ export default function LenisProvider({ children }: LenisProviderProps) {
       }
     }
     rafIdRef.current = requestAnimationFrame(raf);
-  };
+  }, [isMobile]);
 
   // Function to destroy Lenis
   const destroyLenis = () => {
@@ -120,7 +120,7 @@ export default function LenisProvider({ children }: LenisProviderProps) {
     return () => {
       destroyLenis();
     };
-  }, [isMobile]);
+  }, [isMobile, initializeLenis]);
 
   return <>{children}</>;
 }
