@@ -1,6 +1,6 @@
 "use client"; // Required for useEffect and useRef
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BlurScrollEffect_Effect4 } from "@/lib/animations"; // Adjust path if needed
 import gsap from "gsap"; // ScrollTrigger is globally registered
 
@@ -8,22 +8,37 @@ export default function PrivacyPolicyPage() {
   const contentRef = useRef<HTMLDivElement>(null);
   const backgroundRef = useRef<HTMLDivElement>(null); // For parallax background
   const mainElementRef = useRef<HTMLElement>(null); // For main scroll trigger
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     // Set page title
     document.title = "privacy policy - june of";
   }, []);
 
+  // Mobile detection
   useEffect(() => {
-    // Existing BlurScrollEffect logic for contentRef
-    if (contentRef.current) {
-      new BlurScrollEffect_Effect4(contentRef.current);
-    }
+    const checkDevice = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    checkDevice();
+    window.addEventListener("resize", checkDevice);
+
+    return () => {
+      window.removeEventListener("resize", checkDevice);
+    };
   }, []);
 
   useEffect(() => {
-    // New Parallax Effect for backgroundRef
-    if (backgroundRef.current && mainElementRef.current) {
+    // Only apply effects on desktop
+    if (!isMobile && contentRef.current) {
+      new BlurScrollEffect_Effect4(contentRef.current);
+    }
+  }, [isMobile]);
+
+  useEffect(() => {
+    // Only apply parallax effect on desktop
+    if (!isMobile && backgroundRef.current && mainElementRef.current) {
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: mainElementRef.current,
@@ -42,8 +57,155 @@ export default function PrivacyPolicyPage() {
         tl.kill(); // Kill the timeline and its ScrollTrigger
       };
     }
-  }, []);
+  }, [isMobile]);
 
+  // Mobile Layout
+  if (isMobile) {
+    return (
+      <div className="relative bg-[#fdf3e1] min-h-screen">
+        <main className="relative text-black pt-24 px-6 pb-12">
+          <h1 className="text-2xl font-medium tracking-widest lowercase text-black mb-8">
+            privacy policy
+          </h1>
+
+          <div className="text-base lowercase tracking-wide text-black space-y-4 leading-relaxed">
+            <p className="font-bold">last updated: june 20, 2025</p>
+            <p>
+              june of operates this store and website, including all related
+              information, content, features, tools, products and services, in
+              order to provide you, the customer, with a curated shopping
+              experience (the &quot;services&quot;). june of is powered by
+              shopify, which enables us to provide the services to you. this
+              privacy policy describes how we collect, use, and disclose your
+              personal information when you visit, use, or make a purchase or
+              other transaction using the services or otherwise communicate with
+              us. if there is a conflict between our terms of service and this
+              privacy policy, this privacy policy controls with respect to the
+              collection, processing, and disclosure of your personal
+              information.
+            </p>
+            <p>
+              please read this privacy policy carefully. by using and accessing
+              any of the services, you acknowledge that you have read this
+              privacy policy and understand the collection, use, and disclosure
+              of your information as described in this privacy policy.
+            </p>
+            <p className="font-bold">
+              personal information we collect or process
+            </p>
+            <p>
+              when we use the term &quot;personal information,&quot; we are
+              referring to information that identifies or can reasonably be
+              linked to you or another person. personal information does not
+              include information that is collected anonymously or that has been
+              de-identified, so that it cannot identify or be reasonably linked
+              to you. we may collect or process the following categories of
+              personal information, including inferences drawn from this
+              personal information, depending on how you interact with the
+              services, where you live, and as permitted or required by
+              applicable law:
+            </p>
+            <p>
+              contact details including your name, address, billing address,
+              shipping address, phone number, and email address.
+            </p>
+            <p>
+              financial information including credit card, debit card, and
+              financial account numbers, payment card information, financial
+              account information, transaction details, form of payment, payment
+              confirmation and other payment details.
+            </p>
+            <p>
+              account information including your username, password, security
+              questions, preferences and settings.
+            </p>
+            <p>
+              transaction information including the items you view, put in your
+              cart, add to your wishlist, or purchase, return, exchange or
+              cancel and your past transactions.
+            </p>
+            <p>
+              communications with us including the information you include in
+              communications with us, for example, when sending a customer
+              support inquiry.
+            </p>
+            <p>
+              device information including information about your device,
+              browser, or network connection, your ip address, and other unique
+              identifiers.
+            </p>
+            <p>
+              usage information including information regarding your interaction
+              with the services, including how and when you interact with or
+              navigate the services.
+            </p>
+            <p className="font-bold">personal information sources</p>
+            <p>
+              we may collect personal information from the following sources:
+            </p>
+            <p>
+              directly from you including when you create an account, visit or
+              use the services, communicate with us, or otherwise provide us
+              with your personal information;
+            </p>
+            <p>
+              automatically through the services including from your device when
+              you use our products or services or visit our websites, and
+              through the use of cookies and similar technologies;
+            </p>
+            <p>
+              from our service providers including when we engage them to enable
+              certain technology and when they collect or process your personal
+              information on our behalf;
+            </p>
+            <p>from our partners or other third parties.</p>
+            <p>how we use your personal information</p>
+            <p>
+              depending on how you interact with us or which of the services you
+              use, we may use personal information for the following purposes:
+            </p>
+            <p>
+              provide, tailor, and improve the services. we use your personal
+              information to provide you with the services, including to perform
+              our contract with you, to process your payments, to fulfill your
+              orders, to remember your preferences and items you are interested
+              in, to send notifications to you related to your account, to
+              process purchases, returns, exchanges or other transactions, to
+              create, maintain and otherwise manage your account, to arrange for
+              shipping, to facilitate any returns and exchanges, to enable you
+              to post reviews, and to create a customized shopping experience
+              for you, such as recommending products related to your purchases.
+              this may include using your personal information to better tailor
+              and improve the services.
+            </p>
+            <p className="font-bold">marketing and advertising.</p>
+            <p>
+              we use your personal information for marketing and promotional
+              purposes, such as to send marketing, advertising and promotional
+              communications by email, text message or postal mail, and to show
+              you online advertisements for products or services on the services
+              or other websites, including based on items you previously have
+              purchased or added to your cart and other activity on the
+              services.
+            </p>
+            <p>
+              security and fraud prevention. we use your personal information to
+              authenticate your account, to provide a secure payment and
+              shopping experience, detect, investigate or take action regarding
+              possible fraudulent, illegal, unsafe, or malicious activity,
+              protect public safety, and to secure our services. if you choose
+              to use the services and register an account, you are responsible
+              for keeping your account credentials safe. we highly recommend
+              that you do not share your username, password, or other access
+              details with anyone.
+            </p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // Desktop Layout (Original)
   return (
     <div className="relative" style={{ backgroundColor: "#fdf3e1" }}>
       {/* Clipping container for the parallax image */}
@@ -198,14 +360,8 @@ export default function PrivacyPolicyPage() {
               protect public safety, and to secure our services. if you choose
               to use the services and register an account, you are responsible
               for keeping your account credentials safe. we highly recommend
-              that you do not share your username, password or other access
-              details with anyone else.
-            </p>
-            <p>
-              communicating with you. we use your personal information to
-              provide you with customer support, to be responsive to you, to
-              provide effective services to you and to maintain our business
-              relationship with you.
+              that you do not share your username, password, or other access
+              details with anyone.
             </p>
             <p className="font-bold">legal reasons.</p>
             <p>

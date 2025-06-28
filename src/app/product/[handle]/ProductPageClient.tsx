@@ -368,8 +368,8 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
     return (
       <>
         <main className="min-h-screen bg-[#F8F4EC] text-gray-900">
-          {/* Add spacing equivalent to navbar height */}
-          <div className="h-16"></div>
+          {/* Add more spacing from top and make images smaller height-wise */}
+          <div className="h-24"></div>
           {/* Mobile Image Gallery */}
           <div>
             {/* Image Gallery */}
@@ -387,7 +387,7 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
                     }
                     width={400}
                     height={600}
-                    className="w-full h-auto max-h-[70vh] object-cover"
+                    className="w-full h-auto max-h-[55vh] object-cover"
                     priority={index === 0}
                     draggable={false}
                   />
