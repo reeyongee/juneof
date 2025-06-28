@@ -138,11 +138,11 @@ export default function SizeChart({ isOpen, onClose }: SizeChartProps) {
       {/* Size Chart Content */}
       <div
         ref={contentRef}
-        className="relative w-full bg-[#F8F4EC] p-8 max-h-[90vh] overflow-y-auto"
+        className="relative w-full bg-[#F8F4EC] p-4 sm:p-8 max-h-[90vh] overflow-y-auto"
         // transform classes removed - GSAP controls position
       >
-        <div className="flex justify-between items-center mb-8">
-          <h2 className="text-2xl tracking-widest lowercase font-serif">
+        <div className="flex justify-between items-center mb-6 sm:mb-8">
+          <h2 className="text-xl sm:text-2xl tracking-widest lowercase font-serif">
             size guide
           </h2>
           <button
@@ -154,105 +154,139 @@ export default function SizeChart({ isOpen, onClose }: SizeChartProps) {
         </div>
 
         {/* Two-column layout */}
-        <div className="flex flex-col lg:flex-row gap-12 lg:gap-16">
+        <div className="flex flex-col lg:flex-row gap-8 lg:gap-16">
           {/* Left Column - Copy */}
           <div className="lg:w-1/2 space-y-6">
             <div className="space-y-4 text-gray-800 leading-relaxed">
-              <p className="text-base tracking-wide lowercase">
+              <p className="text-sm sm:text-base tracking-wide lowercase">
                 we design for{" "}
                 <em className="italic font-medium">real bodies</em>—from extra
                 petite to extra curvy and every in-between.
               </p>
 
-              <p className="text-base tracking-wide lowercase">
+              <p className="text-sm sm:text-base tracking-wide lowercase">
                 june of pieces are made to celebrate your shape, not squeeze it
                 into a mould.
               </p>
 
-              <p className="text-base tracking-wide lowercase">
+              <p className="text-sm sm:text-base tracking-wide lowercase">
                 each silhouette is{" "}
                 <em className="italic font-medium">thoughtfully</em> tailored
                 for comfort, movement, and confidence.
               </p>
             </div>
 
-            <div className="pt-8 border-t border-gray-300">
-              <p className="text-base font-bold tracking-wide lowercase mb-4">
+            <div className="pt-6 sm:pt-8 border-t border-gray-300">
+              <p className="text-sm sm:text-base font-bold tracking-wide lowercase mb-3 sm:mb-4">
                 not sure what fits you best?
               </p>
-              <p className="text-base tracking-wide text-gray-700 lowercase">
-                check our measurement chart below
+              <p className="text-sm sm:text-base tracking-wide text-gray-700 lowercase">
+                check out our measurement chart
+              </p>
+            </div>
+
+            {/* Still confused section - at bottom of left column */}
+            <div className="pt-6 sm:pt-8 pb-4 sm:pb-6">
+              <p className="text-xs sm:text-sm tracking-wide text-gray-600 lowercase mb-2">
+                still confused about which size?
+              </p>
+              <p className="text-xs sm:text-sm tracking-wide text-gray-600 lowercase">
+                chat with us on{" "}
+                <a
+                  href="mailto:reach@juneof.com"
+                  className="underline decoration-1 underline-offset-2 hover:text-gray-800 transition-colors"
+                >
+                  reach@juneof.com
+                </a>
+                /our socials or{" "}
+                <a
+                  href="/contact-us"
+                  className="underline decoration-1 underline-offset-2 hover:text-gray-800 transition-colors"
+                >
+                  send us a message on the contact us page
+                </a>{" "}
+                and we&apos;ll help you out.
               </p>
             </div>
           </div>
 
           {/* Right Column - Tables */}
-          <div className="lg:w-1/2 space-y-8">
+          <div className="lg:w-1/2 space-y-6 sm:space-y-8">
             {/* Top Table */}
             <div>
-              <h3 className="text-lg font-medium tracking-wide lowercase mb-4 text-center">
+              <h3 className="text-base sm:text-lg font-medium tracking-wide lowercase mb-3 sm:mb-4 text-center">
                 Top
               </h3>
               <div className="overflow-hidden border border-gray-300">
-                <table className="w-full text-sm">
+                <table className="w-full text-xs sm:text-sm">
                   <thead>
                     <tr className="bg-gray-100">
-                      <th className="px-4 py-3 text-left font-medium tracking-wide lowercase border-r border-gray-300">
+                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-left font-medium tracking-wide lowercase border-r border-gray-300">
                         Size
                       </th>
-                      <th className="px-4 py-3 text-left font-medium tracking-wide lowercase border-r border-gray-300">
+                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-left font-medium tracking-wide lowercase border-r border-gray-300">
                         Bust Range (in)
                       </th>
-                      <th className="px-4 py-3 text-left font-medium tracking-wide lowercase">
+                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-left font-medium tracking-wide lowercase">
                         Updated waist
                       </th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr className="border-t border-gray-300">
-                      <td className="px-4 py-3 border-r border-gray-300 lowercase tracking-wide">
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 border-r border-gray-300 lowercase tracking-wide">
                         Extra petite
                       </td>
-                      <td className="px-4 py-3 border-r border-gray-300 tracking-wide">
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 border-r border-gray-300 tracking-wide">
                         30-33
                       </td>
-                      <td className="px-4 py-3 tracking-wide">24-26</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 tracking-wide">
+                        24-26
+                      </td>
                     </tr>
                     <tr className="border-t border-gray-300">
-                      <td className="px-4 py-3 border-r border-gray-300 lowercase tracking-wide">
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 border-r border-gray-300 lowercase tracking-wide">
                         Petite
                       </td>
-                      <td className="px-4 py-3 border-r border-gray-300 tracking-wide">
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 border-r border-gray-300 tracking-wide">
                         33-36
                       </td>
-                      <td className="px-4 py-3 tracking-wide">26-28</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 tracking-wide">
+                        26-28
+                      </td>
                     </tr>
                     <tr className="border-t border-gray-300">
-                      <td className="px-4 py-3 border-r border-gray-300 lowercase tracking-wide">
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 border-r border-gray-300 lowercase tracking-wide">
                         in-between
                       </td>
-                      <td className="px-4 py-3 border-r border-gray-300 tracking-wide">
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 border-r border-gray-300 tracking-wide">
                         36-39
                       </td>
-                      <td className="px-4 py-3 tracking-wide">28-31</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 tracking-wide">
+                        28-31
+                      </td>
                     </tr>
                     <tr className="border-t border-gray-300">
-                      <td className="px-4 py-3 border-r border-gray-300 lowercase tracking-wide">
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 border-r border-gray-300 lowercase tracking-wide">
                         Curvy
                       </td>
-                      <td className="px-4 py-3 border-r border-gray-300 tracking-wide">
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 border-r border-gray-300 tracking-wide">
                         39-41
                       </td>
-                      <td className="px-4 py-3 tracking-wide">31-34</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 tracking-wide">
+                        31-34
+                      </td>
                     </tr>
                     <tr className="border-t border-gray-300">
-                      <td className="px-4 py-3 border-r border-gray-300 lowercase tracking-wide">
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 border-r border-gray-300 lowercase tracking-wide">
                         Extra curvy
                       </td>
-                      <td className="px-4 py-3 border-r border-gray-300 tracking-wide">
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 border-r border-gray-300 tracking-wide">
                         41-44
                       </td>
-                      <td className="px-4 py-3 tracking-wide">34-38</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 tracking-wide">
+                        34-38
+                      </td>
                     </tr>
                   </tbody>
                 </table>
@@ -261,69 +295,69 @@ export default function SizeChart({ isOpen, onClose }: SizeChartProps) {
 
             {/* Skort Table */}
             <div>
-              <h3 className="text-lg font-medium tracking-wide lowercase mb-4 text-center">
+              <h3 className="text-base sm:text-lg font-medium tracking-wide lowercase mb-3 sm:mb-4 text-center">
                 Skort
               </h3>
               <div className="overflow-hidden border border-gray-300">
-                <table className="w-full text-sm">
+                <table className="w-full text-xs sm:text-sm">
                   <thead>
                     <tr className="bg-gray-100">
-                      <th className="px-4 py-3 text-left font-medium tracking-wide lowercase border-r border-gray-300"></th>
-                      <th className="px-4 py-3 text-center font-medium tracking-wide lowercase border-r border-gray-300">
+                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-left font-medium tracking-wide lowercase border-r border-gray-300"></th>
+                      <th className="px-1 sm:px-4 py-2 sm:py-3 text-center font-medium tracking-wide lowercase border-r border-gray-300">
                         Extra petite
                       </th>
-                      <th className="px-4 py-3 text-center font-medium tracking-wide lowercase border-r border-gray-300">
+                      <th className="px-1 sm:px-4 py-2 sm:py-3 text-center font-medium tracking-wide lowercase border-r border-gray-300">
                         petite
                       </th>
-                      <th className="px-4 py-3 text-center font-medium tracking-wide lowercase border-r border-gray-300">
+                      <th className="px-1 sm:px-4 py-2 sm:py-3 text-center font-medium tracking-wide lowercase border-r border-gray-300">
                         in-between
                       </th>
-                      <th className="px-4 py-3 text-center font-medium tracking-wide lowercase border-r border-gray-300">
+                      <th className="px-1 sm:px-4 py-2 sm:py-3 text-center font-medium tracking-wide lowercase border-r border-gray-300">
                         curvy
                       </th>
-                      <th className="px-4 py-3 text-center font-medium tracking-wide lowercase">
+                      <th className="px-1 sm:px-4 py-2 sm:py-3 text-center font-medium tracking-wide lowercase">
                         Extra curvy
                       </th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr className="border-t border-gray-300">
-                      <td className="px-4 py-3 border-r border-gray-300 lowercase tracking-wide font-medium">
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 border-r border-gray-300 lowercase tracking-wide font-medium">
                         Waist
                       </td>
-                      <td className="px-4 py-3 border-r border-gray-300 text-center tracking-wide">
+                      <td className="px-1 sm:px-4 py-2 sm:py-3 border-r border-gray-300 text-center tracking-wide">
                         26
                       </td>
-                      <td className="px-4 py-3 border-r border-gray-300 text-center tracking-wide">
+                      <td className="px-1 sm:px-4 py-2 sm:py-3 border-r border-gray-300 text-center tracking-wide">
                         28
                       </td>
-                      <td className="px-4 py-3 border-r border-gray-300 text-center tracking-wide">
+                      <td className="px-1 sm:px-4 py-2 sm:py-3 border-r border-gray-300 text-center tracking-wide">
                         30
                       </td>
-                      <td className="px-4 py-3 border-r border-gray-300 text-center tracking-wide">
+                      <td className="px-1 sm:px-4 py-2 sm:py-3 border-r border-gray-300 text-center tracking-wide">
                         32
                       </td>
-                      <td className="px-4 py-3 text-center tracking-wide">
+                      <td className="px-1 sm:px-4 py-2 sm:py-3 text-center tracking-wide">
                         34
                       </td>
                     </tr>
                     <tr className="border-t border-gray-300">
-                      <td className="px-4 py-3 border-r border-gray-300 lowercase tracking-wide font-medium">
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 border-r border-gray-300 lowercase tracking-wide font-medium">
                         Hips
                       </td>
-                      <td className="px-4 py-3 border-r border-gray-300 text-center tracking-wide">
+                      <td className="px-1 sm:px-4 py-2 sm:py-3 border-r border-gray-300 text-center tracking-wide">
                         36.5
                       </td>
-                      <td className="px-4 py-3 border-r border-gray-300 text-center tracking-wide">
+                      <td className="px-1 sm:px-4 py-2 sm:py-3 border-r border-gray-300 text-center tracking-wide">
                         38.5
                       </td>
-                      <td className="px-4 py-3 border-r border-gray-300 text-center tracking-wide">
+                      <td className="px-1 sm:px-4 py-2 sm:py-3 border-r border-gray-300 text-center tracking-wide">
                         40.5
                       </td>
-                      <td className="px-4 py-3 border-r border-gray-300 text-center tracking-wide">
+                      <td className="px-1 sm:px-4 py-2 sm:py-3 border-r border-gray-300 text-center tracking-wide">
                         42.5
                       </td>
-                      <td className="px-4 py-3 text-center tracking-wide">
+                      <td className="px-1 sm:px-4 py-2 sm:py-3 text-center tracking-wide">
                         44
                       </td>
                     </tr>
@@ -332,30 +366,6 @@ export default function SizeChart({ isOpen, onClose }: SizeChartProps) {
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Bottom section - Still confused */}
-        <div className="pt-8 mt-8 border-t border-gray-300">
-          <p className="text-sm tracking-wide text-gray-600 lowercase mb-2">
-            still confused about which size?
-          </p>
-          <p className="text-sm tracking-wide text-gray-600 lowercase">
-            chat with us on{" "}
-            <a
-              href="mailto:reach@juneof.com"
-              className="underline decoration-1 underline-offset-2 hover:text-gray-800 transition-colors"
-            >
-              reach@juneof.com
-            </a>
-            /our socials or{" "}
-            <a
-              href="/contact-us"
-              className="underline decoration-1 underline-offset-2 hover:text-gray-800 transition-colors"
-            >
-              send us a message on the contact us page
-            </a>{" "}
-            and we&apos;ll help you out.
-          </p>
         </div>
       </div>
     </div>,

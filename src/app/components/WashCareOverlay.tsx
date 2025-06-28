@@ -121,22 +121,153 @@ export default function WashCareOverlay({
       {/* Wash Care Content */}
       <div
         ref={contentRef}
-        className="relative w-full bg-[#F8F4EC] p-8" // Removed rounded corners here too
+        className="relative w-full bg-[#F8F4EC] p-4 sm:p-8 max-h-[90vh] overflow-y-auto"
       >
-        <div className="flex justify-between items-center mb-6">
-          {/* Updated title */}
-          <h2 className="text-xl tracking-widest lowercase">wash care</h2>
+        <div className="flex justify-between items-center mb-6 sm:mb-8">
+          <h2 className="text-xl sm:text-2xl tracking-widest lowercase font-serif">
+            wash instructions
+          </h2>
           <button
             onClick={handleCloseStart}
-            className="text-gray-600 hover:text-gray-900 transition-colors lowercase tracking-widest"
+            className="text-gray-600 hover:text-gray-900 transition-colors lowercase tracking-widest text-sm"
           >
             close
           </button>
         </div>
 
-        {/* Updated placeholder */}
-        <div className="h-96 flex items-center justify-center text-gray-500 lowercase">
-          wash care instructions will go here
+        {/* Wash Care Content */}
+        <div className="space-y-6 sm:space-y-8 text-gray-800">
+          {/* Top Product */}
+          <div className="space-y-4">
+            <h3 className="text-base sm:text-lg font-medium tracking-wide lowercase">
+              product:{" "}
+              <span className="underline decoration-1 underline-offset-2">
+                top
+              </span>
+            </h3>
+
+            <p className="text-sm sm:text-base tracking-wide lowercase">
+              materials used: lined with poplin and made from soft{" "}
+              <span className="underline decoration-1 underline-offset-2">
+                kantha
+              </span>{" "}
+              cotton.
+            </p>
+
+            <ul className="space-y-2 text-sm sm:text-base tracking-wide lowercase ml-4">
+              <li className="flex items-start">
+                <span className="mr-3">•</span>
+                <span>gentle machine wash in cold water</span>
+              </li>
+              <li className="flex items-start">
+                <span className="mr-3">•</span>
+                <span>
+                  wash with similar{" "}
+                  <span className="underline decoration-1 underline-offset-2">
+                    colours
+                  </span>
+                </span>
+              </li>
+              <li className="flex items-start">
+                <span className="mr-3">•</span>
+                <span>mild detergent only</span>
+              </li>
+              <li className="flex items-start">
+                <span className="mr-3">•</span>
+                <span>do not bleach or tumble dry</span>
+              </li>
+              <li className="flex items-start">
+                <span className="mr-3">•</span>
+                <span>line dry in shade</span>
+              </li>
+              <li className="flex items-start">
+                <span className="mr-3">•</span>
+                <span>iron on low, inside out</span>
+              </li>
+            </ul>
+
+            <p className="text-sm sm:text-base tracking-wide lowercase italic pt-2">
+              soft, flexible, and low-maintenance.
+            </p>
+          </div>
+
+          {/* Divider */}
+          <div className="border-t border-gray-300"></div>
+
+          {/* Skort Product */}
+          <div className="space-y-4">
+            <h3 className="text-base sm:text-lg font-medium tracking-wide lowercase">
+              product:{" "}
+              <span className="underline decoration-1 underline-offset-2">
+                skort
+              </span>
+            </h3>
+
+            <p className="text-sm sm:text-base tracking-wide lowercase">
+              materials used: made from soft{" "}
+              <span className="underline decoration-1 underline-offset-2">
+                kantha
+              </span>{" "}
+              cotton, shorts lined with voile, fastened with a zipper.
+            </p>
+
+            <ul className="space-y-2 text-sm sm:text-base tracking-wide lowercase ml-4">
+              <li className="flex items-start">
+                <span className="mr-3">•</span>
+                <span>gentle machine wash in cold water</span>
+              </li>
+              <li className="flex items-start">
+                <span className="mr-3">•</span>
+                <span>zip up before washing</span>
+              </li>
+              <li className="flex items-start">
+                <span className="mr-3">•</span>
+                <span>
+                  wash with similar{" "}
+                  <span className="underline decoration-1 underline-offset-2">
+                    colours
+                  </span>
+                </span>
+              </li>
+              <li className="flex items-start">
+                <span className="mr-3">•</span>
+                <span>mild detergent only</span>
+              </li>
+              <li className="flex items-start">
+                <span className="mr-3">•</span>
+                <span>no bleach, no tumble dry</span>
+              </li>
+              <li className="flex items-start">
+                <span className="mr-3">•</span>
+                <span>line dry in shade</span>
+              </li>
+              <li className="flex items-start">
+                <span className="mr-3">•</span>
+                <span>iron on low, avoiding the zipper</span>
+              </li>
+            </ul>
+
+            <p className="text-sm sm:text-base tracking-wide lowercase italic pt-2">
+              built for movement, made to last.
+            </p>
+          </div>
+
+          {/* Divider */}
+          <div className="border-t border-gray-300"></div>
+
+          {/* Summer Jacket Product */}
+          <div className="space-y-4 pb-4">
+            <h3 className="text-base sm:text-lg font-medium tracking-wide lowercase">
+              product:{" "}
+              <span className="underline decoration-1 underline-offset-2">
+                summer jacket
+              </span>
+            </h3>
+
+            <p className="text-sm sm:text-base tracking-wide lowercase italic">
+              (wash care instructions coming soon)
+            </p>
+          </div>
         </div>
       </div>
     </div>,
