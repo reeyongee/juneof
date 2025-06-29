@@ -21,11 +21,11 @@ const oldStandardTT = Old_Standard_TT({
 
 export const metadata: Metadata = {
   title: {
-    template: "%s | June Of",
-    default: "June Of – Heritage Meets Now",
+    template: "%s | juneof",
+    default: "juneof",
   },
   description:
-    "June Of is where heritage meets the now. We take cues from the richness of Indian craft and rework it for a generation that lives in motion. Timeless fabrics in reimagined silhouettes, with intention behind every stitch.",
+    "Heritage meets now. Indian craft reworked for a generation in motion. Timeless fabrics, reimagined silhouettes.",
   keywords: [
     "sustainable fashion",
     "Indian craft",
@@ -64,10 +64,10 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     url: "https://www.juneof.com",
-    siteName: "June Of",
-    title: "June Of – Heritage Meets Now",
+    siteName: "juneof",
+    title: "juneof",
     description:
-      "June Of is where heritage meets the now. We take cues from the richness of Indian craft and rework it for a generation that lives in motion. Timeless fabrics in reimagined silhouettes, with intention behind every stitch.",
+      "Heritage meets now. Indian craft reworked for a generation in motion. Timeless fabrics, reimagined silhouettes.",
     images: [
       {
         url: "/landing-images/logo.svg",
@@ -79,9 +79,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "June Of – Heritage Meets Now",
+    title: "juneof",
     description:
-      "June Of is where heritage meets the now. We take cues from the richness of Indian craft and rework it for a generation that lives in motion.",
+      "Heritage meets now. Indian craft reworked for a generation in motion. Timeless fabrics, reimagined silhouettes.",
     images: ["/landing-images/logo.svg"],
     creator: "@juneof",
     site: "@juneof",
