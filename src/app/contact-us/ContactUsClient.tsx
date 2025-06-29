@@ -165,19 +165,7 @@ export default function ContactUsClient() {
                       </div>
                     </div>
 
-                    <div className="flex items-center space-x-4">
-                      <div className="bg-black p-3 rounded-full">
-                        <Phone className="w-5 h-5 text-white" />
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-600 lowercase tracking-widest">
-                          phone
-                        </p>
-                        <p className="text-lg text-black lowercase">
-                          +1 (555) 123-4567
-                        </p>
-                      </div>
-                    </div>
+                    
 
                     <div className="flex items-center space-x-4">
                       <div className="bg-black p-3 rounded-full">
