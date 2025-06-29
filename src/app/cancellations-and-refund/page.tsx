@@ -12,8 +12,180 @@ export default function CancellationsAndRefundPage() {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    // Set page title
+    // Set page title and comprehensive SEO metadata
     document.title = "cancellations & refund - june of";
+
+    // Add meta description
+    const metaDescription = document.querySelector('meta[name="description"]');
+    if (metaDescription) {
+      metaDescription.setAttribute(
+        "content",
+        "learn about june of's cancellation and refund policy. 7-day return window, 8-hour cancellation period, and easy return process for our sustainable fashion collection."
+      );
+    } else {
+      const meta = document.createElement("meta");
+      meta.name = "description";
+      meta.content =
+        "learn about june of's cancellation and refund policy. 7-day return window, 8-hour cancellation period, and easy return process for our sustainable fashion collection.";
+      document.head.appendChild(meta);
+    }
+
+    // Add keywords meta tag
+    const metaKeywords = document.querySelector('meta[name="keywords"]');
+    if (metaKeywords) {
+      metaKeywords.setAttribute(
+        "content",
+        "cancellation policy, refund policy, june of returns, sustainable fashion returns, order cancellation, refund process"
+      );
+    } else {
+      const meta = document.createElement("meta");
+      meta.name = "keywords";
+      meta.content =
+        "cancellation policy, refund policy, june of returns, sustainable fashion returns, order cancellation, refund process";
+      document.head.appendChild(meta);
+    }
+
+    // Add canonical link
+    const canonicalLink = document.querySelector('link[rel="canonical"]');
+    if (canonicalLink) {
+      canonicalLink.setAttribute(
+        "href",
+        "https://www.juneof.com/cancellations-and-refund"
+      );
+    } else {
+      const link = document.createElement("link");
+      link.rel = "canonical";
+      link.href = "https://www.juneof.com/cancellations-and-refund";
+      document.head.appendChild(link);
+    }
+
+    // Add Open Graph meta tags
+    const ogTags = [
+      { property: "og:title", content: "cancellations & refund - june of" },
+      {
+        property: "og:description",
+        content:
+          "learn about june of's cancellation and refund policy. 7-day return window, 8-hour cancellation period, and easy return process for our sustainable fashion collection.",
+      },
+      {
+        property: "og:url",
+        content: "https://www.juneof.com/cancellations-and-refund",
+      },
+      { property: "og:type", content: "website" },
+      { property: "og:site_name", content: "june of" },
+      {
+        property: "og:image",
+        content: "https://www.juneof.com/landing-images/logo.svg",
+      },
+      {
+        property: "og:image:alt",
+        content: "june of cancellation and refund policy",
+      },
+    ];
+
+    ogTags.forEach((tag) => {
+      const existingTag = document.querySelector(
+        `meta[property="${tag.property}"]`
+      );
+      if (existingTag) {
+        existingTag.setAttribute("content", tag.content);
+      } else {
+        const meta = document.createElement("meta");
+        meta.setAttribute("property", tag.property);
+        meta.setAttribute("content", tag.content);
+        document.head.appendChild(meta);
+      }
+    });
+
+    // Add Twitter Card meta tags
+    const twitterTags = [
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "cancellations & refund - june of" },
+      {
+        name: "twitter:description",
+        content:
+          "learn about june of's cancellation and refund policy. 7-day return window, 8-hour cancellation period, and easy return process for our sustainable fashion collection.",
+      },
+      {
+        name: "twitter:image",
+        content: "https://www.juneof.com/landing-images/logo.svg",
+      },
+    ];
+
+    twitterTags.forEach((tag) => {
+      const existingTag = document.querySelector(`meta[name="${tag.name}"]`);
+      if (existingTag) {
+        existingTag.setAttribute("content", tag.content);
+      } else {
+        const meta = document.createElement("meta");
+        meta.setAttribute("name", tag.name);
+        meta.setAttribute("content", tag.content);
+        document.head.appendChild(meta);
+      }
+    });
+
+    // Add structured data for return policy
+    const returnPolicySchema = {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      name: "cancellations & refund - june of",
+      description:
+        "learn about june of's cancellation and refund policy. 7-day return window, 8-hour cancellation period, and easy return process for our sustainable fashion collection.",
+      url: "https://www.juneof.com/cancellations-and-refund",
+      dateModified: "2025-06-20",
+      inLanguage: "en-US",
+      isPartOf: {
+        "@type": "WebSite",
+        name: "june of",
+        url: "https://www.juneof.com",
+      },
+      breadcrumb: {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: "home",
+            item: "https://www.juneof.com",
+          },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: "cancellations & refund",
+            item: "https://www.juneof.com/cancellations-and-refund",
+          },
+        ],
+      },
+      publisher: {
+        "@type": "Organization",
+        name: "june of",
+        url: "https://www.juneof.com",
+      },
+      mainEntity: {
+        "@type": "Service",
+        name: "return and refund service",
+        provider: {
+          "@type": "Organization",
+          name: "june of",
+        },
+        hasPolicy: {
+          "@type": "ReturnPolicy",
+          returnPolicyCategory: "MerchantReturnFiniteReturnWindow",
+          merchantReturnDays: 7,
+          returnMethod: "ReturnByMail",
+          returnFees: "FreeReturn",
+        },
+      },
+    };
+
+    const script = document.createElement("script");
+    script.type = "application/ld+json";
+    script.text = JSON.stringify(returnPolicySchema);
+    document.head.appendChild(script);
+
+    return () => {
+      // Cleanup function would go here if needed
+    };
   }, []);
 
   // Mobile detection

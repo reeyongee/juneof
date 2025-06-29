@@ -10,6 +10,159 @@ export default function TermsOfUsePage() {
   const mainElementRef = useRef<HTMLElement>(null); // For main scroll trigger
 
   useEffect(() => {
+    // Set page title and comprehensive SEO metadata
+    document.title = "terms of use - june of";
+
+    // Add meta description
+    const metaDescription = document.querySelector('meta[name="description"]');
+    if (metaDescription) {
+      metaDescription.setAttribute(
+        "content",
+        "read june of's terms of use for our website and services. understand the guidelines for using our sustainable fashion platform and making purchases."
+      );
+    } else {
+      const meta = document.createElement("meta");
+      meta.name = "description";
+      meta.content =
+        "read june of's terms of use for our website and services. understand the guidelines for using our sustainable fashion platform and making purchases.";
+      document.head.appendChild(meta);
+    }
+
+    // Add keywords meta tag
+    const metaKeywords = document.querySelector('meta[name="keywords"]');
+    if (metaKeywords) {
+      metaKeywords.setAttribute(
+        "content",
+        "terms of use, website terms, june of terms, sustainable fashion terms, user agreement, website guidelines"
+      );
+    } else {
+      const meta = document.createElement("meta");
+      meta.name = "keywords";
+      meta.content =
+        "terms of use, website terms, june of terms, sustainable fashion terms, user agreement, website guidelines";
+      document.head.appendChild(meta);
+    }
+
+    // Add canonical link
+    const canonicalLink = document.querySelector('link[rel="canonical"]');
+    if (canonicalLink) {
+      canonicalLink.setAttribute("href", "https://www.juneof.com/terms-of-use");
+    } else {
+      const link = document.createElement("link");
+      link.rel = "canonical";
+      link.href = "https://www.juneof.com/terms-of-use";
+      document.head.appendChild(link);
+    }
+
+    // Add Open Graph meta tags
+    const ogTags = [
+      { property: "og:title", content: "terms of use - june of" },
+      {
+        property: "og:description",
+        content:
+          "read june of's terms of use for our website and services. understand the guidelines for using our sustainable fashion platform and making purchases.",
+      },
+      { property: "og:url", content: "https://www.juneof.com/terms-of-use" },
+      { property: "og:type", content: "website" },
+      { property: "og:site_name", content: "june of" },
+      {
+        property: "og:image",
+        content: "https://www.juneof.com/landing-images/logo.svg",
+      },
+      { property: "og:image:alt", content: "june of terms of use" },
+    ];
+
+    ogTags.forEach((tag) => {
+      const existingTag = document.querySelector(
+        `meta[property="${tag.property}"]`
+      );
+      if (existingTag) {
+        existingTag.setAttribute("content", tag.content);
+      } else {
+        const meta = document.createElement("meta");
+        meta.setAttribute("property", tag.property);
+        meta.setAttribute("content", tag.content);
+        document.head.appendChild(meta);
+      }
+    });
+
+    // Add Twitter Card meta tags
+    const twitterTags = [
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "terms of use - june of" },
+      {
+        name: "twitter:description",
+        content:
+          "read june of's terms of use for our website and services. understand the guidelines for using our sustainable fashion platform and making purchases.",
+      },
+      {
+        name: "twitter:image",
+        content: "https://www.juneof.com/landing-images/logo.svg",
+      },
+    ];
+
+    twitterTags.forEach((tag) => {
+      const existingTag = document.querySelector(`meta[name="${tag.name}"]`);
+      if (existingTag) {
+        existingTag.setAttribute("content", tag.content);
+      } else {
+        const meta = document.createElement("meta");
+        meta.setAttribute("name", tag.name);
+        meta.setAttribute("content", tag.content);
+        document.head.appendChild(meta);
+      }
+    });
+
+    // Add structured data for terms of use
+    const termsOfUseSchema = {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      name: "terms of use - june of",
+      description:
+        "read june of's terms of use for our website and services. understand the guidelines for using our sustainable fashion platform and making purchases.",
+      url: "https://www.juneof.com/terms-of-use",
+      dateModified: "2025-06-20",
+      inLanguage: "en-US",
+      isPartOf: {
+        "@type": "WebSite",
+        name: "june of",
+        url: "https://www.juneof.com",
+      },
+      breadcrumb: {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: "home",
+            item: "https://www.juneof.com",
+          },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: "terms of use",
+            item: "https://www.juneof.com/terms-of-use",
+          },
+        ],
+      },
+      publisher: {
+        "@type": "Organization",
+        name: "june of",
+        url: "https://www.juneof.com",
+      },
+    };
+
+    const script = document.createElement("script");
+    script.type = "application/ld+json";
+    script.text = JSON.stringify(termsOfUseSchema);
+    document.head.appendChild(script);
+
+    return () => {
+      // Cleanup function would go here if needed
+    };
+  }, []);
+
+  useEffect(() => {
     // Existing BlurScrollEffect logic for contentRef
     if (contentRef.current) {
       new BlurScrollEffect_Effect4(contentRef.current);

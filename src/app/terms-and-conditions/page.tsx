@@ -11,8 +11,162 @@ export default function TermsAndConditionsPage() {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    // Set page title
+    // Set page title and meta description
     document.title = "terms & conditions - june of";
+
+    // Add meta description
+    const metaDescription = document.querySelector('meta[name="description"]');
+    if (metaDescription) {
+      metaDescription.setAttribute(
+        "content",
+        "read june of's terms and conditions for shopping our sustainable fashion collection. understand our policies for orders, payments, and product usage."
+      );
+    } else {
+      const meta = document.createElement("meta");
+      meta.name = "description";
+      meta.content =
+        "read june of's terms and conditions for shopping our sustainable fashion collection. understand our policies for orders, payments, and product usage.";
+      document.head.appendChild(meta);
+    }
+
+    // Add keywords meta tag
+    const metaKeywords = document.querySelector('meta[name="keywords"]');
+    if (metaKeywords) {
+      metaKeywords.setAttribute(
+        "content",
+        "terms and conditions, june of terms, sustainable fashion terms, shopping terms, order policies, payment terms"
+      );
+    } else {
+      const meta = document.createElement("meta");
+      meta.name = "keywords";
+      meta.content =
+        "terms and conditions, june of terms, sustainable fashion terms, shopping terms, order policies, payment terms";
+      document.head.appendChild(meta);
+    }
+
+    // Add canonical link
+    const canonicalLink = document.querySelector('link[rel="canonical"]');
+    if (canonicalLink) {
+      canonicalLink.setAttribute(
+        "href",
+        "https://www.juneof.com/terms-and-conditions"
+      );
+    } else {
+      const link = document.createElement("link");
+      link.rel = "canonical";
+      link.href = "https://www.juneof.com/terms-and-conditions";
+      document.head.appendChild(link);
+    }
+
+    // Add Open Graph meta tags
+    const ogTags = [
+      { property: "og:title", content: "terms & conditions - june of" },
+      {
+        property: "og:description",
+        content:
+          "read june of's terms and conditions for shopping our sustainable fashion collection. understand our policies for orders, payments, and product usage.",
+      },
+      {
+        property: "og:url",
+        content: "https://www.juneof.com/terms-and-conditions",
+      },
+      { property: "og:type", content: "website" },
+      { property: "og:site_name", content: "june of" },
+      {
+        property: "og:image",
+        content: "https://www.juneof.com/landing-images/logo.svg",
+      },
+      { property: "og:image:alt", content: "june of terms and conditions" },
+    ];
+
+    ogTags.forEach((tag) => {
+      const existingTag = document.querySelector(
+        `meta[property="${tag.property}"]`
+      );
+      if (existingTag) {
+        existingTag.setAttribute("content", tag.content);
+      } else {
+        const meta = document.createElement("meta");
+        meta.setAttribute("property", tag.property);
+        meta.setAttribute("content", tag.content);
+        document.head.appendChild(meta);
+      }
+    });
+
+    // Add Twitter Card meta tags
+    const twitterTags = [
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "terms & conditions - june of" },
+      {
+        name: "twitter:description",
+        content:
+          "read june of's terms and conditions for shopping our sustainable fashion collection. understand our policies for orders, payments, and product usage.",
+      },
+      {
+        name: "twitter:image",
+        content: "https://www.juneof.com/landing-images/logo.svg",
+      },
+    ];
+
+    twitterTags.forEach((tag) => {
+      const existingTag = document.querySelector(`meta[name="${tag.name}"]`);
+      if (existingTag) {
+        existingTag.setAttribute("content", tag.content);
+      } else {
+        const meta = document.createElement("meta");
+        meta.setAttribute("name", tag.name);
+        meta.setAttribute("content", tag.content);
+        document.head.appendChild(meta);
+      }
+    });
+
+    // Add structured data for terms and conditions
+    const termsSchema = {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      name: "terms & conditions - june of",
+      description:
+        "read june of's terms and conditions for shopping our sustainable fashion collection. understand our policies for orders, payments, and product usage.",
+      url: "https://www.juneof.com/terms-and-conditions",
+      dateModified: "2025-06-20",
+      inLanguage: "en-US",
+      isPartOf: {
+        "@type": "WebSite",
+        name: "june of",
+        url: "https://www.juneof.com",
+      },
+      breadcrumb: {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: "home",
+            item: "https://www.juneof.com",
+          },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: "terms & conditions",
+            item: "https://www.juneof.com/terms-and-conditions",
+          },
+        ],
+      },
+      publisher: {
+        "@type": "Organization",
+        name: "june of",
+        url: "https://www.juneof.com",
+      },
+    };
+
+    const script = document.createElement("script");
+    script.type = "application/ld+json";
+    script.text = JSON.stringify(termsSchema);
+    document.head.appendChild(script);
+
+    return () => {
+      // Cleanup function would go here if needed
+    };
   }, []);
 
   // Mobile detection

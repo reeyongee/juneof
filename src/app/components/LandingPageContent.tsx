@@ -362,7 +362,7 @@ export default function LandingPageContent() {
             <Image
               className="pic1 relative block w-auto md:w-full max-md:w-[90vw] max-md:h-auto"
               src="/landing-images/1.jpg"
-              alt="pic1"
+              alt="june of sustainable fashion model wearing heritage-inspired clothing in natural setting"
               width={800}
               height={600}
               priority
@@ -374,7 +374,7 @@ export default function LandingPageContent() {
             <Image
               className="pic2 relative block w-full"
               src="/landing-images/2.jpg"
-              alt="pic2"
+              alt="artisanal handwoven kantha cotton clothing from june of sustainable fashion collection"
               width={800}
               height={600}
               priority
@@ -386,7 +386,7 @@ export default function LandingPageContent() {
             <Image
               className="pic3 relative block w-full"
               src="/landing-images/3.jpg"
-              alt="pic3"
+              alt="june of ethical fashion model showcasing timeless silhouettes and heritage craftsmanship"
               width={800}
               height={600}
               priority
@@ -398,7 +398,7 @@ export default function LandingPageContent() {
             <Image
               className="pic4 relative block w-full"
               src="/landing-images/4.jpg"
-              alt="pic4"
+              alt="sustainable fashion portrait featuring june of's contemporary take on traditional indian textiles"
               width={800}
               height={600}
               priority
@@ -414,7 +414,7 @@ export default function LandingPageContent() {
         <div className="container">
           <Image
             src="/landing-images/5.jpg"
-            alt="pic5"
+            alt="june of model in flowing sustainable garment representing heritage meets now philosophy"
             width={1800}
             height={1200}
             priority
@@ -458,7 +458,7 @@ export default function LandingPageContent() {
           <Image
             className="w-full scale-[1.3]"
             src="/landing-images/6.jpg"
-            alt="pic6"
+            alt="june of sustainable fashion collection showcasing indian heritage craftsmanship and modern design"
             width={1200}
             height={800}
             priority
@@ -476,7 +476,7 @@ export default function LandingPageContent() {
         <Image
           className="pic1 absolute min-w-[150px] max-w-[300px] w-[20vw] top-[50vh] left-[8.5vw]"
           src="/landing-images/e4.jpg"
-          alt="pic7"
+          alt="june of sustainable fashion editorial featuring handcrafted textiles and ethical clothing"
           width={300}
           height={400}
           sizes="(max-width: 768px) 200px, 20vw"
@@ -484,7 +484,7 @@ export default function LandingPageContent() {
         <Image
           className="pic2 absolute min-w-[150px] max-w-[300px] w-[16vw] top-[90vh] left-[23vw]"
           src="/landing-images/e1.jpg"
-          alt="pic8"
+          alt="artisanal june of garment showcasing traditional indian craft techniques and modern silhouettes"
           width={300}
           height={400}
           sizes="(max-width: 768px) 200px, 16vw"
@@ -492,7 +492,7 @@ export default function LandingPageContent() {
         <Image
           className="pic3 absolute min-w-[150px] max-w-[300px] w-[20vw] top-[20vh] left-[40vw]"
           src="/landing-images/e3.jpg"
-          alt="pic9"
+          alt="june of model wearing sustainable fashion piece that represents heritage meets now philosophy"
           width={300}
           height={400}
           sizes="(max-width: 768px) 200px, 20vw"
@@ -500,7 +500,7 @@ export default function LandingPageContent() {
         <Image
           className="pic4 absolute min-w-[150px] max-w-[300px] w-[19vw] top-[99vh] left-[80vw]"
           src="/landing-images/e2.jpg"
-          alt="pic10"
+          alt="contemporary june of design featuring timeless fabrics and intention behind every stitch"
           width={300}
           height={400}
           sizes="(max-width: 768px) 200px, 19vw"
@@ -508,7 +508,7 @@ export default function LandingPageContent() {
         <Image
           className="pic5 absolute min-w-[150px] max-w-[300px] w-[15vw] top-0 right-0"
           src="/landing-images/e5.jpg"
-          alt="pic11"
+          alt="june of sustainable fashion editorial highlighting ethical clothing and indian heritage"
           width={300}
           height={400}
           sizes="(max-width: 768px) 200px, 15vw"
@@ -516,7 +516,7 @@ export default function LandingPageContent() {
         <Image
           className="pic6 absolute min-w-[150px] max-w-[300px] w-[17vw] top-[70vh] right-[15vw]"
           src="/landing-images/e3.jpg"
-          alt="pic12"
+          alt="handwoven sustainable garment from june of collection showcasing artisanal craftsmanship"
           width={300}
           height={400}
           sizes="(max-width: 768px) 200px, 17vw"
@@ -524,7 +524,7 @@ export default function LandingPageContent() {
         <Image
           className="pic7 absolute min-w-[150px] max-w-[300px] w-[16vw] top-[40vh] right-[35vw]"
           src="/landing-images/e1.jpg"
-          alt="pic13"
+          alt="june of model in sustainable fashion piece representing thoughtful design and heritage textiles"
           width={300}
           height={400}
           sizes="(max-width: 768px) 200px, 16vw"

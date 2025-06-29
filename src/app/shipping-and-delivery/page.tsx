@@ -11,8 +11,183 @@ export default function ShippingAndDeliveryPage() {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    // Set page title
+    // Set page title and comprehensive SEO metadata
     document.title = "shipping & delivery - june of";
+
+    // Add meta description
+    const metaDescription = document.querySelector('meta[name="description"]');
+    if (metaDescription) {
+      metaDescription.setAttribute(
+        "content",
+        "learn about june of's shipping and delivery policies. we ship pan india with ₹100 shipping charges and 7-day processing time for our sustainable fashion collection."
+      );
+    } else {
+      const meta = document.createElement("meta");
+      meta.name = "description";
+      meta.content =
+        "learn about june of's shipping and delivery policies. we ship pan india with ₹100 shipping charges and 7-day processing time for our sustainable fashion collection.";
+      document.head.appendChild(meta);
+    }
+
+    // Add keywords meta tag
+    const metaKeywords = document.querySelector('meta[name="keywords"]');
+    if (metaKeywords) {
+      metaKeywords.setAttribute(
+        "content",
+        "shipping policy, delivery information, june of shipping, sustainable fashion delivery, india shipping, order tracking"
+      );
+    } else {
+      const meta = document.createElement("meta");
+      meta.name = "keywords";
+      meta.content =
+        "shipping policy, delivery information, june of shipping, sustainable fashion delivery, india shipping, order tracking";
+      document.head.appendChild(meta);
+    }
+
+    // Add canonical link
+    const canonicalLink = document.querySelector('link[rel="canonical"]');
+    if (canonicalLink) {
+      canonicalLink.setAttribute(
+        "href",
+        "https://www.juneof.com/shipping-and-delivery"
+      );
+    } else {
+      const link = document.createElement("link");
+      link.rel = "canonical";
+      link.href = "https://www.juneof.com/shipping-and-delivery";
+      document.head.appendChild(link);
+    }
+
+    // Add Open Graph meta tags
+    const ogTags = [
+      { property: "og:title", content: "shipping & delivery - june of" },
+      {
+        property: "og:description",
+        content:
+          "learn about june of's shipping and delivery policies. we ship pan india with ₹100 shipping charges and 7-day processing time for our sustainable fashion collection.",
+      },
+      {
+        property: "og:url",
+        content: "https://www.juneof.com/shipping-and-delivery",
+      },
+      { property: "og:type", content: "website" },
+      { property: "og:site_name", content: "june of" },
+      {
+        property: "og:image",
+        content: "https://www.juneof.com/landing-images/logo.svg",
+      },
+      {
+        property: "og:image:alt",
+        content: "june of shipping and delivery policy",
+      },
+    ];
+
+    ogTags.forEach((tag) => {
+      const existingTag = document.querySelector(
+        `meta[property="${tag.property}"]`
+      );
+      if (existingTag) {
+        existingTag.setAttribute("content", tag.content);
+      } else {
+        const meta = document.createElement("meta");
+        meta.setAttribute("property", tag.property);
+        meta.setAttribute("content", tag.content);
+        document.head.appendChild(meta);
+      }
+    });
+
+    // Add Twitter Card meta tags
+    const twitterTags = [
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "shipping & delivery - june of" },
+      {
+        name: "twitter:description",
+        content:
+          "learn about june of's shipping and delivery policies. we ship pan india with ₹100 shipping charges and 7-day processing time for our sustainable fashion collection.",
+      },
+      {
+        name: "twitter:image",
+        content: "https://www.juneof.com/landing-images/logo.svg",
+      },
+    ];
+
+    twitterTags.forEach((tag) => {
+      const existingTag = document.querySelector(`meta[name="${tag.name}"]`);
+      if (existingTag) {
+        existingTag.setAttribute("content", tag.content);
+      } else {
+        const meta = document.createElement("meta");
+        meta.setAttribute("name", tag.name);
+        meta.setAttribute("content", tag.content);
+        document.head.appendChild(meta);
+      }
+    });
+
+    // Add structured data for shipping policy
+    const shippingSchema = {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      name: "shipping & delivery - june of",
+      description:
+        "learn about june of's shipping and delivery policies. we ship pan india with ₹100 shipping charges and 7-day processing time for our sustainable fashion collection.",
+      url: "https://www.juneof.com/shipping-and-delivery",
+      dateModified: "2025-06-20",
+      inLanguage: "en-US",
+      isPartOf: {
+        "@type": "WebSite",
+        name: "june of",
+        url: "https://www.juneof.com",
+      },
+      breadcrumb: {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: "home",
+            item: "https://www.juneof.com",
+          },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: "shipping & delivery",
+            item: "https://www.juneof.com/shipping-and-delivery",
+          },
+        ],
+      },
+      publisher: {
+        "@type": "Organization",
+        name: "june of",
+        url: "https://www.juneof.com",
+      },
+      mainEntity: {
+        "@type": "Service",
+        name: "shipping and delivery service",
+        provider: {
+          "@type": "Organization",
+          name: "june of",
+        },
+        areaServed: {
+          "@type": "Country",
+          name: "India",
+        },
+        offers: {
+          "@type": "Offer",
+          price: "100",
+          priceCurrency: "INR",
+          description: "shipping charges for domestic delivery in india",
+        },
+      },
+    };
+
+    const script = document.createElement("script");
+    script.type = "application/ld+json";
+    script.text = JSON.stringify(shippingSchema);
+    document.head.appendChild(script);
+
+    return () => {
+      // Cleanup function would go here if needed
+    };
   }, []);
 
   // Mobile detection
