@@ -124,9 +124,18 @@
   pointer-events: none;
 }
 
-/* Subtle dimming effect on images when hovering */
-.section4:hover img {
-  opacity: 0.8;
+/* Subtle dimming effect on images when hovering (desktop) */
+@media (min-width: 768px) {
+  .section4:hover img {
+    opacity: 0.8;
+  }
+}
+
+/* Mobile: dimming effect when overlay is visible */
+@media (max-width: 767px) {
+  .section4.mobile-overlay-visible img {
+    opacity: 0.8;
+  }
 }
 
 /* Responsive adjustments */

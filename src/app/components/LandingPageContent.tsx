@@ -29,6 +29,9 @@ export default function LandingPageContent() {
     isInitialized: isViewportInitialized,
   } = useViewportHeight();
 
+  // State for mobile overlay visibility
+  const [isMobileOverlayVisible, setIsMobileOverlayVisible] = useState(false);
+
   // Track image loading state
   const [imagesLoaded, setImagesLoaded] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
@@ -326,6 +329,34 @@ export default function LandingPageContent() {
     setIsHydrated(true);
   }, []);
 
+  // Mobile scroll-based overlay visibility
+  useEffect(() => {
+    if (!isMobile || !section4Ref.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          // Show overlay when section4 is 50% visible
+          if (entry.intersectionRatio >= 0.5) {
+            setIsMobileOverlayVisible(true);
+          } else {
+            setIsMobileOverlayVisible(false);
+          }
+        });
+      },
+      {
+        threshold: [0, 0.5, 1], // Trigger at 0%, 50%, and 100% visibility
+        rootMargin: "0px",
+      }
+    );
+
+    observer.observe(section4Ref.current);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [isMobile, isHydrated]);
+
   // Initialize animations when all conditions are met
   useEffect(() => {
     if (!isHydrated || !imagesLoaded || !isViewportInitialized) return;
@@ -479,7 +510,9 @@ export default function LandingPageContent() {
       {/* Section 4 - Floating Images with Instagram Overlay */}
       <div
         ref={section4Ref}
-        className="section4 absolute block top-0 left-0 w-screen h-screen overflow-hidden bg-[#F8F4EC] group cursor-pointer"
+        className={`section4 absolute block top-0 left-0 w-screen h-screen overflow-hidden bg-[#F8F4EC] group cursor-pointer ${
+          isMobile && isMobileOverlayVisible ? "mobile-overlay-visible" : ""
+        }`}
         onClick={() =>
           window.open(
             "https://www.instagram.com/juneof__",
@@ -501,11 +534,27 @@ export default function LandingPageContent() {
           }
         }}
       >
-        {/* Dark overlay that appears on hover */}
-        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-500 ease-out z-10 pointer-events-none" />
+        {/* Dark overlay that appears on hover (desktop) or scroll (mobile) */}
+        <div
+          className={`absolute inset-0 bg-black/60 transition-opacity duration-500 ease-out z-10 pointer-events-none ${
+            isMobile
+              ? isMobileOverlayVisible
+                ? "opacity-100"
+                : "opacity-0"
+              : "opacity-0 group-hover:opacity-100"
+          }`}
+        />
 
-        {/* Instagram icon that appears on hover */}
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-500 ease-out z-20 pointer-events-none">
+        {/* Instagram icon that appears on hover (desktop) or scroll (mobile) */}
+        <div
+          className={`absolute inset-0 flex items-center justify-center transition-opacity duration-500 ease-out z-20 pointer-events-none ${
+            isMobile
+              ? isMobileOverlayVisible
+                ? "opacity-100"
+                : "opacity-0"
+              : "opacity-0 group-hover:opacity-100"
+          }`}
+        >
           <Instagram
             className="w-16 h-16 md:w-20 md:h-20 text-white"
             strokeWidth={1.5}
