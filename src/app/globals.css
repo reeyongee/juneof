@@ -43,13 +43,16 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
+html, body {
+  overscroll-behavior-y: none;
+}
+
 body {
   user-select: none;
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
   cursor: default;
-  overscroll-behavior-y: none;
 }
 
 a,
