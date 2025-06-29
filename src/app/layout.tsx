@@ -102,6 +102,20 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        {/* Google Analytics 4 (GA4) */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-ES618WEEFG"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-ES618WEEFG');
+          `}
+        </Script>
+
         {/* Meta Pixel Script */}
         {PIXEL_ID && (
           <Script id="meta-pixel-base" strategy="afterInteractive">
