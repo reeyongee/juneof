@@ -106,7 +106,7 @@
   width: 100vw;
 }
 
-/* Section 4 - Floating Images */
+/* Section 4 - Floating Images with Instagram Overlay */
 .section4 {
   position: absolute;
   display: block;
@@ -120,6 +120,13 @@
 .section4 img {
   min-width: 150px;
   max-width: 300px;
+  transition: opacity 0.3s ease-out;
+  pointer-events: none;
+}
+
+/* Subtle dimming effect on images when hovering */
+.section4:hover img {
+  opacity: 0.8;
 }
 
 /* Responsive adjustments */

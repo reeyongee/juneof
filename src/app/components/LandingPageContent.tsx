@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Image from "next/image";
+import { Instagram } from "lucide-react";
 import ScrollIndicator from "./ScrollIndicator";
 import { useViewportHeight } from "@/hooks/useViewportHeight";
 import "../landing-page.css";
@@ -256,18 +257,25 @@ export default function LandingPageContent() {
       ];
 
       section4Animations.forEach(({ selector, scrub, yPercent }) => {
-        gsap.to(selector, {
-          scrollTrigger: {
-            trigger: selector,
-            start: "top bottom",
-            endTrigger: ".section4",
-            end: "bottom top",
-            scrub,
-            markers: false,
-          },
-          yPercent,
-        });
+        // Ensure the element exists before creating animation
+        const element = document.querySelector(selector);
+        if (element) {
+          gsap.to(selector, {
+            scrollTrigger: {
+              trigger: selector,
+              start: "top bottom",
+              endTrigger: ".section4",
+              end: "bottom top",
+              scrub,
+              markers: false,
+            },
+            yPercent,
+          });
+        }
       });
+
+      // Force ScrollTrigger refresh after creating animations
+      ScrollTrigger.refresh();
 
       // Set spacer height with proper calculation
       const section4length = section4Ref.current?.offsetHeight || 0;
@@ -468,11 +476,42 @@ export default function LandingPageContent() {
         </div>
       </div>
 
-      {/* Section 4 - Floating Images */}
+      {/* Section 4 - Floating Images with Instagram Overlay */}
       <div
         ref={section4Ref}
-        className="section4 absolute block top-0 left-0 w-screen h-screen overflow-hidden bg-[#F8F4EC]"
+        className="section4 absolute block top-0 left-0 w-screen h-screen overflow-hidden bg-[#F8F4EC] group cursor-pointer"
+        onClick={() =>
+          window.open(
+            "https://www.instagram.com/juneof__",
+            "_blank",
+            "noopener,noreferrer"
+          )
+        }
+        role="button"
+        tabIndex={0}
+        aria-label="Visit June Of on Instagram - Sustainable fashion editorial and behind-the-scenes content"
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            window.open(
+              "https://www.instagram.com/juneof__",
+              "_blank",
+              "noopener,noreferrer"
+            );
+          }
+        }}
       >
+        {/* Dark overlay that appears on hover */}
+        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-500 ease-out z-10 pointer-events-none" />
+
+        {/* Instagram icon that appears on hover */}
+        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-500 ease-out z-20 pointer-events-none">
+          <Instagram
+            className="w-16 h-16 md:w-20 md:h-20 text-white"
+            strokeWidth={1.5}
+            aria-hidden="true"
+          />
+        </div>
         <Image
           className="pic1 absolute min-w-[150px] max-w-[300px] w-[20vw] top-[50vh] left-[8.5vw]"
           src="/landing-images/e4.jpg"
