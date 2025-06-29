@@ -2,6 +2,7 @@ import { Old_Standard_TT } from "next/font/google";
 import "./globals.css";
 import type { Metadata } from "next";
 import Script from "next/script"; // Import next/script
+import { organizationSchema } from "@/lib/seo";
 
 import { SplashProvider } from "@/context/SplashContext";
 import { AuthProvider } from "@/context/AuthContext";
@@ -19,13 +20,75 @@ const oldStandardTT = Old_Standard_TT({
 });
 
 export const metadata: Metadata = {
-  title: "june of",
+  title: {
+    template: "%s | June Of",
+    default: "June Of – Heritage Meets Now",
+  },
   description:
-    "a timeless brand for the modern and classical people who love to express their individuality boldly with styles to match",
+    "June Of is where heritage meets the now. We take cues from the richness of Indian craft and rework it for a generation that lives in motion. Timeless fabrics in reimagined silhouettes, with intention behind every stitch.",
+  keywords: [
+    "sustainable fashion",
+    "Indian craft",
+    "heritage clothing",
+    "ethical fashion",
+    "artisanal clothing",
+    "handwoven fabrics",
+    "kantha cotton",
+    "conscious fashion",
+    "june of",
+  ],
+  authors: [{ name: "June Of" }],
+  creator: "June Of",
+  publisher: "June Of",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
   icons: {
     icon: "/favicon.png",
     shortcut: "/favicon.png",
     apple: "/favicon.png",
+  },
+  metadataBase: new URL("https://www.juneof.com"),
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "https://www.juneof.com",
+    siteName: "June Of",
+    title: "June Of – Heritage Meets Now",
+    description:
+      "June Of is where heritage meets the now. We take cues from the richness of Indian craft and rework it for a generation that lives in motion. Timeless fabrics in reimagined silhouettes, with intention behind every stitch.",
+    images: [
+      {
+        url: "/landing-images/logo.svg",
+        width: 1200,
+        height: 630,
+        alt: "June Of Logo",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "June Of – Heritage Meets Now",
+    description:
+      "June Of is where heritage meets the now. We take cues from the richness of Indian craft and rework it for a generation that lives in motion.",
+    images: ["/landing-images/logo.svg"],
+    creator: "@juneof",
+    site: "@juneof",
+  },
+  verification: {
+    google: "your-google-verification-code",
+    // Add other verification codes as needed
   },
 };
 
@@ -55,6 +118,15 @@ export default function RootLayout({
             `}
           </Script>
         )}
+
+        {/* Organization Schema */}
+        <Script
+          id="organization-schema"
+          type="application/ld+json"
+          strategy="afterInteractive"
+        >
+          {JSON.stringify(organizationSchema)}
+        </Script>
       </head>
       <body className={`${oldStandardTT.className} flex flex-col min-h-screen`}>
         {/* Meta Pixel noscript Fallback */}

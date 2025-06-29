@@ -10,6 +10,7 @@ import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 import { ShopifyProductDetails } from "@/lib/shopify";
 import { Badge } from "@/components/ui/badge";
+import { generateProductSchema } from "@/lib/seo";
 import * as pixel from "@/lib/meta-pixel"; // Import the pixel helper
 
 // Mobile detection hook
@@ -104,6 +105,50 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
         currency: product.priceRange.minVariantPrice.currencyCode,
         value: parseFloat(product.priceRange.minVariantPrice.amount),
       });
+    }
+  }, [product]);
+
+  // Add product schema to page
+  useEffect(() => {
+    if (product) {
+      const price = parseFloat(product.priceRange.minVariantPrice.amount);
+      const currency = product.priceRange.minVariantPrice.currencyCode;
+      const imageUrl = product.images.edges[0]?.node.url || "";
+
+      const productSchema = generateProductSchema({
+        name: product.title,
+        description:
+          product.description ||
+          `${product.title} - Sustainable fashion from June Of`,
+        price: price,
+        currency: currency,
+        availability: "InStock",
+        condition: "NewCondition",
+        brand: "June Of",
+        sku: product.id,
+        image: imageUrl,
+        url: `https://www.juneof.com/product/${product.handle}`,
+      });
+
+      // Add or update product schema script
+      const existingScript = document.getElementById("product-schema");
+      if (existingScript) {
+        existingScript.remove();
+      }
+
+      const script = document.createElement("script");
+      script.id = "product-schema";
+      script.type = "application/ld+json";
+      script.textContent = JSON.stringify(productSchema);
+      document.head.appendChild(script);
+
+      // Cleanup on unmount
+      return () => {
+        const scriptToRemove = document.getElementById("product-schema");
+        if (scriptToRemove) {
+          scriptToRemove.remove();
+        }
+      };
     }
   }, [product]);
 

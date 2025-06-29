@@ -14,8 +14,27 @@ export default function AboutUsPage() {
   const mainElementRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    // Set page title
-    document.title = "about us - june of";
+    // Set page title and meta description
+    document.title = "About Us | June Of";
+
+    // Update meta description
+    const metaDescription = document.querySelector('meta[name="description"]');
+    if (metaDescription) {
+      metaDescription.setAttribute(
+        "content",
+        "Learn about June Of - where heritage meets the now. We work with Indian artisans to create sustainable, ethically-made clothing that celebrates tradition while embracing the future."
+      );
+    }
+
+    // Update canonical URL
+    const canonicalLink =
+      document.querySelector('link[rel="canonical"]') ||
+      document.createElement("link");
+    canonicalLink.setAttribute("rel", "canonical");
+    canonicalLink.setAttribute("href", "https://www.juneof.com/about-us");
+    if (!document.querySelector('link[rel="canonical"]')) {
+      document.head.appendChild(canonicalLink);
+    }
   }, []);
 
   useEffect(() => {

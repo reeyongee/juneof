@@ -1,0 +1,13 @@
+# *
+User-agent: *
+Disallow: /admin
+Disallow: /api
+Disallow: /auth/callback-handler
+Disallow: /auth/error
+Disallow: /dashboard
+
+# Host
+Host: https://www.juneof.com
+
+# Sitemaps
+Sitemap: https://www.juneof.com/sitemap.xml

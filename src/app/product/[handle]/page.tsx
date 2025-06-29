@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import type { Metadata } from "next";
 import {
   storefrontApiRequest,
   GET_PRODUCT_BY_HANDLE_QUERY,
@@ -19,6 +20,80 @@ interface ProductPageProps {
   params: Promise<{
     handle: string;
   }>;
+}
+
+// Generate metadata for product pages
+export async function generateMetadata({
+  params,
+}: ProductPageProps): Promise<Metadata> {
+  const { handle } = await params;
+
+  try {
+    const data = await storefrontApiRequest<ShopifyProductByHandleData>(
+      GET_PRODUCT_BY_HANDLE_QUERY,
+      { handle }
+    );
+
+    if (!data.productByHandle) {
+      return {
+        title: "Product Not Found",
+        description: "The requested product could not be found.",
+      };
+    }
+
+    const product = data.productByHandle;
+    const price = parseFloat(product.priceRange.minVariantPrice.amount);
+    const currency = product.priceRange.minVariantPrice.currencyCode;
+    const imageUrl =
+      product.images.edges[0]?.node.url || "/landing-images/logo.svg";
+
+    return {
+      title: product.title,
+      description:
+        product.description ||
+        `${product.title} - Sustainable fashion from June Of. Heritage meets now.`,
+      openGraph: {
+        title: `${product.title} | June Of`,
+        description:
+          product.description ||
+          `${product.title} - Sustainable fashion from June Of`,
+        url: `https://www.juneof.com/product/${handle}`,
+        images: [
+          {
+            url: imageUrl,
+            width: 800,
+            height: 800,
+            alt: product.title,
+          },
+        ],
+        type: "website",
+      },
+      twitter: {
+        card: "summary_large_image",
+        title: `${product.title} | June Of`,
+        description:
+          product.description ||
+          `${product.title} - Sustainable fashion from June Of`,
+        images: [imageUrl],
+      },
+      alternates: {
+        canonical: `https://www.juneof.com/product/${handle}`,
+      },
+      other: {
+        "product:price:amount": price.toString(),
+        "product:price:currency": currency,
+        "product:availability": "in stock",
+        "product:condition": "new",
+        "product:brand": "June Of",
+      },
+    };
+  } catch (error) {
+    console.error("Failed to generate metadata for product:", error);
+    return {
+      title: "Product | June Of",
+      description: "Sustainable fashion from June Of - Heritage meets now.",
+    };
+  }
 }
 
 // Generate static params for all products
