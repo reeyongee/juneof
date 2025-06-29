@@ -2,7 +2,7 @@ import { DefaultSeoProps } from "next-seo";
 
 export const defaultSEO: DefaultSeoProps = {
   titleTemplate: "%s | June Of",
-  defaultTitle: "June Of – Heritage Meets Now",
+  defaultTitle: "june of",
   description:
     "June Of is where heritage meets the now. We take cues from the richness of Indian craft and rework it for a generation that lives in motion. Timeless fabrics in reimagined silhouettes, with intention behind every stitch.",
   canonical: "https://www.juneof.com",
@@ -11,7 +11,7 @@ export const defaultSEO: DefaultSeoProps = {
     locale: "en_US",
     url: "https://www.juneof.com",
     siteName: "June Of",
-    title: "June Of – Heritage Meets Now",
+    title: "june of",
     description:
       "June Of is where heritage meets the now. We take cues from the richness of Indian craft and rework it for a generation that lives in motion. Timeless fabrics in reimagined silhouettes, with intention behind every stitch.",
     images: [

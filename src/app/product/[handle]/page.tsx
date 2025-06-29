@@ -51,7 +51,7 @@ export async function generateMetadata({
       title: product.title,
       description:
         product.description ||
-        `${product.title} - Sustainable fashion from June Of. Heritage meets now.`,
+        `${product.title} - Sustainable fashion from June Of.`,
       openGraph: {
         title: `${product.title} | June Of`,
         description:
@@ -91,7 +91,7 @@ export async function generateMetadata({
     console.error("Failed to generate metadata for product:", error);
     return {
       title: "Product | June Of",
-      description: "Sustainable fashion from June Of - Heritage meets now.",
+      description: "Sustainable fashion from June Of.",
     };
   }
 }
