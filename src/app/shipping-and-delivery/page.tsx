@@ -19,13 +19,13 @@ export default function ShippingAndDeliveryPage() {
     if (metaDescription) {
       metaDescription.setAttribute(
         "content",
-        "learn about june of's shipping and delivery policies. we ship pan india with ₹100 shipping charges and 7-day processing time for our sustainable fashion collection."
+        "learn about june of's shipping and delivery policies. we ship pan india with free shipping and 7 business day processing time for our sustainable fashion collection."
       );
     } else {
       const meta = document.createElement("meta");
       meta.name = "description";
       meta.content =
-        "learn about june of's shipping and delivery policies. we ship pan india with ₹100 shipping charges and 7-day processing time for our sustainable fashion collection.";
+        "learn about june of's shipping and delivery policies. we ship pan india with free shipping and 7 business day processing time for our sustainable fashion collection.";
       document.head.appendChild(meta);
     }
 
@@ -64,7 +64,7 @@ export default function ShippingAndDeliveryPage() {
       {
         property: "og:description",
         content:
-          "learn about june of's shipping and delivery policies. we ship pan india with ₹100 shipping charges and 7-day processing time for our sustainable fashion collection.",
+          "learn about june of's shipping and delivery policies. we ship pan india with free shipping and 7 business day processing time for our sustainable fashion collection.",
       },
       {
         property: "og:url",
@@ -103,7 +103,7 @@ export default function ShippingAndDeliveryPage() {
       {
         name: "twitter:description",
         content:
-          "learn about june of's shipping and delivery policies. we ship pan india with ₹100 shipping charges and 7-day processing time for our sustainable fashion collection.",
+          "learn about june of's shipping and delivery policies. we ship pan india with free shipping and 7 business day processing time for our sustainable fashion collection.",
       },
       {
         name: "twitter:image",
@@ -129,7 +129,7 @@ export default function ShippingAndDeliveryPage() {
       "@type": "WebPage",
       name: "shipping & delivery - june of",
       description:
-        "learn about june of's shipping and delivery policies. we ship pan india with ₹100 shipping charges and 7-day processing time for our sustainable fashion collection.",
+        "learn about june of's shipping and delivery policies. we ship pan india with free shipping and 7 business day processing time for our sustainable fashion collection.",
       url: "https://www.juneof.com/shipping-and-delivery",
       dateModified: "2025-06-20",
       inLanguage: "en-US",
@@ -173,9 +173,9 @@ export default function ShippingAndDeliveryPage() {
         },
         offers: {
           "@type": "Offer",
-          price: "100",
+          price: "0",
           priceCurrency: "INR",
-          description: "shipping charges for domestic delivery in india",
+          description: "free shipping charges for domestic delivery in india",
         },
       },
     };
@@ -240,30 +240,33 @@ export default function ShippingAndDeliveryPage() {
       <div className="relative bg-[#fdf3e1] min-h-screen">
         <main className="relative text-black pt-24 px-6 pb-12">
           <h1 className="text-2xl font-medium tracking-widest lowercase text-black mb-8">
-            shipping &amp; returns
+            shipping &amp; delivery
           </h1>
 
           <div className="text-base lowercase tracking-wide text-black space-y-4 leading-relaxed">
-            <p className="font-bold">effective date: june 20, 2025</p>
             <p>
               at june of, we want your experience to be smooth and delightful.
-              here&apos;s everything you need to know about shipping and
-              returns:
             </p>
-            <p className="font-bold">1. shipping</p> <br />
-            <p className="font-bold">shipping locations: </p>
-            <p>we currently ship pan india.</p> <br />
-            <p className="font-bold">dispatch time: </p>
+            <p>note that we currently only ship pan india.</p>
+
             <p>
-              orders are typically processed and dispatched within 7 working
+              orders are typically processed and dispatched within 7 business
               days.
             </p>
-            <p className="font-bold">shipping charges:</p>
-            <p>domestic (india): ₹100</p> <br />
-            <p className="font-bold">tracking: </p>
+
+            <p>shipping charges are free for domestic shipments.</p>
+
+            <p>your order will be delivered to you in 5-10 working days.</p>
+
+            <p className="font-bold">tracking</p>
             <p>
-              once your order is shipped, you will receive a tracking number via
+              once your order is shipped, you will receive a tracking notice via
               email.
+            </p>
+
+            <p>
+              in case of any other queries, reach out to us on our email
+              reach@juneof.com or dm us on instagram.
             </p>
           </div>
         </main>
@@ -289,7 +292,7 @@ export default function ShippingAndDeliveryPage() {
         {/* Left Column (Sticky Title) */}
         <div className="relative sticky top-0 z-10 flex h-screen w-[40%] flex-shrink-0 flex-col justify-center p-8 border-r border-gray-300">
           <h1 className="text-xl font-medium tracking-widest lowercase text-black mix-blend-difference">
-            shipping &amp; returns
+            shipping &amp; delivery
           </h1>
         </div>
 
@@ -299,26 +302,29 @@ export default function ShippingAndDeliveryPage() {
             ref={contentRef}
             className="text-xl lowercase tracking-wider text-black space-y-4 mix-blend-difference"
           >
-            <p className="font-bold">effective date: june 20, 2025</p>
             <p>
               at june of, we want your experience to be smooth and delightful.
-              here&apos;s everything you need to know about shipping and
-              returns:
             </p>
-            <p className="font-bold">1. shipping</p> <br />
-            <p className="font-bold">shipping locations: </p>
-            <p>we currently ship pan india.</p> <br />
-            <p className="font-bold">dispatch time: </p>
+            <p>note that we currently only ship pan india.</p>
+
             <p>
-              orders are typically processed and dispatched within 7 working
+              orders are typically processed and dispatched within 7 business
               days.
             </p>
-            <p className="font-bold">shipping charges:</p>
-            <p>domestic (india): ₹100</p> <br />
-            <p className="font-bold">tracking: </p>
+
+            <p>shipping charges are free for domestic shipments.</p>
+
+            <p>your order will be delivered to you in 5-10 working days.</p>
+
+            <p className="font-bold">tracking</p>
             <p>
-              once your order is shipped, you will receive a tracking number via
+              once your order is shipped, you will receive a tracking notice via
               email.
+            </p>
+
+            <p>
+              in case of any other queries, reach out to us on our email
+              reach@juneof.com or dm us on instagram.
             </p>
           </div>
         </div>

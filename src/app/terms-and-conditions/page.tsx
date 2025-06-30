@@ -223,7 +223,7 @@ export default function TermsAndConditionsPage() {
           </h1>
 
           <div className="text-base lowercase tracking-wide text-black space-y-4 leading-relaxed">
-            <p className="font-bold">effective date: june 20, 2025</p>
+            <p className="font-bold">effective date: </p>
             <p>
               welcome to june of. by accessing or using our website
               www.juneof.com, you agree to comply with and be bound by the
@@ -233,11 +233,11 @@ export default function TermsAndConditionsPage() {
 
             <p className="font-bold">1. use of the site</p>
             <p>
-              you agree to use the site for lawful purposes only. you may not: •
-              attempt to gain unauthorized access to our systems • interfere
-              with the site&apos;s operation • copy or distribute any content
-              without our consent
+              you agree to use the site for lawful purposes only. you may not:
             </p>
+            <p>• attempt to gain unauthorized access to our systems</p>
+            <p>• interfere with the site&apos;s operation</p>
+            <p>• copy or distribute any content without our consent</p>
 
             <p className="font-bold">2. product descriptions</p>
             <p>
@@ -272,11 +272,10 @@ export default function TermsAndConditionsPage() {
             <p className="font-bold">6. governing law</p>
             <p>
               these terms are governed by the laws of india. any disputes will
-              be subject to the exclusive jurisdiction of the courts in india.
+              be subject to the exclusive jurisdiction of the courts in
+              thiruvananthapuram, kerala.
             </p>
 
-            <p className="font-bold">7. contact</p>
-            <br />
             <p>for any concerns, email us at reach@juneof.com</p>
           </div>
         </main>
@@ -312,7 +311,7 @@ export default function TermsAndConditionsPage() {
             ref={contentRef}
             className="text-xl lowercase tracking-wider text-black space-y-4 mix-blend-difference"
           >
-            <p className="font-bold">effective date: june 20, 2025</p>
+            <p className="font-bold">effective date: </p>
             <p>
               welcome to june of. by accessing or using our website
               www.juneof.com, you agree to comply with and be bound by the
@@ -322,11 +321,11 @@ export default function TermsAndConditionsPage() {
 
             <p className="font-bold">1. use of the site</p>
             <p>
-              you agree to use the site for lawful purposes only. you may not: •
-              attempt to gain unauthorized access to our systems • interfere
-              with the site&apos;s operation • copy or distribute any content
-              without our consent
+              you agree to use the site for lawful purposes only. you may not:
             </p>
+            <p>• attempt to gain unauthorized access to our systems</p>
+            <p>• interfere with the site&apos;s operation</p>
+            <p>• copy or distribute any content without our consent</p>
 
             <p className="font-bold">2. product descriptions</p>
             <p>
@@ -361,11 +360,10 @@ export default function TermsAndConditionsPage() {
             <p className="font-bold">6. governing law</p>
             <p>
               these terms are governed by the laws of india. any disputes will
-              be subject to the exclusive jurisdiction of the courts in india.
+              be subject to the exclusive jurisdiction of the courts in
+              thiruvananthapuram, kerala.
             </p>
 
-            <p className="font-bold">7. contact</p>
-            <br />
             <p>for any concerns, email us at reach@juneof.com</p>
           </div>
         </div>
