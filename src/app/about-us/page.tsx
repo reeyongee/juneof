@@ -81,10 +81,10 @@ export default function AboutUsPage() {
           <div className="flex justify-start">
             <div className="max-w-[500px] text-left">
               <p className="text-xl sm:text-2xl lg:text-3xl font-light leading-relaxed lowercase tracking-wider">
-                june of is where heritage meets the now. We take cues from the
-                richness of Indian craft and rework it for a generation that
-                lives in motion. Think of it as timeless fabrics in reimagined
-                silhouettes, and a whole lot of intention behind every stitch.
+                june of takes cues from the richness of Indian craft and rework
+                it for a generation that lives in motion. Think of it as
+                timeless fabrics in reimagined silhouettes, and a whole lot of
+                intention behind every stitch.
               </p>
             </div>
           </div>
@@ -95,8 +95,8 @@ export default function AboutUsPage() {
               <p className="text-xl sm:text-2xl lg:text-3xl font-light leading-relaxed lowercase tracking-wider">
                 Our pieces are made for everyday wear but hopefully they never
                 feel basic. Designed for bodies that live, our fits move with
-                you, not against you. We believe style shouldn&apos;t come at
-                the cost of comfort or even identity.
+                you. We believe style shouldn&apos;t come at the cost of comfort
+                or even identity.
               </p>
             </div>
           </div>
@@ -106,9 +106,8 @@ export default function AboutUsPage() {
             <div className="max-w-[500px] text-left">
               <p className="text-xl sm:text-2xl lg:text-3xl font-light leading-relaxed lowercase tracking-wider">
                 Born in India, shaped by nostalgia, and tailored for the future,
-                june of is for the ones who value wearing pieces with tales to
-                tell. We&apos;re not here to copy tradition, only inspired by
-                it.
+                june of is for those who value wearing pieces with tales to
+                tell.
               </p>
             </div>
           </div>
@@ -116,6 +115,15 @@ export default function AboutUsPage() {
           {/* Fourth Paragraph - Right */}
           <div className="flex justify-end">
             <div className="max-w-[500px] text-right">
+              <p className="text-xl sm:text-2xl lg:text-3xl font-light leading-relaxed lowercase tracking-wider">
+                We&apos;re not here to copy tradition, merely inspired by it.
+              </p>
+            </div>
+          </div>
+
+          {/* Fifth Paragraph - Left */}
+          <div className="flex justify-start">
+            <div className="max-w-[500px] text-left">
               <p className="text-xl sm:text-2xl lg:text-3xl font-light leading-relaxed lowercase tracking-wider">
                 <strong>Sustainability for june of</strong>
                 <br />
@@ -128,9 +136,9 @@ export default function AboutUsPage() {
             </div>
           </div>
 
-          {/* Fifth Paragraph - Left */}
-          <div className="flex justify-start">
-            <div className="max-w-[500px] text-left">
+          {/* Sixth Paragraph - Right */}
+          <div className="flex justify-end">
+            <div className="max-w-[500px] text-right">
               <p className="text-xl sm:text-2xl lg:text-3xl font-light leading-relaxed lowercase tracking-wider">
                 We source our fabrics from Jaipur, India, working with natural
                 fibres that carry the richness of the land. But our
@@ -139,26 +147,14 @@ export default function AboutUsPage() {
             </div>
           </div>
 
-          {/* Sixth Paragraph - Right */}
-          <div className="flex justify-end">
-            <div className="max-w-[500px] text-right">
-              <p className="text-xl sm:text-2xl lg:text-3xl font-light leading-relaxed lowercase tracking-wider">
-                Each piece arrives in a reusable, hand-woven cotton bag,
-                designed to live beyond its first use. Our tags? They&apos;re
-                intended to live on, made with seed paper tags tied with jute
-                threads, replacing plastic and making room for new life.
-              </p>
-            </div>
-          </div>
-
           {/* Seventh Paragraph - Left */}
           <div className="flex justify-start">
             <div className="max-w-[500px] text-left">
               <p className="text-xl sm:text-2xl lg:text-3xl font-light leading-relaxed lowercase tracking-wider">
-                We produce in small, mindful quantities, making sure every
-                garment receives the attention it deserves and doesn&apos;t end
-                up as dead stock. This approach allows us to stay connected to
-                the craftsmanship and reduce waste at every step.
+                Each piece arrives in a reusable cotton bag, designed to carry
+                beyond its first use. Our tags? They&apos;re intended to live
+                on, made with seed paper tags tied with jute threads, replacing
+                plastic and making room for new life.
               </p>
             </div>
           </div>
@@ -167,13 +163,9 @@ export default function AboutUsPage() {
           <div className="flex justify-end">
             <div className="max-w-[500px] text-right">
               <p className="text-xl sm:text-2xl lg:text-3xl font-light leading-relaxed lowercase tracking-wider">
-                At its core, June Of is a celebration of heritage; a quiet
-                homage to the artisanal depth of India. We work hand-in-hand
-                with artisans and production teams, ensuring fair pay, safe
-                working conditions, and opportunities for growth. For us,
-                it&apos;s simple: to create beautiful, meaningful pieces that
-                honour where they came from, uplift the hands that make them,
-                and stand the test of time.
+                We produce in small, mindful quantities, making sure every
+                garment receives the attention it deserves and doesn&apos;t end
+                up as dead stock.
               </p>
             </div>
           </div>
@@ -182,13 +174,21 @@ export default function AboutUsPage() {
           <div className="flex justify-start">
             <div className="max-w-[500px] text-left">
               <p className="text-xl sm:text-2xl lg:text-3xl font-light leading-relaxed lowercase tracking-wider">
-                Want to know more?{" "}
-                <a
-                  href="/contact-us"
-                  className="underline hover:opacity-75 transition-opacity"
-                >
-                  reach out
-                </a>
+                At its core, june of is a celebration of heritage; a quiet
+                homage to the artisanal depth of India. We work alongside
+                production teams who care just as much*, ensuring fair pay, safe
+                working conditions, and opportunities for growth.
+              </p>
+            </div>
+          </div>
+
+          {/* Tenth Paragraph - Right */}
+          <div className="flex justify-end">
+            <div className="max-w-[500px] text-right">
+              <p className="text-xl sm:text-2xl lg:text-3xl font-light leading-relaxed lowercase tracking-wider">
+                For us, it&apos;s simple: to create beautiful, meaningful pieces
+                that honour where they came from, uplift the hands that make
+                them, and stand the test of time.
               </p>
             </div>
           </div>
