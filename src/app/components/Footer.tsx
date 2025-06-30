@@ -94,13 +94,15 @@ const Footer = () => {
 
               {/* Column 2: Social/Shop */}
               <div className="w-full sm:w-auto md:w-1/4 mb-6 md:mb-0 flex flex-col items-start md:items-center">
-                <Link
-                  href="#"
+                <a
+                  href="https://www.instagram.com/juneof__"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="hover:opacity-75 mb-1"
                   data-underline-button-effect
                 >
                   instagram
-                </Link>
+                </a>
                 {/* Removed TikTok and Shop Lello */}
               </div>
 
@@ -140,13 +142,15 @@ const Footer = () => {
             <div className="flex justify-between items-start text-base tracking-wider mb-8">
               {/* Left Column: Social + Company */}
               <div className="flex flex-col items-start">
-                <Link
-                  href="#"
+                <a
+                  href="https://www.instagram.com/juneof__"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="hover:opacity-75 mb-1"
                   data-underline-button-effect
                 >
                   instagram
-                </Link>
+                </a>
                 <Link
                   href="/about-us"
                   className="hover:opacity-75 mb-1"
