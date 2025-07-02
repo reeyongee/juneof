@@ -199,7 +199,7 @@ export default function LandingPageContent() {
           end: "bottom bottom",
           pin: ".section1 .container",
           pinSpacing: false,
-          scrub: true,
+          scrub: 0.8,
           markers: false,
         },
       });
@@ -216,7 +216,7 @@ export default function LandingPageContent() {
             trigger: ".section1",
             start: "top top",
             end: () => `+=${section1length - 2 * height}`,
-            scrub: true,
+            scrub: 0.8,
             markers: false,
             id: "section1-move",
           },
@@ -235,7 +235,7 @@ export default function LandingPageContent() {
             trigger: ".section3 .container",
             start: "top bottom",
             end: "bottom top",
-            scrub: true,
+            scrub: 0.8,
             markers: false,
           },
           y: () => `+=${0.3 * section3Image.offsetHeight}`,
@@ -250,13 +250,13 @@ export default function LandingPageContent() {
 
       // Section 4 parallax animations
       const section4Animations = [
-        { selector: ".section4 .pic1", scrub: 2, yPercent: -150 },
+        { selector: ".section4 .pic1", scrub: 0.8, yPercent: -150 },
         { selector: ".section4 .pic2", scrub: 0.8, yPercent: -120 },
-        { selector: ".section4 .pic3", scrub: 1, yPercent: -130 },
-        { selector: ".section4 .pic4", scrub: 0.5, yPercent: -140 },
-        { selector: ".section4 .pic5", scrub: 0.5, yPercent: -160 },
-        { selector: ".section4 .pic6", scrub: 1.2, yPercent: -125 },
-        { selector: ".section4 .pic7", scrub: 0.7, yPercent: -145 },
+        { selector: ".section4 .pic3", scrub: 0.8, yPercent: -130 },
+        { selector: ".section4 .pic4", scrub: 0.8, yPercent: -140 },
+        { selector: ".section4 .pic5", scrub: 0.8, yPercent: -160 },
+        { selector: ".section4 .pic6", scrub: 0.8, yPercent: -125 },
+        { selector: ".section4 .pic7", scrub: 0.8, yPercent: -145 },
       ];
 
       section4Animations.forEach(({ selector, scrub, yPercent }) => {

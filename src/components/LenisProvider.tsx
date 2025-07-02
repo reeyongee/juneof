@@ -57,12 +57,12 @@ export default function LenisProvider({ children }: LenisProviderProps) {
     if (lenisRef.current || isMobile) return; // Don't initialize if already exists or on mobile
 
     const lenis = new Lenis({
-      duration: 1.5,
+      duration: 1.2,
       easing: (t) => (t === 1 ? 1 : 1 - Math.pow(2, -10 * t)),
       orientation: "vertical",
       gestureOrientation: "vertical",
       smoothWheel: true,
-      touchMultiplier: 2,
+      touchMultiplier: 1.5,
       infinite: false,
     });
 
