@@ -25,6 +25,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 import {
   ShopifyAuthConfig,
@@ -56,6 +57,9 @@ interface OrderNode {
           url: string;
           altText: string;
         };
+        variant?: {
+          id: string;
+        } | null;
       };
     }>;
   };
@@ -102,6 +106,32 @@ export default function CustomerOrders({
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [orderToCancel, setOrderToCancel] = useState<OrderNode | null>(null);
   const hasFetchedRef = useRef(false);
+
+  // Exchange feature state
+  const [showExchangeDialog, setShowExchangeDialog] = useState(false);
+  const [exchangeItem, setExchangeItem] = useState<{
+    order: OrderNode;
+    item: {
+      id: string;
+      name: string;
+      quantity: number;
+      variantTitle: string;
+      variant?: { id: string } | null;
+    };
+  } | null>(null);
+  const [variantOptions, setVariantOptions] = useState<
+    Array<{
+      id: string;
+      title: string;
+      availableForSale: boolean;
+      inventoryQuantity: number;
+    }>
+  >([]);
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(
+    null
+  );
+  const [variantLoading, setVariantLoading] = useState(false);
+  const [submittingExchange, setSubmittingExchange] = useState(false);
 
   // Memoize config to prevent unnecessary re-renders
   const memoizedConfig = useMemo(
@@ -191,6 +221,9 @@ export default function CustomerOrders({
                             image {
                               url
                               altText
+                            }
+                            variant {
+                              id
                             }
                           }
                         }
@@ -288,6 +321,88 @@ export default function CustomerOrders({
       month: "long",
       day: "numeric",
     });
+  };
+
+  // --- Exchange Logic ---
+  const fetchVariantOptions = useCallback(async (variantId: string) => {
+    try {
+      setVariantLoading(true);
+      const response = await fetch("/api/customer/exchange-options", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ variantId }),
+      });
+
+      const data = await response.json();
+      if (response.ok && data.success) {
+        setVariantOptions(data.variants);
+      } else {
+        toast.error(data.error || "failed to load sizes");
+      }
+    } catch (error) {
+      console.error("Error fetching variant options", error);
+      toast.error("failed to load sizes");
+    } finally {
+      setVariantLoading(false);
+    }
+  }, []);
+
+  const handleExchangeClick = (
+    order: OrderNode,
+    item: {
+      id: string;
+      name: string;
+      quantity: number;
+      variantTitle: string;
+      variant?: { id: string } | null;
+    }
+  ) => {
+    if (!item.variant?.id) {
+      toast.error("exchange unavailable for this item");
+      return;
+    }
+
+    setExchangeItem({ order, item });
+    setSelectedVariantId(null);
+    setVariantOptions([]);
+    setShowExchangeDialog(true);
+    fetchVariantOptions(item.variant.id);
+  };
+
+  const submitExchange = async () => {
+    if (!exchangeItem || !selectedVariantId) {
+      return;
+    }
+    try {
+      setSubmittingExchange(true);
+      const response = await fetch("/api/customer/exchange", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          orderId: exchangeItem.order.id,
+          lineItemId: exchangeItem.item.id,
+          newVariantId: selectedVariantId,
+        }),
+      });
+
+      const data = await response.json();
+      if (response.ok && data.success) {
+        toast.success("exchange request submitted");
+        setShowExchangeDialog(false);
+        setExchangeItem(null);
+      } else {
+        toast.error(data.error || "failed to submit exchange");
+      }
+    } catch (error) {
+      console.error("Error submitting exchange", error);
+      toast.error("failed to submit exchange");
+    } finally {
+      setSubmittingExchange(false);
+    }
   };
 
   // Cancel order function
@@ -582,6 +697,17 @@ export default function CustomerOrders({
                             qty: {item.quantity}
                           </p>
                         </div>
+                        {order.fulfillmentStatus === "FULFILLED" && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleExchangeClick(order, item)}
+                            className="lowercase tracking-wider"
+                            disabled={!item.variant?.id}
+                          >
+                            exchange
+                          </Button>
+                        )}
                       </div>
                     ))}
 
@@ -695,6 +821,71 @@ export default function CustomerOrders({
           </div>
         </div>
       )}
+
+      {/* Exchange Dialog */}
+      <Dialog open={showExchangeDialog} onOpenChange={setShowExchangeDialog}>
+        <DialogContent className="sm:max-w-md" showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle className="lowercase tracking-wider text-black">
+              exchange item
+            </DialogTitle>
+            <DialogDescription className="lowercase tracking-wider text-gray-600">
+              select a new size
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex flex-wrap gap-2 py-2">
+            {variantLoading && (
+              <div className="flex items-center">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span className="ml-2 text-sm lowercase tracking-wider">
+                  loading sizes...
+                </span>
+              </div>
+            )}
+            {!variantLoading &&
+              variantOptions.map((variant) => (
+                <Button
+                  key={variant.id}
+                  variant={
+                    selectedVariantId === variant.id ? "default" : "outline"
+                  }
+                  disabled={
+                    !variant.availableForSale || variant.inventoryQuantity <= 0
+                  }
+                  onClick={() => setSelectedVariantId(variant.id)}
+                  className="lowercase tracking-wider text-xs"
+                >
+                  {variant.title}
+                </Button>
+              ))}
+          </div>
+
+          <DialogFooter className="flex-col-reverse sm:flex-row sm:justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowExchangeDialog(false);
+                setExchangeItem(null);
+              }}
+              className="lowercase tracking-wider border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400"
+            >
+              close
+            </Button>
+            <Button
+              onClick={submitExchange}
+              disabled={submittingExchange || !selectedVariantId}
+              className="lowercase tracking-wider"
+            >
+              {submittingExchange ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                "confirm"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Cancel Order Confirmation Dialog */}
       <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
