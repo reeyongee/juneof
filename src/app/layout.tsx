@@ -52,9 +52,46 @@ export const metadata: Metadata = {
     },
   },
   icons: {
-    icon: "/favicon.png",
+    icon: [
+      { url: "/favicon.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon.png", sizes: "16x16", type: "image/png" },
+    ],
     shortcut: "/favicon.png",
-    apple: "/favicon.png",
+    apple: [
+      { url: "/favicon.png", sizes: "180x180", type: "image/png" },
+      { url: "/favicon.png", sizes: "152x152", type: "image/png" },
+      { url: "/favicon.png", sizes: "144x144", type: "image/png" },
+      { url: "/favicon.png", sizes: "120x120", type: "image/png" },
+      { url: "/favicon.png", sizes: "114x114", type: "image/png" },
+      { url: "/favicon.png", sizes: "76x76", type: "image/png" },
+      { url: "/favicon.png", sizes: "72x72", type: "image/png" },
+      { url: "/favicon.png", sizes: "60x60", type: "image/png" },
+      { url: "/favicon.png", sizes: "57x57", type: "image/png" },
+    ],
+    other: [
+      {
+        rel: "icon",
+        url: "/favicon.png",
+        sizes: "32x32",
+        type: "image/png",
+      },
+      {
+        rel: "icon",
+        url: "/favicon.png",
+        sizes: "16x16",
+        type: "image/png",
+      },
+      {
+        rel: "apple-touch-icon",
+        url: "/favicon.png",
+        sizes: "180x180",
+      },
+      {
+        rel: "mask-icon",
+        url: "/favicon.png",
+        color: "#000000",
+      },
+    ],
   },
   metadataBase: new URL("https://www.juneof.com"),
   alternates: {
@@ -102,6 +139,24 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        {/* Favicon and Icon Links for Cross-Browser Compatibility */}
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/favicon.png" />
+        <link rel="apple-touch-icon" sizes="152x152" href="/favicon.png" />
+        <link rel="apple-touch-icon" sizes="144x144" href="/favicon.png" />
+        <link rel="apple-touch-icon" sizes="120x120" href="/favicon.png" />
+        <link rel="apple-touch-icon" sizes="114x114" href="/favicon.png" />
+        <link rel="apple-touch-icon" sizes="76x76" href="/favicon.png" />
+        <link rel="apple-touch-icon" sizes="72x72" href="/favicon.png" />
+        <link rel="apple-touch-icon" sizes="60x60" href="/favicon.png" />
+        <link rel="apple-touch-icon" sizes="57x57" href="/favicon.png" />
+        <link rel="shortcut icon" href="/favicon.png" />
+        <meta name="msapplication-TileImage" content="/favicon.png" />
+        <meta name="msapplication-TileColor" content="#ffffff" />
+        <meta name="theme-color" content="#ffffff" />
+        <link rel="manifest" href="/site.webmanifest" />
+
         {/* Google Analytics 4 (GA4) */}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-ES618WEEFG"

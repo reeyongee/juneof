@@ -1,0 +1,22 @@
+{
+  "name": "June Of",
+  "short_name": "juneof",
+  "description": "Heritage meets now. Indian craft reworked for a generation in motion.",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "theme_color": "#ffffff",
+  "background_color": "#F8F4EC",
+  "display": "standalone",
+  "start_url": "/",
+  "scope": "/"
+}
