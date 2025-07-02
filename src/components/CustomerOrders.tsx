@@ -24,8 +24,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
-import { toast } from "sonner";
 
 import {
   ShopifyAuthConfig,
@@ -57,12 +63,34 @@ interface OrderNode {
           url: string;
           altText: string;
         };
-        variant?: {
-          id: string;
-        } | null;
       };
     }>;
   };
+}
+
+interface ExchangeVariant {
+  id: string;
+  title: string;
+  availableForSale: boolean;
+  inventoryQuantity: number;
+  inStock: boolean;
+}
+
+interface ExchangeOptions {
+  fulfillmentLineItemId: string;
+  fulfillmentId: string;
+  originalItem: {
+    id: string;
+    name: string;
+    variantTitle: string;
+  };
+  product: {
+    id: string;
+    handle: string;
+    title: string;
+  };
+  availableVariants: ExchangeVariant[];
+  maxQuantity: number;
 }
 
 interface OrderStatus {
@@ -105,33 +133,15 @@ export default function CustomerOrders({
   const [statusLoading, setStatusLoading] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [orderToCancel, setOrderToCancel] = useState<OrderNode | null>(null);
-  const hasFetchedRef = useRef(false);
-
-  // Exchange feature state
   const [showExchangeDialog, setShowExchangeDialog] = useState(false);
-  const [exchangeItem, setExchangeItem] = useState<{
-    order: OrderNode;
-    item: {
-      id: string;
-      name: string;
-      quantity: number;
-      variantTitle: string;
-      variant?: { id: string } | null;
-    };
-  } | null>(null);
-  const [variantOptions, setVariantOptions] = useState<
-    Array<{
-      id: string;
-      title: string;
-      availableForSale: boolean;
-      inventoryQuantity: number;
-    }>
-  >([]);
-  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(
-    null
-  );
-  const [variantLoading, setVariantLoading] = useState(false);
-  const [submittingExchange, setSubmittingExchange] = useState(false);
+  const [exchangeOptions, setExchangeOptions] =
+    useState<ExchangeOptions | null>(null);
+  const [exchangeLoading, setExchangeLoading] = useState(false);
+  const [selectedVariant, setSelectedVariant] = useState<string>("");
+  const [exchangeQuantity, setExchangeQuantity] = useState(1);
+  const [exchangeReason, setExchangeReason] = useState("SIZE_TOO_SMALL");
+  const [exchangingItemId, setExchangingItemId] = useState<string | null>(null);
+  const hasFetchedRef = useRef(false);
 
   // Memoize config to prevent unnecessary re-renders
   const memoizedConfig = useMemo(
@@ -221,9 +231,6 @@ export default function CustomerOrders({
                             image {
                               url
                               altText
-                            }
-                            variant {
-                              id
                             }
                           }
                         }
@@ -323,88 +330,6 @@ export default function CustomerOrders({
     });
   };
 
-  // --- Exchange Logic ---
-  const fetchVariantOptions = useCallback(async (variantId: string) => {
-    try {
-      setVariantLoading(true);
-      const response = await fetch("/api/customer/exchange-options", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ variantId }),
-      });
-
-      const data = await response.json();
-      if (response.ok && data.success) {
-        setVariantOptions(data.variants);
-      } else {
-        toast.error(data.error || "failed to load sizes");
-      }
-    } catch (error) {
-      console.error("Error fetching variant options", error);
-      toast.error("failed to load sizes");
-    } finally {
-      setVariantLoading(false);
-    }
-  }, []);
-
-  const handleExchangeClick = (
-    order: OrderNode,
-    item: {
-      id: string;
-      name: string;
-      quantity: number;
-      variantTitle: string;
-      variant?: { id: string } | null;
-    }
-  ) => {
-    if (!item.variant?.id) {
-      toast.error("exchange unavailable for this item");
-      return;
-    }
-
-    setExchangeItem({ order, item });
-    setSelectedVariantId(null);
-    setVariantOptions([]);
-    setShowExchangeDialog(true);
-    fetchVariantOptions(item.variant.id);
-  };
-
-  const submitExchange = async () => {
-    if (!exchangeItem || !selectedVariantId) {
-      return;
-    }
-    try {
-      setSubmittingExchange(true);
-      const response = await fetch("/api/customer/exchange", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          orderId: exchangeItem.order.id,
-          lineItemId: exchangeItem.item.id,
-          newVariantId: selectedVariantId,
-        }),
-      });
-
-      const data = await response.json();
-      if (response.ok && data.success) {
-        toast.success("exchange request submitted");
-        setShowExchangeDialog(false);
-        setExchangeItem(null);
-      } else {
-        toast.error(data.error || "failed to submit exchange");
-      }
-    } catch (error) {
-      console.error("Error submitting exchange", error);
-      toast.error("failed to submit exchange");
-    } finally {
-      setSubmittingExchange(false);
-    }
-  };
-
   // Cancel order function
   const cancelOrder = async (orderId: string) => {
     try {
@@ -453,6 +378,95 @@ export default function CustomerOrders({
   const isCancelledOrder = (order: OrderNode) => {
     const status = orderStatuses[order.id];
     return status?.isCancelled || false;
+  };
+
+  // Open exchange dialog
+  const openExchangeDialog = async (orderId: string, lineItemId: string) => {
+    try {
+      setExchangeLoading(true);
+      setExchangingItemId(lineItemId);
+
+      const response = await fetch("/api/customer/exchange-options", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ orderId, lineItemId }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setExchangeOptions(data.exchangeOptions);
+        setSelectedVariant("");
+        setExchangeQuantity(1);
+        setExchangeReason("SIZE_TOO_SMALL");
+        setShowExchangeDialog(true);
+      } else {
+        console.error("Failed to fetch exchange options:", data.error);
+        setError(data.error || "Failed to fetch exchange options");
+      }
+    } catch (error) {
+      console.error("Error fetching exchange options:", error);
+      setError("Failed to fetch exchange options. Please try again.");
+    } finally {
+      setExchangeLoading(false);
+      setExchangingItemId(null);
+    }
+  };
+
+  // Submit exchange
+  const submitExchange = async () => {
+    if (!exchangeOptions || !selectedVariant) {
+      setError("Please select a size for exchange");
+      return;
+    }
+
+    try {
+      setExchangeLoading(true);
+
+      const response = await fetch("/api/customer/exchange", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          orderId:
+            orders.find((o) =>
+              o.lineItems.edges.some(
+                (e) => e.node.id === exchangeOptions.originalItem.id
+              )
+            )?.id || "",
+          fulfillmentLineItemId: exchangeOptions.fulfillmentLineItemId,
+          returnQuantity: exchangeQuantity,
+          returnReason: exchangeReason,
+          returnReasonNote: "Customer requested size exchange",
+          exchangeVariantId: selectedVariant,
+          exchangeQuantity: exchangeQuantity,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        console.log("✅ Exchange created successfully:", data.exchange);
+        setShowExchangeDialog(false);
+        setExchangeOptions(null);
+        setSelectedVariant("");
+
+        // Refresh orders to show updated status
+        hasFetchedRef.current = false;
+        await loadTokensAndFetchOrders();
+      } else {
+        console.error("❌ Failed to create exchange:", data.error);
+        setError(data.error || "Failed to create exchange");
+      }
+    } catch (error) {
+      console.error("❌ Error creating exchange:", error);
+      setError("Failed to create exchange. Please try again.");
+    } finally {
+      setExchangeLoading(false);
+    }
   };
 
   // Separate current, past, and cancelled orders
@@ -697,17 +711,23 @@ export default function CustomerOrders({
                             qty: {item.quantity}
                           </p>
                         </div>
-                        {order.fulfillmentStatus === "FULFILLED" && (
+                        <div className="flex flex-col gap-2">
                           <Button
-                            size="sm"
+                            onClick={() =>
+                              openExchangeDialog(order.id, item.id)
+                            }
+                            disabled={exchangingItemId === item.id}
                             variant="outline"
-                            onClick={() => handleExchangeClick(order, item)}
-                            className="lowercase tracking-wider"
-                            disabled={!item.variant?.id}
+                            size="sm"
+                            className="lowercase tracking-wider text-xs"
                           >
-                            exchange
+                            {exchangingItemId === item.id ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              "exchange"
+                            )}
                           </Button>
-                        )}
+                        </div>
                       </div>
                     ))}
 
@@ -822,71 +842,6 @@ export default function CustomerOrders({
         </div>
       )}
 
-      {/* Exchange Dialog */}
-      <Dialog open={showExchangeDialog} onOpenChange={setShowExchangeDialog}>
-        <DialogContent className="sm:max-w-md" showCloseButton={false}>
-          <DialogHeader>
-            <DialogTitle className="lowercase tracking-wider text-black">
-              exchange item
-            </DialogTitle>
-            <DialogDescription className="lowercase tracking-wider text-gray-600">
-              select a new size
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="flex flex-wrap gap-2 py-2">
-            {variantLoading && (
-              <div className="flex items-center">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span className="ml-2 text-sm lowercase tracking-wider">
-                  loading sizes...
-                </span>
-              </div>
-            )}
-            {!variantLoading &&
-              variantOptions.map((variant) => (
-                <Button
-                  key={variant.id}
-                  variant={
-                    selectedVariantId === variant.id ? "default" : "outline"
-                  }
-                  disabled={
-                    !variant.availableForSale || variant.inventoryQuantity <= 0
-                  }
-                  onClick={() => setSelectedVariantId(variant.id)}
-                  className="lowercase tracking-wider text-xs"
-                >
-                  {variant.title}
-                </Button>
-              ))}
-          </div>
-
-          <DialogFooter className="flex-col-reverse sm:flex-row sm:justify-end gap-2">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowExchangeDialog(false);
-                setExchangeItem(null);
-              }}
-              className="lowercase tracking-wider border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400"
-            >
-              close
-            </Button>
-            <Button
-              onClick={submitExchange}
-              disabled={submittingExchange || !selectedVariantId}
-              className="lowercase tracking-wider"
-            >
-              {submittingExchange ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                "confirm"
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
       {/* Cancel Order Confirmation Dialog */}
       <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
         <DialogContent className="sm:max-w-md" showCloseButton={false}>
@@ -927,6 +882,115 @@ export default function CustomerOrders({
                 </>
               ) : (
                 "confirm"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Exchange Dialog */}
+      <Dialog open={showExchangeDialog} onOpenChange={setShowExchangeDialog}>
+        <DialogContent className="sm:max-w-md" showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle className="lowercase tracking-wider text-black">
+              exchange {exchangeOptions?.originalItem.name}
+            </DialogTitle>
+            <DialogDescription className="lowercase tracking-wider text-gray-600">
+              select a new size for exchange. current size:{" "}
+              {exchangeOptions?.originalItem.variantTitle}
+            </DialogDescription>
+          </DialogHeader>
+
+          {exchangeOptions && (
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium lowercase tracking-wider text-gray-700">
+                  new size
+                </label>
+                <Select
+                  value={selectedVariant}
+                  onValueChange={setSelectedVariant}
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="select size" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {exchangeOptions.availableVariants.map((variant) => (
+                      <SelectItem
+                        key={variant.id}
+                        value={variant.id}
+                        disabled={!variant.inStock}
+                      >
+                        <div className="flex justify-between items-center w-full">
+                          <span className="lowercase tracking-wider">
+                            {variant.title}
+                          </span>
+                          <span
+                            className={`text-xs ml-2 ${
+                              variant.inStock
+                                ? "text-green-600"
+                                : "text-red-600"
+                            }`}
+                          >
+                            {variant.inStock ? "in stock" : "out of stock"}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium lowercase tracking-wider text-gray-700">
+                  reason for exchange
+                </label>
+                <Select
+                  value={exchangeReason}
+                  onValueChange={setExchangeReason}
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="SIZE_TOO_SMALL">
+                      size too small
+                    </SelectItem>
+                    <SelectItem value="SIZE_TOO_LARGE">
+                      size too large
+                    </SelectItem>
+                    <SelectItem value="STYLE">style preference</SelectItem>
+                    <SelectItem value="OTHER">other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="flex-col-reverse sm:flex-row sm:justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowExchangeDialog(false);
+                setExchangeOptions(null);
+                setSelectedVariant("");
+              }}
+              className="lowercase tracking-wider border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400"
+            >
+              cancel
+            </Button>
+            <Button
+              onClick={submitExchange}
+              disabled={!selectedVariant || exchangeLoading}
+              className="lowercase tracking-wider bg-black text-white hover:bg-gray-800"
+            >
+              {exchangeLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  creating exchange...
+                </>
+              ) : (
+                "create exchange"
               )}
             </Button>
           </DialogFooter>

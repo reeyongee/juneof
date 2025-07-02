@@ -2,126 +2,135 @@ import { NextRequest, NextResponse } from "next/server";
 import { GraphQLClient } from "graphql-request";
 import { authenticateRequest } from "@/lib/api-auth-helpers";
 
+interface CreateReturnResponse {
+  returnCreate: {
+    return: {
+      id: string;
+      name: string;
+      status: string;
+      exchangeLineItems: {
+        edges: Array<{
+          node: {
+            id: string;
+            variantId: string;
+            quantity: number;
+          };
+        }>;
+      };
+    } | null;
+    userErrors: Array<{
+      field: string[];
+      message: string;
+    }>;
+  };
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const auth = await authenticateRequest(request);
-    if (!auth.success) {
+    const authResult = await authenticateRequest(request);
+
+    if (!authResult.success || !authResult.user) {
       return NextResponse.json(
-        { error: auth.error || "authentication failed" },
-        { status: auth.statusCode || 401 }
+        { error: authResult.error || "Authentication failed" },
+        { status: authResult.statusCode || 401 }
       );
     }
 
-    const { orderId, lineItemId, newVariantId } = await request.json();
+    const { customerId } = authResult.user;
+    const {
+      orderId,
+      fulfillmentLineItemId,
+      returnQuantity,
+      returnReason,
+      returnReasonNote,
+      exchangeVariantId,
+      exchangeQuantity,
+    } = await request.json();
 
-    if (!orderId || !lineItemId || !newVariantId) {
+    if (
+      !orderId ||
+      !fulfillmentLineItemId ||
+      !returnQuantity ||
+      !returnReason ||
+      !exchangeVariantId ||
+      !exchangeQuantity
+    ) {
       return NextResponse.json(
-        { error: "orderId, lineItemId and newVariantId are required" },
+        { error: "Missing required fields for exchange" },
         { status: 400 }
       );
     }
 
+    // Get environment variables for Admin API
     const adminApiToken = process.env.SHOPIFY_ADMIN_API_TOKEN;
     const shopDomain = process.env.NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN;
 
     if (!adminApiToken || !shopDomain) {
       return NextResponse.json(
-        { error: "server configuration error" },
+        { error: "Server configuration error" },
         { status: 500 }
       );
     }
 
-    const adminClient = new GraphQLClient(
-      `https://${shopDomain}/admin/api/2024-10/graphql.json`,
-      {
-        headers: {
-          "X-Shopify-Access-Token": adminApiToken,
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    // Create a GraphQL client for the Admin API
+    const adminApiUrl = `https://${shopDomain}/admin/api/2025-07/graphql.json`;
+    const adminClient = new GraphQLClient(adminApiUrl, {
+      headers: {
+        "X-Shopify-Access-Token": adminApiToken,
+        "Content-Type": "application/json",
+      },
+    });
 
-    // Step 1: Fetch returnable fulfillment line item ID
-    const fulfillQuery = `
-      query ReturnableFulfillments($orderId: ID!) {
-        returnableFulfillments(orderId: $orderId, first: 10) {
-          edges {
-            node {
-              id
-              returnableFulfillmentLineItems(first: 30) {
-                edges {
-                  node {
-                    fulfillmentLineItem {
-                      id
-                      lineItem {
-                        id
-                      }
-                    }
-                    quantity
-                  }
-                }
-              }
-            }
+    // First verify order ownership
+    const orderOwnershipQuery = `
+      query VerifyOrderOwnership($id: ID!) {
+        order(id: $id) {
+          id
+          customer {
+            id
           }
         }
       }
     `;
 
-    interface FulfillmentLineItemEdge {
-      node: {
-        fulfillmentLineItem: {
+    const orderResponse = await adminClient.request<{
+      order: {
+        id: string;
+        customer: {
           id: string;
-          lineItem: {
-            id: string;
-          };
-        };
-        quantity: number;
-      };
-    }
-
-    interface FulfillData {
-      returnableFulfillments: {
-        edges: Array<{
-          node: {
-            id: string;
-            returnableFulfillmentLineItems: {
-              edges: FulfillmentLineItemEdge[];
-            };
-          };
-        }>;
-      };
-    }
-
-    const fulfillData = await adminClient.request<FulfillData>(fulfillQuery, {
-      orderId,
+        } | null;
+      } | null;
+    }>(orderOwnershipQuery, {
+      id: orderId,
     });
 
-    let fulfillmentLineItemId: string | null = null;
-
-    for (const fulfillmentEdge of fulfillData.returnableFulfillments.edges) {
-      for (const lineEdge of fulfillmentEdge.node.returnableFulfillmentLineItems
-        .edges) {
-        if (lineEdge.node.fulfillmentLineItem.lineItem.id === lineItemId) {
-          fulfillmentLineItemId = lineEdge.node.fulfillmentLineItem.id;
-          break;
-        }
-      }
-      if (fulfillmentLineItemId) break;
-    }
-
-    if (!fulfillmentLineItemId) {
+    if (
+      !orderResponse.order ||
+      orderResponse.order.customer?.id !== customerId
+    ) {
       return NextResponse.json(
-        { error: "unable to locate fulfillment line item" },
-        { status: 400 }
+        { error: "Order not found or access denied" },
+        { status: 403 }
       );
     }
 
-    // Step 2: Create return with exchange line item
+    // Create the return with exchange
     const returnCreateMutation = `
-      mutation ReturnCreate($input: ReturnInput!) {
-        returnCreate(returnInput: $input) {
+      mutation CreateReturnWithExchange($returnInput: ReturnInput!) {
+        returnCreate(returnInput: $returnInput) {
           return {
             id
+            name
+            status
+            exchangeLineItems(first: 10) {
+              edges {
+                node {
+                  id
+                  variantId
+                  quantity
+                }
+              }
+            }
           }
           userErrors {
             field
@@ -132,56 +141,70 @@ export async function POST(request: NextRequest) {
     `;
 
     const returnInput = {
-      orderId,
+      orderId: orderId,
       returnLineItems: [
         {
           fulfillmentLineItemId: fulfillmentLineItemId,
-          quantity: 1,
-          returnReason: "SIZE_TOO_SMALL",
-          returnReasonNote: "Customer requested size exchange",
+          quantity: parseInt(returnQuantity.toString()),
+          returnReason: returnReason,
+          returnReasonNote:
+            returnReasonNote || "Customer requested size exchange",
         },
       ],
       exchangeLineItems: [
         {
-          variantId: newVariantId,
-          quantity: 1,
+          variantId: exchangeVariantId,
+          quantity: parseInt(exchangeQuantity.toString()),
         },
       ],
       notifyCustomer: true,
       requestedAt: new Date().toISOString(),
     };
 
-    interface ReturnCreateResponse {
-      returnCreate: {
-        return: {
-          id: string;
-        } | null;
-        userErrors: Array<{ field: string[]; message: string }>;
-      };
+    const createReturnResponse =
+      await adminClient.request<CreateReturnResponse>(returnCreateMutation, {
+        returnInput,
+      });
+
+    if (createReturnResponse.returnCreate.userErrors.length > 0) {
+      return NextResponse.json(
+        {
+          error: "Failed to create exchange",
+          details: createReturnResponse.returnCreate.userErrors,
+        },
+        { status: 400 }
+      );
     }
 
-    const createResp = await adminClient.request<ReturnCreateResponse>(
-      returnCreateMutation,
-      { input: returnInput }
-    );
-
-    if (createResp.returnCreate.userErrors.length > 0) {
+    if (!createReturnResponse.returnCreate.return) {
       return NextResponse.json(
-        { error: createResp.returnCreate.userErrors[0].message },
-        { status: 400 }
+        { error: "Failed to create exchange - no return created" },
+        { status: 500 }
       );
     }
 
     return NextResponse.json({
       success: true,
-      returnId: createResp.returnCreate.return?.id,
+      exchange: {
+        returnId: createReturnResponse.returnCreate.return.id,
+        returnName: createReturnResponse.returnCreate.return.name,
+        status: createReturnResponse.returnCreate.return.status,
+        exchangeItems:
+          createReturnResponse.returnCreate.return.exchangeLineItems.edges.map(
+            (edge) => ({
+              id: edge.node.id,
+              variantId: edge.node.variantId,
+              quantity: edge.node.quantity,
+            })
+          ),
+      },
     });
   } catch (error) {
-    console.error("Exchange API error", error);
+    console.error("Exchange API error:", error);
     return NextResponse.json(
       {
-        error: "internal server error",
-        message: error instanceof Error ? error.message : "unknown error",
+        error: "Internal server error",
+        message: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }
     );
