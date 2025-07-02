@@ -1,0 +1,973 @@
+{% assign delivery_method_types = delivery_agreements | map:
+'delivery_method_type' | uniq %} {% if delivery_method_types.size > 1 %} {%
+assign has_split_cart = true %} {% else %} {% assign has_split_cart = false %}
+{% endif %} {% capture email_title %} {% if has_pending_payment %} thank you for
+your order! {% else %} thank you for your purchase! {% endif %} {% endcapture %}
+{% capture email_body %} {% if has_pending_payment %} {% if
+buyer_action_required %} you'll get a confirmation email after completing your
+payment. {% else %} your payment is being processed. you'll get an email when
+your order is confirmed. {% endif %} {% else %} {% if requires_shipping %} {%
+case delivery_method %} {% when 'pick-up' %} you'll receive an email when your
+order is ready for pickup. {% when 'local' %} hi {{ customer.first_name }},
+we're getting your order ready for delivery. {% else %} we're getting your order
+ready to be shipped. we will notify you when it has been sent. {% endcase %} {%
+if delivery_instructions != blank %}
+<p><b>delivery information:</b> {{ delivery_instructions }}</p>
+{% endif %} {% if consolidated_estimated_delivery_time %} {% if
+has_multiple_delivery_methods %}
+<h3 class="estimated_delivery__title">estimated delivery</h3>
+<p>{{ consolidated_estimated_delivery_time }}</p>
+{% else %}
+<p>estimated delivery <b>{{ consolidated_estimated_delivery_time }}</b></p>
+{% endif %} {% endif %} {% endif %} {% endif %} {% assign gift_card_line_items =
+line_items | where: "gift_card" %} {% assign
+found_gift_card_with_recipient_email = false %} {% for line_item in
+gift_card_line_items %} {% if
+line_item.properties["__shopify_send_gift_card_to_recipient"] and
+line_item.properties["Recipient email"] %} {% assign
+found_gift_card_with_recipient_email = true %} {% break %} {% endif %} {% endfor
+%} {% if found_gift_card_with_recipient_email %}
+<p>your gift card recipient will receive an email with their gift card code.</p>
+{% elsif gift_card_line_items.first %}
+<p>you'll receive separate emails for any gift cards.</p>
+{% endif %} {% endcapture %}
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>{{ email_title }}</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* Reset and base styles */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Old Standard TT", serif;
+        background-color: #f8f4ec;
+        color: #171717;
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
+      /* Container and layout */
+      .email-container {
+        max-width: 600px;
+        margin: 0 auto;
+        background-color: #ffffff;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      }
+
+      .header {
+        background-color: #f8f4ec;
+        padding: 40px 32px;
+        text-align: center;
+        border-bottom: 1px solid #e5e5e5;
+      }
+
+      .logo {
+        max-width: 200px;
+        height: auto;
+        margin-bottom: 20px;
+      }
+
+      .order-number {
+        font-size: 14px;
+        font-weight: 400;
+        letter-spacing: 2px;
+        text-transform: lowercase;
+        color: #666;
+        margin-top: 16px;
+      }
+
+      /* Content sections */
+      .content {
+        padding: 40px 32px;
+      }
+
+      .content h1 {
+        font-size: 28px;
+        font-weight: 400;
+        letter-spacing: 3px;
+        text-transform: lowercase;
+        margin-bottom: 16px;
+        color: #171717;
+      }
+
+      .content p {
+        font-size: 16px;
+        letter-spacing: 1px;
+        text-transform: lowercase;
+        margin-bottom: 16px;
+        color: #171717;
+      }
+
+      /* Button styling */
+      .button {
+        display: inline-block;
+        background-color: #171717;
+        color: #ffffff !important;
+        padding: 12px 32px;
+        text-decoration: none !important;
+        font-size: 14px;
+        font-weight: 400;
+        letter-spacing: 2px;
+        text-transform: lowercase;
+        border: none !important;
+        transition: all 0.3s ease;
+        margin: 20px 0;
+        border-radius: 0;
+      }
+
+      .button:hover {
+        background-color: #333333;
+        color: #ffffff !important;
+        text-decoration: none !important;
+      }
+
+      .button-secondary {
+        display: inline-block;
+        background-color: transparent !important;
+        color: #171717 !important;
+        border: 1px solid #171717 !important;
+        padding: 12px 32px;
+        text-decoration: none !important;
+        font-size: 14px;
+        font-weight: 400;
+        letter-spacing: 2px;
+        text-transform: lowercase;
+        margin: 20px 0;
+        border-radius: 0;
+      }
+
+      .button-secondary:hover {
+        background-color: #171717 !important;
+        color: #ffffff !important;
+        text-decoration: none !important;
+      }
+
+      /* Order summary */
+      .order-summary {
+        background-color: #fafafa;
+        padding: 32px;
+        margin: 32px 0;
+        border: 1px solid #e5e5e5;
+      }
+
+      .order-summary h2 {
+        font-size: 20px;
+        font-weight: 400;
+        letter-spacing: 2px;
+        text-transform: lowercase;
+        margin-bottom: 24px;
+        color: #171717;
+      }
+
+      /* Product items */
+      .product-item {
+        width: 100%;
+        border-collapse: collapse;
+        padding: 16px 0;
+        border-bottom: 1px solid #e5e5e5;
+        margin-bottom: 16px;
+      }
+
+      .product-item:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+      }
+
+      .product-item td {
+        vertical-align: top;
+        padding: 8px;
+      }
+
+      .product-image {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border: 1px solid #e5e5e5;
+        display: block;
+      }
+
+      .product-details {
+        width: 100%;
+        padding-left: 16px;
+      }
+
+      .product-title {
+        font-size: 16px;
+        font-weight: 400;
+        letter-spacing: 1px;
+        text-transform: lowercase;
+        margin-bottom: 4px;
+        color: #171717;
+        margin: 0 0 4px 0;
+      }
+
+      .product-variant {
+        font-size: 14px;
+        letter-spacing: 1px;
+        color: #666;
+        text-transform: lowercase;
+        margin: 0;
+      }
+
+      .product-price {
+        font-size: 16px;
+        font-weight: 400;
+        color: #171717;
+        text-align: right;
+        min-width: 100px;
+        white-space: nowrap;
+      }
+
+      /* Totals */
+      .totals {
+        border-top: 1px solid #e5e5e5;
+        padding-top: 20px;
+        margin-top: 20px;
+        width: 100%;
+      }
+
+      .total-row {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 12px;
+      }
+
+      .total-row td {
+        padding: 8px 0;
+        font-size: 16px;
+        letter-spacing: 1px;
+        text-transform: lowercase;
+        vertical-align: middle;
+      }
+
+      .total-row .total-label {
+        text-align: left;
+        width: 70%;
+      }
+
+      .total-row .total-value {
+        text-align: right;
+        width: 30%;
+        font-weight: 400;
+      }
+
+      .total-row.final {
+        border-top: 1px solid #e5e5e5;
+        padding-top: 16px;
+        margin-top: 16px;
+      }
+
+      .total-row.final td {
+        font-weight: 700;
+        font-size: 18px;
+        padding-top: 16px;
+      }
+
+      /* Customer info */
+      .customer-info {
+        background-color: #fafafa;
+        padding: 32px;
+        margin: 32px 0;
+        border: 1px solid #e5e5e5;
+      }
+
+      .customer-info h2 {
+        font-size: 20px;
+        font-weight: 400;
+        letter-spacing: 2px;
+        text-transform: lowercase;
+        margin-bottom: 24px;
+        color: #171717;
+      }
+
+      .info-section {
+        margin-bottom: 24px;
+      }
+
+      .info-section h3 {
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: 2px;
+        text-transform: lowercase;
+        margin-bottom: 8px;
+        color: #171717;
+      }
+
+      .info-section p {
+        font-size: 14px;
+        letter-spacing: 1px;
+        line-height: 1.5;
+        color: #666;
+        margin-bottom: 4px;
+      }
+
+      /* Footer */
+      .footer {
+        background-color: #f8f4ec;
+        padding: 40px 32px;
+        text-align: center;
+        border-top: 1px solid #e5e5e5;
+      }
+
+      .footer p {
+        font-size: 14px;
+        letter-spacing: 1px;
+        text-transform: lowercase;
+        color: #666;
+        margin-bottom: 8px;
+      }
+
+      .footer a {
+        color: #171717;
+        text-decoration: none;
+        border-bottom: 1px solid #171717;
+        transition: opacity 0.3s ease;
+      }
+
+      .footer a:hover {
+        opacity: 0.7;
+      }
+
+      /* Responsive */
+      @media only screen and (max-width: 600px) {
+        .email-container {
+          margin: 0;
+          box-shadow: none;
+        }
+
+        .header,
+        .content,
+        .footer {
+          padding: 24px 20px;
+        }
+
+        .order-summary,
+        .customer-info {
+          padding: 24px 20px;
+          margin: 24px 0;
+        }
+
+        .product-item td {
+          display: block;
+          width: 100% !important;
+          text-align: left !important;
+          padding: 4px 0 !important;
+        }
+
+        .product-image {
+          margin-bottom: 12px;
+          margin-right: 0;
+        }
+
+        .product-price {
+          text-align: left !important;
+          margin-top: 8px;
+        }
+
+        .total-row td {
+          font-size: 14px !important;
+        }
+
+        .total-row.final td {
+          font-size: 16px !important;
+        }
+      }
+
+      /* Dark mode support */
+      @media (prefers-color-scheme: dark) {
+        body {
+          background-color: #1a1a1a;
+          color: #e5e5e5;
+        }
+
+        .email-container {
+          background-color: #2a2a2a;
+        }
+
+        .header {
+          background-color: #1a1a1a;
+          border-bottom-color: #404040;
+        }
+
+        .order-summary,
+        .customer-info {
+          background-color: #1f1f1f;
+          border-color: #404040;
+        }
+
+        .footer {
+          background-color: #1a1a1a;
+          border-top-color: #404040;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="email-container">
+      <!-- Header -->
+      <div class="header">
+        {%- if shop.email_logo_url %}
+        <img src="{{shop.email_logo_url}}" alt="{{ shop.name }}" class="logo" />
+        {%- else %}
+        <img
+          src="https://www.juneof.com/juneof-logo.svg"
+          alt="juneof"
+          class="logo"
+        />
+        {%- endif %}
+
+        <div class="order-number">
+          order {{ order_name }} {%- if po_number %}
+          <br />po number #{{ po_number }} {%- endif %}
+        </div>
+      </div>
+
+      <!-- Main Content -->
+      <div class="content">
+        <h1>{{ email_title }}</h1>
+        <p>{{ email_body }}</p>
+
+        {% assign transaction_count = transactions | size %} {% if
+        transaction_count > 0 %} {% for transaction in transactions %} {% if
+        transaction.show_buyer_pending_payment_instructions? %}
+        <p>{{ transaction.buyer_pending_payment_notice }}</p>
+        <div
+          style="
+            background-color: #fafafa;
+            padding: 20px;
+            margin: 20px 0;
+            border: 1px solid #e5e5e5;
+          "
+        >
+          <table style="width: 100%; border-collapse: collapse">
+            <tr>
+              {% for instruction in
+              transaction.buyer_pending_payment_instructions %}
+              <td
+                style="
+                  padding: 8px;
+                  border-bottom: 1px solid #e5e5e5;
+                  font-size: 14px;
+                  letter-spacing: 1px;
+                  text-transform: lowercase;
+                "
+              >
+                {{ instruction.header }}
+              </td>
+              {% endfor %}
+              <td
+                style="
+                  padding: 8px;
+                  border-bottom: 1px solid #e5e5e5;
+                  font-size: 14px;
+                  letter-spacing: 1px;
+                  text-transform: lowercase;
+                "
+              >
+                amount
+              </td>
+            </tr>
+            <tr>
+              {% for instruction in
+              transaction.buyer_pending_payment_instructions %}
+              <td style="padding: 8px; font-size: 14px; color: #666">
+                {{ instruction.value }}
+              </td>
+              {% endfor %}
+              <td style="padding: 8px; font-size: 14px; color: #666">
+                {{ transaction.amount | money }}
+              </td>
+            </tr>
+          </table>
+        </div>
+        {% endif %} {% endfor %} {% endif %}
+
+        <!-- Action Buttons -->
+        {% if order_status_url %}
+        <div style="text-align: center; margin: 32px 0">
+          <a href="{{ order_status_url }}" class="button">view your order</a>
+          {% if shop.url %}
+          <br />
+          <a
+            href="{{ shop.url }}"
+            class="button-secondary"
+            style="margin-top: 16px; display: inline-block"
+            >visit our store</a
+          >
+          {% endif %}
+        </div>
+        {% else %} {% if shop.url %}
+        <div style="text-align: center; margin: 32px 0">
+          <a href="{{ shop.url }}" class="button">visit our store</a>
+        </div>
+        {% endif %} {% endif %}
+      </div>
+
+      <!-- Order Summary -->
+      <div class="order-summary">
+        <h2>order summary</h2>
+
+        <!-- Products -->
+        {% if has_split_cart %}
+        <!-- Split cart logic - simplified for email -->
+        {% for delivery_agreement in delivery_agreements %} {% if
+        delivery_agreement.line_items != blank %} {% if delivery_agreements.size
+        > 1 %}
+        <h3
+          style="
+            font-size: 16px;
+            font-weight: 400;
+            letter-spacing: 1px;
+            text-transform: lowercase;
+            margin: 20px 0 16px 0;
+            color: #171717;
+          "
+        >
+          {{ delivery_agreement.delivery_method_name }} items
+        </h3>
+        {% endif %} {% for line in delivery_agreement.line_items %}
+        <table
+          class="product-item"
+          style="width: 100%; border-collapse: collapse; margin-bottom: 16px"
+        >
+          <tr>
+            {% if line.image %}
+            <td
+              style="width: 80px; vertical-align: top; padding: 8px 16px 8px 0"
+            >
+              <img
+                src="{{ line | img_url: 'compact_cropped' }}"
+                alt="{{ line.title }}"
+                class="product-image"
+              />
+            </td>
+            {% endif %}
+            <td
+              class="product-details"
+              style="vertical-align: top; padding: 8px"
+            >
+              <div class="product-title">
+                {{ line.title }} × {{ line.quantity }}
+              </div>
+              {% if line.variant.title != 'Default Title' %}
+              <div class="product-variant">{{ line.variant.title }}</div>
+              {% endif %}
+            </td>
+            <td
+              class="product-price"
+              style="
+                vertical-align: top;
+                padding: 8px 0 8px 8px;
+                text-align: right;
+                min-width: 100px;
+              "
+            >
+              {% if line.final_line_price > 0 %} {{ line.final_line_price |
+              money | replace: 'Rs.', '₹' }} {% else %} free {% endif %}
+            </td>
+          </tr>
+        </table>
+        {% endfor %} {% endif %} {% endfor %} {% else %}
+        <!-- Standard cart -->
+        {% for line in subtotal_line_items %}
+        <table
+          class="product-item"
+          style="width: 100%; border-collapse: collapse; margin-bottom: 16px"
+        >
+          <tr>
+            {% if line.image %}
+            <td
+              style="width: 80px; vertical-align: top; padding: 8px 16px 8px 0"
+            >
+              <img
+                src="{{ line | img_url: 'compact_cropped' }}"
+                alt="{{ line.title }}"
+                class="product-image"
+              />
+            </td>
+            {% endif %}
+            <td
+              class="product-details"
+              style="vertical-align: top; padding: 8px"
+            >
+              <div class="product-title">
+                {{ line.title }} × {{ line.quantity }}
+              </div>
+              {% if line.variant.title != 'Default Title' %}
+              <div class="product-variant">{{ line.variant.title }}</div>
+              {% endif %}
+            </td>
+            <td
+              class="product-price"
+              style="
+                vertical-align: top;
+                padding: 8px 0 8px 8px;
+                text-align: right;
+                min-width: 100px;
+              "
+            >
+              {% if line.final_line_price > 0 %} {{ line.final_line_price |
+              money | replace: 'Rs.', '₹' }} {% else %} free {% endif %}
+            </td>
+          </tr>
+        </table>
+        {% endfor %} {% endif %}
+
+        <!-- Totals -->
+        <div
+          class="totals"
+          style="
+            border-top: 1px solid #e5e5e5;
+            padding-top: 20px;
+            margin-top: 20px;
+          "
+        >
+          <table
+            class="total-row"
+            style="width: 100%; border-collapse: collapse; margin-bottom: 12px"
+          >
+            <tr>
+              <td
+                class="total-label"
+                style="
+                  text-align: left;
+                  width: 70%;
+                  padding: 8px 0;
+                  font-size: 16px;
+                  letter-spacing: 1px;
+                  text-transform: lowercase;
+                "
+              >
+                subtotal
+              </td>
+              <td
+                class="total-value"
+                style="
+                  text-align: right;
+                  width: 30%;
+                  padding: 8px 0;
+                  font-size: 16px;
+                  letter-spacing: 1px;
+                "
+              >
+                {{ subtotal_price | money | replace: 'Rs.', '₹' }}
+              </td>
+            </tr>
+          </table>
+
+          {% unless retail_delivery_only %} {% if delivery_method == 'pick-up'
+          %}
+          <table
+            class="total-row"
+            style="width: 100%; border-collapse: collapse; margin-bottom: 12px"
+          >
+            <tr>
+              <td
+                class="total-label"
+                style="
+                  text-align: left;
+                  width: 70%;
+                  padding: 8px 0;
+                  font-size: 16px;
+                  letter-spacing: 1px;
+                  text-transform: lowercase;
+                "
+              >
+                pickup
+              </td>
+              <td
+                class="total-value"
+                style="
+                  text-align: right;
+                  width: 30%;
+                  padding: 8px 0;
+                  font-size: 16px;
+                  letter-spacing: 1px;
+                "
+              >
+                {{ shipping_price | money | replace: 'Rs.', '₹' }}
+              </td>
+            </tr>
+          </table>
+          {% else %}
+          <table
+            class="total-row"
+            style="width: 100%; border-collapse: collapse; margin-bottom: 12px"
+          >
+            <tr>
+              <td
+                class="total-label"
+                style="
+                  text-align: left;
+                  width: 70%;
+                  padding: 8px 0;
+                  font-size: 16px;
+                  letter-spacing: 1px;
+                  text-transform: lowercase;
+                "
+              >
+                shipping
+              </td>
+              <td
+                class="total-value"
+                style="
+                  text-align: right;
+                  width: 30%;
+                  padding: 8px 0;
+                  font-size: 16px;
+                  letter-spacing: 1px;
+                "
+              >
+                {{ shipping_price | money | replace: 'Rs.', '₹' }}
+              </td>
+            </tr>
+          </table>
+          {% endif %} {% endunless %} {% if total_duties %}
+          <table
+            class="total-row"
+            style="width: 100%; border-collapse: collapse; margin-bottom: 12px"
+          >
+            <tr>
+              <td
+                class="total-label"
+                style="
+                  text-align: left;
+                  width: 70%;
+                  padding: 8px 0;
+                  font-size: 16px;
+                  letter-spacing: 1px;
+                  text-transform: lowercase;
+                "
+              >
+                duties
+              </td>
+              <td
+                class="total-value"
+                style="
+                  text-align: right;
+                  width: 30%;
+                  padding: 8px 0;
+                  font-size: 16px;
+                  letter-spacing: 1px;
+                "
+              >
+                {{ total_duties | money | replace: 'Rs.', '₹' }}
+              </td>
+            </tr>
+          </table>
+          {% endif %}
+
+          <table
+            class="total-row"
+            style="width: 100%; border-collapse: collapse; margin-bottom: 12px"
+          >
+            <tr>
+              <td
+                class="total-label"
+                style="
+                  text-align: left;
+                  width: 70%;
+                  padding: 8px 0;
+                  font-size: 16px;
+                  letter-spacing: 1px;
+                  text-transform: lowercase;
+                "
+              >
+                taxes
+              </td>
+              <td
+                class="total-value"
+                style="
+                  text-align: right;
+                  width: 30%;
+                  padding: 8px 0;
+                  font-size: 16px;
+                  letter-spacing: 1px;
+                "
+              >
+                {{ tax_price | money | replace: 'Rs.', '₹' }}
+              </td>
+            </tr>
+          </table>
+
+          {% if total_tip and total_tip > 0 %}
+          <table
+            class="total-row"
+            style="width: 100%; border-collapse: collapse; margin-bottom: 12px"
+          >
+            <tr>
+              <td
+                class="total-label"
+                style="
+                  text-align: left;
+                  width: 70%;
+                  padding: 8px 0;
+                  font-size: 16px;
+                  letter-spacing: 1px;
+                  text-transform: lowercase;
+                "
+              >
+                tip
+              </td>
+              <td
+                class="total-value"
+                style="
+                  text-align: right;
+                  width: 30%;
+                  padding: 8px 0;
+                  font-size: 16px;
+                  letter-spacing: 1px;
+                "
+              >
+                {{ total_tip | money | replace: 'Rs.', '₹' }}
+              </td>
+            </tr>
+          </table>
+          {% endif %}
+
+          <table
+            class="total-row final"
+            style="
+              width: 100%;
+              border-collapse: collapse;
+              border-top: 1px solid #e5e5e5;
+              margin-top: 16px;
+            "
+          >
+            <tr>
+              <td
+                class="total-label"
+                style="
+                  text-align: left;
+                  width: 70%;
+                  padding: 16px 0 8px 0;
+                  font-size: 18px;
+                  font-weight: 700;
+                  letter-spacing: 1px;
+                  text-transform: lowercase;
+                "
+              >
+                total
+              </td>
+              <td
+                class="total-value"
+                style="
+                  text-align: right;
+                  width: 30%;
+                  padding: 16px 0 8px 0;
+                  font-size: 18px;
+                  font-weight: 700;
+                  letter-spacing: 1px;
+                "
+              >
+                {{ total_price | money_with_currency | replace: 'Rs.', '₹' }}
+              </td>
+            </tr>
+          </table>
+
+          {% if total_discounts > 0 %}
+          <div
+            style="
+              text-align: center;
+              margin-top: 16px;
+              font-size: 14px;
+              letter-spacing: 1px;
+              text-transform: lowercase;
+              color: #666;
+            "
+          >
+            you saved {{ total_discounts | money | replace: 'Rs.', '₹' }}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Customer Information -->
+      <div class="customer-info">
+        <h2>customer information</h2>
+
+        <div style="display: flex; flex-wrap: wrap; gap: 24px">
+          {% if requires_shipping and shipping_address %}
+          <div class="info-section" style="flex: 1; min-width: 200px">
+            <h3>shipping address</h3>
+            <p>{{ shipping_address | format_address }}</p>
+          </div>
+          {% endif %} {% if billing_address %}
+          <div class="info-section" style="flex: 1; min-width: 200px">
+            <h3>billing address</h3>
+            <p>{{ billing_address | format_address }}</p>
+          </div>
+          {% endif %}
+        </div>
+
+        <div
+          style="display: flex; flex-wrap: wrap; gap: 24px; margin-top: 24px"
+        >
+          {% if requires_shipping and shipping_method %}
+          <div class="info-section" style="flex: 1; min-width: 200px">
+            <h3>shipping method</h3>
+            <p>
+              {% if delivery_promise_branded_shipping_line %} {{
+              delivery_promise_branded_shipping_line }} {% else %} {{
+              shipping_method.title }} {% endif %}
+            </p>
+          </div>
+          {% endif %} {% if transaction_count > 0 %}
+          <div class="info-section" style="flex: 1; min-width: 200px">
+            <h3>payment method</h3>
+            {% for transaction in transactions %} {% if transaction.status ==
+            "success" and transaction.kind == "capture" or transaction.kind ==
+            "sale" %} {% if transaction.payment_details.credit_card_company %}
+            <p>
+              {{ transaction.payment_details.credit_card_company }} ending in {{
+              transaction.payment_details.credit_card_last_four_digits }}
+            </p>
+            {% else %}
+            <p>{{ transaction.gateway_display_name }}</p>
+            {% endif %} {% endif %} {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="footer">
+        <p>
+          if you have any questions, reach out to us at
+          <a href="mailto:reach@juneof.com">reach@juneof.com</a>
+        </p>
+        <p>
+          or dm us on
+          <a href="https://www.instagram.com/juneof__" target="_blank"
+            >instagram</a
+          >
+        </p>
+        <p style="margin-top: 20px; font-size: 12px; opacity: 0.7">
+          heritage meets now. timeless fabrics, reimagined silhouettes.
+        </p>
+      </div>
+    </div>
+  </body>
+</html>
+
+{%- if billing_address.country_code == 'DE' or billing_address.country_code ==
+'DK' -%} {%- if shop.terms_of_service.body != blank -%} {{ shop.terms_of_service
+| attach_as_pdf: "Terms of service" }} {%- endif -%} {%- if
+shop.refund_policy.body != blank -%} {{ shop.refund_policy | attach_as_pdf:
+"Refund policy" }} {%- endif -%} {%- endif -%}

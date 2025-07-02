@@ -504,8 +504,13 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
             {/* Product Details - Always Visible */}
             <div className="space-y-4">
               <div className="space-y-2 text-sm tracking-wider text-gray-700">
-                {product.description && (
-                  <p className="lowercase">{product.description}</p>
+                {product.descriptionHtml && (
+                  <div
+                    className="prose prose-sm lowercase"
+                    dangerouslySetInnerHTML={{
+                      __html: product.descriptionHtml,
+                    }}
+                  />
                 )}
                 {product.tags.length > 0 && (
                   <p className="lowercase">{product.tags.join(" • ")}</p>
@@ -624,29 +629,18 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
 
                 {/* Product Information */}
                 <div className="space-y-2 text-sm tracking-wider text-gray-700">
-                  {product.description && (
-                    <p className="lowercase">{product.description}</p>
+                  {product.descriptionHtml && (
+                    <div
+                      className="prose prose-sm lowercase"
+                      dangerouslySetInnerHTML={{
+                        __html: product.descriptionHtml,
+                      }}
+                    />
                   )}
                   {product.tags.length > 0 && (
                     <p className="lowercase">{product.tags.join(" • ")}</p>
                   )}
                 </div>
-
-                {/* Express Interest Banner */}
-                {expressInterest && (
-                  <div className="bg-gray-50 border border-gray-200 p-4 rounded-lg">
-                    <div className="mb-3">
-                      <Badge className="bg-black text-white hover:bg-black/90 px-4 py-2 text-sm font-semibold tracking-widest lowercase border-0">
-                        coming soon!
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-gray-700 tracking-wide lowercase leading-relaxed text-justify">
-                      we&apos;re working on bringing you this product as soon as
-                      possible. sign up to be the first to know when it&apos;s
-                      available by clicking on the express interest button!
-                    </p>
-                  </div>
-                )}
               </div>
             </div>
 
@@ -775,6 +769,17 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
 
           {/* Add to Cart Button */}
           <div className="mt-auto">
+            {/* Express Interest Banner - positioned above button */}
+            {expressInterest && (
+              <div className="bg-gray-50 border border-gray-200 p-4 rounded-lg mb-4">
+                <p className="text-sm text-gray-700 tracking-wide lowercase leading-relaxed text-justify">
+                  we&apos;re working on bringing you this product as soon as
+                  possible. sign up to be the first to know when it&apos;s
+                  available by clicking on the express interest button!
+                </p>
+              </div>
+            )}
+
             <button
               className="w-full border border-gray-900 py-3 text-center text-base tracking-widest hover:bg-gray-100 transition-colors lowercase disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={

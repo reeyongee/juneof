@@ -1,0 +1,512 @@
+{% if fulfillment.item_count == item_count %} {% capture email_title %}Your
+order has been delivered{% endcapture %} {% capture email_body %}Your order has
+been delivered. Track your shipment to see the delivery status.{% endcapture %}
+{% elsif fulfillment.item_count > 1 %} {% if fulfillment_status == 'fulfilled'
+%} {% capture email_title %}The last items in your order have been delivered{%
+endcapture %} {% capture email_body %}The last items in your order have been
+delivered. Track your shipment to see the delivery status.{% endcapture %} {%
+else %} {% capture email_title %}Some items in your order have been delivered{%
+endcapture %} {% capture email_body %}Some items in your order have been
+delivered. Track your shipment to see the delivery status.{% endcapture %} {%
+endif %} {% else %} {% if fulfillment_status == 'fulfilled' %} {% capture
+email_title %}The last item in your order has been delivered{% endcapture %} {%
+capture email_body %}The last item in your order has been delivered. Track your
+shipment to see the delivery status.{% endcapture %} {% else %} {% capture
+email_title %}One item in your order has been delivered{% endcapture %} {%
+capture email_body %}One item in your order has been delivered. Track your
+shipment to see the delivery status.{% endcapture %} {% endif %} {% endif %}
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>{{ email_title }}</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      /* Reset and base styles */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Old Standard TT", serif;
+        background-color: #f8f4ec;
+        color: #171717;
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
+      table {
+        border-collapse: collapse;
+        mso-table-lspace: 0pt;
+        mso-table-rspace: 0pt;
+      }
+
+      td {
+        border-collapse: collapse;
+      }
+
+      /* Container */
+      .email-container {
+        max-width: 600px;
+        margin: 0 auto;
+        background-color: #ffffff;
+        box-shadow: 0 4px 20px rgba(23, 23, 23, 0.1);
+      }
+
+      /* Header */
+      .header {
+        background-color: #f8f4ec;
+        padding: 40px 40px 20px 40px;
+        text-align: center;
+        border-bottom: 1px solid #e5e5e5;
+      }
+
+      .logo {
+        max-width: 200px;
+        height: auto;
+        margin-bottom: 20px;
+      }
+
+      .order-info {
+        font-size: 14px;
+        letter-spacing: 1px;
+        text-transform: lowercase;
+        color: #666;
+        margin-top: 10px;
+      }
+
+      /* Main content */
+      .main-content {
+        padding: 40px;
+        background-color: #ffffff;
+      }
+
+      .title {
+        font-size: 28px;
+        font-weight: 400;
+        letter-spacing: 2px;
+        text-transform: lowercase;
+        text-align: center;
+        margin-bottom: 16px;
+        color: #171717;
+      }
+
+      .subtitle {
+        font-size: 16px;
+        letter-spacing: 1px;
+        text-transform: lowercase;
+        text-align: center;
+        color: #666;
+        margin-bottom: 32px;
+        line-height: 1.5;
+      }
+
+      /* Support message */
+      .support-message {
+        background-color: #f8f4ec;
+        padding: 20px;
+        margin: 24px 0;
+        text-align: center;
+        border-radius: 0;
+      }
+
+      .support-message p {
+        font-size: 14px;
+        letter-spacing: 1px;
+        text-transform: lowercase;
+        color: #171717;
+        margin-bottom: 0;
+      }
+
+      .support-message a {
+        color: #171717 !important;
+        text-decoration: none !important;
+        border-bottom: 1px solid #171717;
+        padding-bottom: 1px;
+      }
+
+      .support-message a:hover {
+        opacity: 0.7;
+      }
+
+      /* Button styling */
+      .button {
+        display: inline-block;
+        background-color: #171717;
+        color: #ffffff !important;
+        padding: 12px 32px;
+        text-decoration: none !important;
+        font-size: 14px;
+        font-weight: 400;
+        letter-spacing: 2px;
+        text-transform: lowercase;
+        border: none !important;
+        border-radius: 0 !important;
+        margin: 20px 0;
+        transition: all 0.3s ease;
+      }
+
+      .button:hover {
+        background-color: #333333;
+        transform: translateY(-1px);
+      }
+
+      .button-container {
+        text-align: center;
+        margin: 32px 0;
+      }
+
+      /* Tracking info */
+      .tracking-info {
+        background-color: #f8f4ec;
+        padding: 20px;
+        margin: 24px 0;
+        text-align: center;
+        border-radius: 0;
+      }
+
+      .tracking-info p {
+        font-size: 14px;
+        letter-spacing: 1px;
+        text-transform: lowercase;
+        color: #171717;
+        margin-bottom: 8px;
+      }
+
+      .tracking-link {
+        color: #171717 !important;
+        text-decoration: none !important;
+        border-bottom: 1px solid #171717;
+        padding-bottom: 1px;
+      }
+
+      .tracking-link:hover {
+        opacity: 0.7;
+      }
+
+      /* Items section */
+      .items-section {
+        margin-top: 40px;
+        padding-top: 40px;
+        border-top: 1px solid #e5e5e5;
+      }
+
+      .section-title {
+        font-size: 20px;
+        font-weight: 400;
+        letter-spacing: 2px;
+        text-transform: lowercase;
+        text-align: center;
+        margin-bottom: 32px;
+        color: #171717;
+      }
+
+      /* Product items */
+      .product-item {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+        border-bottom: 1px solid #e5e5e5;
+        padding-bottom: 20px;
+      }
+
+      .product-item:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+      }
+
+      .product-item td {
+        padding: 8px;
+        vertical-align: top;
+      }
+
+      .product-image {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border: 1px solid #e5e5e5;
+      }
+
+      .product-details {
+        width: 100%;
+        padding-left: 16px;
+      }
+
+      .product-title {
+        font-size: 16px;
+        font-weight: 400;
+        letter-spacing: 1px;
+        text-transform: lowercase;
+        margin-bottom: 4px;
+        color: #171717;
+      }
+
+      .product-variant {
+        font-size: 14px;
+        letter-spacing: 1px;
+        color: #666;
+        text-transform: lowercase;
+        margin-bottom: 4px;
+      }
+
+      .product-quantity {
+        font-size: 14px;
+        letter-spacing: 1px;
+        color: #666;
+        text-transform: lowercase;
+      }
+
+      /* Footer */
+      .footer {
+        background-color: #f8f4ec;
+        padding: 40px;
+        text-align: center;
+        border-top: 1px solid #e5e5e5;
+      }
+
+      .footer p {
+        font-size: 14px;
+        letter-spacing: 1px;
+        text-transform: lowercase;
+        color: #666;
+        line-height: 1.6;
+      }
+
+      .footer a {
+        color: #171717 !important;
+        text-decoration: none !important;
+        border-bottom: 1px solid #171717;
+        padding-bottom: 1px;
+      }
+
+      .footer a:hover {
+        opacity: 0.7;
+      }
+
+      /* Responsive */
+      @media only screen and (max-width: 600px) {
+        .email-container {
+          width: 100% !important;
+          margin: 0 !important;
+        }
+
+        .header,
+        .main-content,
+        .footer {
+          padding: 20px !important;
+        }
+
+        .title {
+          font-size: 24px !important;
+        }
+
+        .product-item td {
+          display: block !important;
+          width: 100% !important;
+          text-align: left !important;
+          padding: 4px 0 !important;
+        }
+
+        .product-image {
+          margin-bottom: 12px;
+        }
+
+        .product-details {
+          padding-left: 0 !important;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <table
+      width="100%"
+      cellpadding="0"
+      cellspacing="0"
+      style="background-color: #f8f4ec; padding: 20px 0"
+    >
+      <tr>
+        <td align="center">
+          <div class="email-container">
+            <!-- Header -->
+            <div class="header">
+              {%- if shop.email_logo_url %}
+              <img
+                src="{{shop.email_logo_url}}"
+                alt="{{ shop.name }}"
+                class="logo"
+              />
+              {%- else %}
+              <img
+                src="/juneof-logo.svg"
+                alt="juneof"
+                class="logo"
+                style="max-width: 200px; height: auto"
+              />
+              {%- endif %}
+
+              <div class="order-info">
+                order {{ order_name }} {%- if po_number %}
+                <br />po number #{{ po_number }} {%- endif %}
+              </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="main-content">
+              <h1 class="title">{{ email_title }}</h1>
+
+              <!-- Support Message -->
+              <div class="support-message">
+                <p>
+                  haven't received your package yet?
+                  <a href="mailto:{{ shop.email }}">let us know</a>
+                </p>
+              </div>
+
+              <!-- Action Button -->
+              <div class="button-container">
+                {% if shop.url %}
+                <a href="{{ shop.url }}" class="button">visit our store</a>
+                {% endif %}
+              </div>
+
+              <!-- Tracking Information -->
+              {% if fulfillment.tracking_numbers.size > 0 %}
+              <div class="tracking-info">
+                {% if fulfillment.tracking_numbers.size == 1 and
+                fulfillment.tracking_company and fulfillment.tracking_url %}
+                <p>{{ fulfillment.tracking_company }} tracking number:</p>
+                <p>
+                  <a href="{{ fulfillment.tracking_url }}" class="tracking-link"
+                    >{{ fulfillment.tracking_numbers.first }}</a
+                  >
+                </p>
+                {% elsif fulfillment.tracking_numbers.size == 1 %}
+                <p>tracking number: {{ fulfillment.tracking_numbers.first }}</p>
+                {% else %}
+                <p>{{ fulfillment.tracking_company }} tracking numbers:</p>
+                {% for tracking_number in fulfillment.tracking_numbers %}
+                <p>
+                  {% if fulfillment.tracking_urls[forloop.index0] %}
+                  <a
+                    href="{{ fulfillment.tracking_urls[forloop.index0] }}"
+                    class="tracking-link"
+                    >{{ tracking_number }}</a
+                  >
+                  {% else %} {{ tracking_number }} {% endif %}
+                </p>
+                {% endfor %} {% endif %}
+              </div>
+              {% endif %}
+
+              <!-- Items Section -->
+              <div class="items-section">
+                <h2 class="section-title">items in this shipment</h2>
+
+                {% for line in fulfillment.fulfillment_line_items %}
+                <table class="product-item">
+                  <tr>
+                    <td style="width: 80px">
+                      {% if line.line_item.image %}
+                      <img
+                        src="{{ line.line_item | img_url: 'compact_cropped' }}"
+                        alt="{{ line.line_item.title }}"
+                        class="product-image"
+                      />
+                      {% else %}
+                      <div
+                        style="
+                          width: 80px;
+                          height: 80px;
+                          background-color: #f5f5f5;
+                          border: 1px solid #e5e5e5;
+                          display: flex;
+                          align-items: center;
+                          justify-content: center;
+                        "
+                      >
+                        <span
+                          style="
+                            font-size: 12px;
+                            color: #999;
+                            text-transform: lowercase;
+                          "
+                          >no image</span
+                        >
+                      </div>
+                      {% endif %}
+                    </td>
+                    <td class="product-details">
+                      {% if line.line_item.presentment_title %} {% assign
+                      line_title = line.line_item.presentment_title %} {% elsif
+                      line.line_item.title %} {% assign line_title =
+                      line.line_item.title %} {% else %} {% assign line_title =
+                      line.line_item.product.title %} {% endif %} {% if
+                      line.quantity < line.line_item.quantity %} {% capture
+                      line_display %}{{ line.quantity }} of {{
+                      line.line_item.quantity }}{% endcapture %} {% else %} {%
+                      assign line_display = line.line_item.quantity %} {% endif
+                      %}
+
+                      <div class="product-title">
+                        {{ line_title | downcase }} × {{ line_display }}
+                      </div>
+
+                      {% if line.line_item.variant.title != 'Default Title' %}
+                      <div class="product-variant">
+                        {{ line.line_item.variant.title | downcase }}
+                      </div>
+                      {% endif %} {% if line.line_item.selling_plan_allocation
+                      %}
+                      <div class="product-variant">
+                        {{
+                        line.line_item.selling_plan_allocation.selling_plan.name
+                        | downcase }}
+                      </div>
+                      {% endif %} {% for group in line.line_item.groups %}
+                      <div class="product-variant">
+                        part of: {{ group.display_title | downcase }}
+                      </div>
+                      {% endfor %} {% if line.line_item.discount_allocations %}
+                      {% for discount_allocation in
+                      line.line_item.discount_allocations %} {% if
+                      discount_allocation.discount_application.target_selection
+                      != 'all' %}
+                      <div class="product-variant">
+                        {{ discount_allocation.discount_application.title |
+                        downcase }} (-{{ discount_allocation.amount |
+                        money_with_currency | replace: 'Rs.', '₹' }})
+                      </div>
+                      {% endif %} {% endfor %} {% endif %}
+                    </td>
+                  </tr>
+                </table>
+                {% endfor %}
+              </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="footer">
+              <p>
+                if you have any questions, reply to this email or contact us at
+                <a href="mailto:{{ shop.email }}">{{ shop.email }}</a>
+              </p>
+            </div>
+          </div>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

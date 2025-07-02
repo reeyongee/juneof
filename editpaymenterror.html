@@ -1,0 +1,255 @@
+{% capture email_title %}your payment couldn't be processed{% endcapture %} {%
+capture email_body %}you added items to your shopping cart but the payment
+couldn't be processed. you haven't been charged.{% endcapture %}
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>{{ email_title }}</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      /* Reset and base styles */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Old Standard TT", serif;
+        background-color: #f8f4ec;
+        color: #171717;
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
+      table {
+        border-collapse: collapse;
+        mso-table-lspace: 0pt;
+        mso-table-rspace: 0pt;
+      }
+
+      td {
+        border-collapse: collapse;
+      }
+
+      /* Container */
+      .email-container {
+        max-width: 600px;
+        margin: 0 auto;
+        background-color: #ffffff;
+        box-shadow: 0 4px 20px rgba(23, 23, 23, 0.1);
+      }
+
+      /* Header */
+      .header {
+        background-color: #f8f4ec;
+        padding: 40px 40px 20px 40px;
+        text-align: center;
+        border-bottom: 1px solid #e5e5e5;
+      }
+
+      .logo {
+        max-width: 200px;
+        height: auto;
+        margin-bottom: 20px;
+      }
+
+      /* Main content */
+      .main-content {
+        padding: 40px;
+        background-color: #ffffff;
+      }
+
+      .title {
+        font-size: 28px;
+        font-weight: 400;
+        letter-spacing: 2px;
+        text-transform: lowercase;
+        text-align: center;
+        margin-bottom: 16px;
+        color: #171717;
+      }
+
+      .subtitle {
+        font-size: 16px;
+        letter-spacing: 1px;
+        text-transform: lowercase;
+        text-align: center;
+        color: #666;
+        margin-bottom: 24px;
+        line-height: 1.5;
+      }
+
+      .message {
+        font-size: 16px;
+        letter-spacing: 1px;
+        text-transform: lowercase;
+        text-align: center;
+        color: #666;
+        margin-bottom: 32px;
+        line-height: 1.5;
+      }
+
+      /* Button styling */
+      .button {
+        display: inline-block;
+        background-color: #171717;
+        color: #ffffff !important;
+        padding: 12px 32px;
+        text-decoration: none !important;
+        font-size: 14px;
+        font-weight: 400;
+        letter-spacing: 2px;
+        text-transform: lowercase;
+        border: none !important;
+        border-radius: 0 !important;
+        margin: 20px 0;
+        transition: all 0.3s ease;
+      }
+
+      .button:hover {
+        background-color: #333333;
+        transform: translateY(-1px);
+      }
+
+      .button-container {
+        text-align: center;
+        margin: 32px 0;
+      }
+
+      .secondary-link {
+        display: inline-block;
+        color: #171717 !important;
+        text-decoration: none !important;
+        font-size: 14px;
+        letter-spacing: 1px;
+        text-transform: lowercase;
+        margin-top: 16px;
+        border-bottom: 1px solid #171717;
+        padding-bottom: 2px;
+      }
+
+      .secondary-link:hover {
+        opacity: 0.7;
+      }
+
+      /* Footer */
+      .footer {
+        background-color: #f8f4ec;
+        padding: 40px;
+        text-align: center;
+        border-top: 1px solid #e5e5e5;
+      }
+
+      .footer p {
+        font-size: 14px;
+        letter-spacing: 1px;
+        text-transform: lowercase;
+        color: #666;
+        line-height: 1.6;
+      }
+
+      .footer a {
+        color: #171717 !important;
+        text-decoration: none !important;
+        border-bottom: 1px solid #171717;
+        padding-bottom: 1px;
+      }
+
+      .footer a:hover {
+        opacity: 0.7;
+      }
+
+      /* Responsive */
+      @media only screen and (max-width: 600px) {
+        .email-container {
+          width: 100% !important;
+          margin: 0 !important;
+        }
+
+        .header,
+        .main-content,
+        .footer {
+          padding: 20px !important;
+        }
+
+        .title {
+          font-size: 24px !important;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <table
+      width="100%"
+      cellpadding="0"
+      cellspacing="0"
+      style="background-color: #f8f4ec; padding: 20px 0"
+    >
+      <tr>
+        <td align="center">
+          <div class="email-container">
+            <!-- Header -->
+            <div class="header">
+              {%- if shop.email_logo_url %}
+              <img
+                src="{{shop.email_logo_url}}"
+                alt="{{ shop.name }}"
+                class="logo"
+              />
+              {%- else %}
+              <img
+                src="/juneof-logo.svg"
+                alt="juneof"
+                class="logo"
+                style="max-width: 200px; height: auto"
+              />
+              {%- endif %}
+            </div>
+
+            <!-- Main Content -->
+            <div class="main-content">
+              <h1 class="title">{{ email_title }}</h1>
+              <p class="subtitle">{{ email_body }}</p>
+
+              <p class="message">
+                you can still return to your cart to complete your purchase.
+              </p>
+
+              <!-- Action Buttons -->
+              <div class="button-container">
+                {% if url %}
+                <a href="{{ url }}" class="button">return to cart</a>
+                <br />
+                {% endif %} {% if shop.url %}
+                <a href="{{ shop.url }}" class="secondary-link"
+                  >or visit our store</a
+                >
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="footer">
+              <p>
+                if you have any questions, reply to this email or contact us at
+                <a href="mailto:{{ shop.email }}">{{ shop.email }}</a>
+              </p>
+            </div>
+          </div>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

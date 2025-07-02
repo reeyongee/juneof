@@ -1,0 +1,786 @@
+{% if refund_line_items.size == item_count %} {% capture email_title %}your
+order has been refunded{% endcapture %} {% elsif refund_line_items.size == 0 %}
+{% capture email_title %}you have received a refund{% endcapture %} {% else %}
+{% capture email_title %}some items in your order have been refunded{%
+endcapture %} {% endif %} {% capture email_body %}total amount refunded:
+<strong>{{ amount | money_with_currency | replace: 'Rs.', '₹' }}</strong>. it
+may take up to 10 days for this refund to appear in your account.{% endcapture
+%}
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>{{ email_title }}</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      /* Reset and base styles */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Old Standard TT", serif;
+        background-color: #f8f4ec;
+        color: #171717;
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
+      table {
+        border-collapse: collapse;
+        mso-table-lspace: 0pt;
+        mso-table-rspace: 0pt;
+      }
+
+      td {
+        border-collapse: collapse;
+      }
+
+      /* Container */
+      .email-container {
+        max-width: 600px;
+        margin: 0 auto;
+        background-color: #ffffff;
+        box-shadow: 0 4px 20px rgba(23, 23, 23, 0.1);
+      }
+
+      /* Header - Using cream brand colors */
+      .header {
+        background-color: #f8f4ec;
+        padding: 40px 40px 20px 40px;
+        text-align: center;
+        border-bottom: 1px solid #e5e5e5;
+      }
+
+      .logo {
+        max-width: 200px;
+        height: auto;
+        margin-bottom: 20px;
+      }
+
+      .order-info {
+        font-size: 14px;
+        letter-spacing: 1px;
+        text-transform: lowercase;
+        color: #666;
+        margin-top: 10px;
+      }
+
+      /* Main content */
+      .main-content {
+        padding: 40px;
+        background-color: #ffffff;
+      }
+
+      .title {
+        font-size: 28px;
+        font-weight: 400;
+        letter-spacing: 2px;
+        text-transform: lowercase;
+        text-align: center;
+        margin-bottom: 16px;
+        color: #171717;
+      }
+
+      .subtitle {
+        font-size: 16px;
+        letter-spacing: 1px;
+        text-transform: lowercase;
+        text-align: center;
+        color: #666;
+        margin-bottom: 32px;
+        line-height: 1.5;
+      }
+
+      /* Items section */
+      .items-section {
+        margin-top: 40px;
+        padding-top: 40px;
+        border-top: 1px solid #e5e5e5;
+      }
+
+      .section-title {
+        font-size: 20px;
+        font-weight: 400;
+        letter-spacing: 2px;
+        text-transform: lowercase;
+        text-align: center;
+        margin-bottom: 32px;
+        color: #171717;
+      }
+
+      /* Product items */
+      .product-item {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+        border-bottom: 1px solid #e5e5e5;
+        padding-bottom: 20px;
+      }
+
+      .product-item:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+      }
+
+      .product-item td {
+        padding: 8px;
+        vertical-align: top;
+      }
+
+      .product-image {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border: 1px solid #e5e5e5;
+      }
+
+      .product-details {
+        width: 100%;
+        padding-left: 16px;
+      }
+
+      .product-title {
+        font-size: 16px;
+        font-weight: 400;
+        letter-spacing: 1px;
+        text-transform: lowercase;
+        margin-bottom: 4px;
+        color: #171717;
+      }
+
+      .product-variant {
+        font-size: 14px;
+        letter-spacing: 1px;
+        color: #666;
+        text-transform: lowercase;
+        margin-bottom: 4px;
+      }
+
+      .product-status {
+        font-size: 14px;
+        letter-spacing: 1px;
+        color: #e74c3c;
+        text-transform: lowercase;
+        margin-bottom: 4px;
+        font-weight: 400;
+      }
+
+      .product-price {
+        font-size: 16px;
+        font-weight: 400;
+        color: #171717;
+        text-align: right;
+        text-transform: lowercase;
+      }
+
+      .product-price del {
+        color: #999;
+        margin-right: 8px;
+      }
+
+      /* Totals */
+      .totals {
+        border-top: 1px solid #e5e5e5;
+        padding-top: 20px;
+        margin-top: 20px;
+        width: 100%;
+      }
+
+      .total-row {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 12px;
+      }
+
+      .total-row td {
+        padding: 8px 0;
+        font-size: 16px;
+        letter-spacing: 1px;
+        text-transform: lowercase;
+        color: #171717;
+      }
+
+      .total-row .total-label {
+        text-align: left;
+        color: #666;
+      }
+
+      .total-row .total-value {
+        text-align: right;
+        font-weight: 400;
+      }
+
+      .total-row.final {
+        border-top: 1px solid #e5e5e5;
+        padding-top: 16px;
+        margin-top: 16px;
+      }
+
+      .total-row.final td {
+        font-weight: 700;
+        font-size: 18px;
+        padding-top: 16px;
+      }
+
+      .discount-info {
+        font-size: 14px;
+        color: #666;
+        text-transform: lowercase;
+        letter-spacing: 1px;
+        margin-top: 4px;
+      }
+
+      .total-discount {
+        color: #171717;
+        font-size: 14px;
+        letter-spacing: 1px;
+        text-transform: lowercase;
+        text-align: right;
+        padding-top: 8px;
+      }
+
+      .refund-highlight {
+        background-color: #f8f4ec;
+        padding: 16px;
+        margin: 20px 0;
+        text-align: center;
+        border-radius: 0;
+      }
+
+      .refund-highlight p {
+        font-size: 16px;
+        letter-spacing: 1px;
+        text-transform: lowercase;
+        color: #171717;
+        margin-bottom: 8px;
+      }
+
+      /* Footer */
+      .footer {
+        background-color: #f8f4ec;
+        padding: 40px;
+        text-align: center;
+        border-top: 1px solid #e5e5e5;
+      }
+
+      .footer p {
+        font-size: 14px;
+        letter-spacing: 1px;
+        text-transform: lowercase;
+        color: #666;
+        line-height: 1.6;
+      }
+
+      .footer a {
+        color: #171717 !important;
+        text-decoration: none !important;
+        border-bottom: 1px solid #171717;
+        padding-bottom: 1px;
+      }
+
+      .footer a:hover {
+        opacity: 0.7;
+      }
+
+      /* Responsive */
+      @media only screen and (max-width: 600px) {
+        .email-container {
+          width: 100% !important;
+          margin: 0 !important;
+        }
+
+        .header,
+        .main-content,
+        .footer {
+          padding: 20px !important;
+        }
+
+        .title {
+          font-size: 24px !important;
+        }
+
+        .product-item td {
+          display: block !important;
+          width: 100% !important;
+          text-align: left !important;
+          padding: 4px 0 !important;
+        }
+
+        .product-image {
+          margin-bottom: 12px;
+        }
+
+        .product-details {
+          padding-left: 0 !important;
+        }
+
+        .product-price {
+          text-align: left !important;
+          margin-top: 8px;
+        }
+
+        .total-row td {
+          font-size: 14px !important;
+        }
+
+        .total-row.final td {
+          font-size: 16px !important;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <table
+      width="100%"
+      cellpadding="0"
+      cellspacing="0"
+      style="background-color: #f8f4ec; padding: 20px 0"
+    >
+      <tr>
+        <td align="center">
+          <div class="email-container">
+            <!-- Header with cream brand colors -->
+            <div class="header">
+              {%- if shop.email_logo_url %}
+              <img
+                src="{{shop.email_logo_url}}"
+                alt="{{ shop.name }}"
+                class="logo"
+              />
+              {%- else %}
+              <img
+                src="/juneof-logo.svg"
+                alt="juneof"
+                class="logo"
+                style="max-width: 200px; height: auto"
+              />
+              {%- endif %}
+
+              <div class="order-info">
+                order {{ order_name }} {%- if po_number %}
+                <br />po number #{{ po_number }} {%- endif %}
+              </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="main-content">
+              <h1 class="title">{{ email_title }}</h1>
+              <p class="subtitle">{{ email_body }}</p>
+
+              <!-- Items Section -->
+              <div class="items-section">
+                <h2 class="section-title">order summary</h2>
+
+                {% if line_items_including_zero_quantity == empty %} {% for line
+                in subtotal_line_items %}
+                <table class="product-item">
+                  <tr>
+                    <td style="width: 80px">
+                      {% if line.image %}
+                      <img
+                        src="{{ line | img_url: 'compact_cropped' }}"
+                        alt="{{ line.title }}"
+                        class="product-image"
+                      />
+                      {% else %}
+                      <div
+                        style="
+                          width: 80px;
+                          height: 80px;
+                          background-color: #f5f5f5;
+                          border: 1px solid #e5e5e5;
+                          display: flex;
+                          align-items: center;
+                          justify-content: center;
+                        "
+                      >
+                        <span
+                          style="
+                            font-size: 12px;
+                            color: #999;
+                            text-transform: lowercase;
+                          "
+                          >no image</span
+                        >
+                      </div>
+                      {% endif %}
+                    </td>
+                    <td class="product-details">
+                      {% if line.product.title %} {% assign line_title =
+                      line.product.title %} {% else %} {% assign line_title =
+                      line.title %} {% endif %} {% assign line_display =
+                      line.quantity %}
+
+                      <div class="product-title">
+                        {{ line_title | downcase }} × {{ line_display }}
+                      </div>
+
+                      {% if line.variant.title != 'Default Title' %}
+                      <div class="product-variant">
+                        {{ line.variant.title | downcase }}
+                      </div>
+                      {% endif %} {% if line.selling_plan_allocation %}
+                      <div class="product-variant">
+                        {{ line.selling_plan_allocation.selling_plan.name |
+                        downcase }}
+                      </div>
+                      {% endif %} {% for group in line.groups %}
+                      <div class="product-variant">
+                        part of: {{ group.display_title | downcase }}
+                      </div>
+                      {% endfor %} {% if line.aggregated_update %}
+                      <div class="product-status">
+                        {{ line.aggregated_update | downcase }}
+                      </div>
+                      {% elsif line.refunded_quantity > 0 %}
+                      <div class="product-status">refunded</div>
+                      {% endif %} {% if line.discount_allocations %} {% for
+                      discount_allocation in line.discount_allocations %} {% if
+                      discount_allocation.discount_application.target_selection
+                      != 'all' %}
+                      <div class="product-variant">
+                        {{ discount_allocation.discount_application.title |
+                        downcase }} (-{{ discount_allocation.amount |
+                        money_with_currency | replace: 'Rs.', '₹' }})
+                      </div>
+                      {% endif %} {% endfor %} {% endif %}
+                    </td>
+                    <td class="product-price">
+                      {% if line.original_line_price != line.final_line_price %}
+                      <del
+                        >{{ line.original_line_price | money_with_currency |
+                        replace: 'Rs.', '₹' }}</del
+                      >
+                      {% endif %} {% if line.final_line_price > 0 or
+                      line.quantity == 0 %} {{ line.final_line_price |
+                      money_with_currency | replace: 'Rs.', '₹' }} {% else %}
+                      free {% endif %}
+                    </td>
+                  </tr>
+                </table>
+                {% endfor %} {% else %} {% for line in
+                line_items_including_zero_quantity %}
+                <table class="product-item">
+                  <tr>
+                    <td style="width: 80px">
+                      {% if line.image %}
+                      <img
+                        src="{{ line | img_url: 'compact_cropped' }}"
+                        alt="{{ line.title }}"
+                        class="product-image"
+                      />
+                      {% else %}
+                      <div
+                        style="
+                          width: 80px;
+                          height: 80px;
+                          background-color: #f5f5f5;
+                          border: 1px solid #e5e5e5;
+                          display: flex;
+                          align-items: center;
+                          justify-content: center;
+                        "
+                      >
+                        <span
+                          style="
+                            font-size: 12px;
+                            color: #999;
+                            text-transform: lowercase;
+                          "
+                          >no image</span
+                        >
+                      </div>
+                      {% endif %}
+                    </td>
+                    <td class="product-details">
+                      {% if line.product.title %} {% assign line_title =
+                      line.product.title %} {% else %} {% assign line_title =
+                      line.title %} {% endif %} {% assign line_display =
+                      line.quantity %}
+
+                      <div class="product-title">
+                        {{ line_title | downcase }} × {{ line_display }}
+                      </div>
+
+                      {% if line.variant.title != 'Default Title' %}
+                      <div class="product-variant">
+                        {{ line.variant.title | downcase }}
+                      </div>
+                      {% endif %} {% if line.selling_plan_allocation %}
+                      <div class="product-variant">
+                        {{ line.selling_plan_allocation.selling_plan.name |
+                        downcase }}
+                      </div>
+                      {% endif %} {% for group in line.groups %}
+                      <div class="product-variant">
+                        part of: {{ group.display_title | downcase }}
+                      </div>
+                      {% endfor %} {% if line.aggregated_update %}
+                      <div class="product-status">
+                        {{ line.aggregated_update | downcase }}
+                      </div>
+                      {% elsif line.refunded_quantity > 0 %}
+                      <div class="product-status">refunded</div>
+                      {% endif %} {% if line.discount_allocations %} {% for
+                      discount_allocation in line.discount_allocations %} {% if
+                      discount_allocation.discount_application.target_selection
+                      != 'all' %}
+                      <div class="product-variant">
+                        {{ discount_allocation.discount_application.title |
+                        downcase }} (-{{ discount_allocation.amount |
+                        money_with_currency | replace: 'Rs.', '₹' }})
+                      </div>
+                      {% endif %} {% endfor %} {% endif %}
+                    </td>
+                    <td class="product-price">
+                      {% if line.original_line_price != line.final_line_price %}
+                      <del
+                        >{{ line.original_line_price | money_with_currency |
+                        replace: 'Rs.', '₹' }}</del
+                      >
+                      {% endif %} {% if line.final_line_price > 0 or
+                      line.quantity == 0 %} {{ line.final_line_price |
+                      money_with_currency | replace: 'Rs.', '₹' }} {% else %}
+                      free {% endif %}
+                    </td>
+                  </tr>
+                </table>
+                {% endfor %} {% endif %}
+
+                <!-- Totals -->
+                <div class="totals">
+                  {% assign total_order_discount_amount = 0 %} {% assign
+                  has_shipping_discount = false %} {% assign epsilon = 0.00001
+                  %} {% for discount_application in discount_applications %} {%
+                  if discount_application.target_selection == 'all' and
+                  discount_application.target_type == 'line_item' %} {% assign
+                  order_discount_count = order_discount_count | plus: 1 %} {%
+                  assign total_order_discount_amount =
+                  total_order_discount_amount | plus:
+                  discount_application.total_allocated_amount %} {% endif %} {%
+                  if discount_application.target_type == 'shipping_line' %} {%
+                  assign has_shipping_discount = true %} {% assign
+                  shipping_discount_title = discount_application.title %} {%
+                  assign discount_value_price =
+                  discount_application.total_allocated_amount %} {% assign
+                  shipping_amount_minus_discount_value_price = shipping_price |
+                  minus: discount_value_price %} {% assign
+                  shipping_amount_minus_discount_value_price_abs =
+                  shipping_amount_minus_discount_value_price | abs %} {% assign
+                  discount_application_value_type =
+                  discount_application.value_type | strip %} {% if
+                  shipping_amount_minus_discount_value_price_abs < epsilon or
+                  discount_application_value_type == 'percentage' and
+                  discount_application.value == 100 %} {% assign free_shipping =
+                  true %} {% else %} {% assign discounted_shipping_price =
+                  shipping_amount_minus_discount_value_price %} {% endif %} {%
+                  endif %} {% endfor %}
+
+                  <table class="total-row">
+                    <tr>
+                      <td class="total-label">subtotal</td>
+                      <td class="total-value">
+                        {{ subtotal_price | plus: total_order_discount_amount |
+                        money_with_currency | replace: 'Rs.', '₹' }}
+                      </td>
+                    </tr>
+                  </table>
+
+                  {% if order_discount_count > 0 %}
+                  <table class="total-row">
+                    <tr>
+                      <td class="total-label">
+                        {% if order_discount_count == 1 %}order discount{% else
+                        %}order discounts{% endif %}
+                      </td>
+                      <td class="total-value">
+                        -{{ total_order_discount_amount | money_with_currency |
+                        replace: 'Rs.', '₹' }}
+                      </td>
+                    </tr>
+                  </table>
+
+                  {% for discount_application in discount_applications %} {% if
+                  discount_application.target_selection == 'all' and
+                  discount_application.target_type != 'shipping_line' %}
+                  <div class="discount-info">
+                    {{ discount_application.title | downcase }} (-{{
+                    discount_application.total_allocated_amount |
+                    money_with_currency | replace: 'Rs.', '₹' }})
+                  </div>
+                  {% endif %} {% endfor %} {% endif %} {% unless
+                  retail_delivery_only %} {% if delivery_method == 'pick-up' %}
+                  <table class="total-row">
+                    <tr>
+                      <td class="total-label">pickup</td>
+                      <td class="total-value">
+                        {{ shipping_price | money_with_currency | replace:
+                        'Rs.', '₹' }}
+                      </td>
+                    </tr>
+                  </table>
+                  {% else %} {% if has_shipping_discount %} {% if free_shipping
+                  == true %}
+                  <table class="total-row">
+                    <tr>
+                      <td class="total-label">shipping</td>
+                      <td class="total-value">
+                        {% if shipping_price != 0 %}<del
+                          >{{ shipping_price | money_with_currency | replace:
+                          'Rs.', '₹' }}</del
+                        >{% endif %} free
+                      </td>
+                    </tr>
+                  </table>
+                  {% else %}
+                  <table class="total-row">
+                    <tr>
+                      <td class="total-label">shipping</td>
+                      <td class="total-value">
+                        <del
+                          >{{ shipping_price | money_with_currency | replace:
+                          'Rs.', '₹' }}</del
+                        >
+                        {{ discounted_shipping_price | money_with_currency |
+                        replace: 'Rs.', '₹' }}
+                      </td>
+                    </tr>
+                  </table>
+                  {% endif %}
+                  <div class="discount-info">
+                    {{ shipping_discount_title | downcase }} {% if
+                    discount_value_price != 0 %} (-{{ discount_value_price |
+                    money_with_currency | replace: 'Rs.', '₹' }}) {% endif %}
+                  </div>
+                  {% else %}
+                  <table class="total-row">
+                    <tr>
+                      <td class="total-label">shipping</td>
+                      <td class="total-value">
+                        {{ shipping_price | money_with_currency | replace:
+                        'Rs.', '₹' }}
+                      </td>
+                    </tr>
+                  </table>
+                  {% endif %} {% endif %} {% endunless %} {% if total_duties %}
+                  <table class="total-row">
+                    <tr>
+                      <td class="total-label">duties</td>
+                      <td class="total-value">
+                        {{ total_duties | money_with_currency | replace: 'Rs.',
+                        '₹' }}
+                      </td>
+                    </tr>
+                  </table>
+                  {% endif %} {% for fee in fees %}
+                  <table class="total-row">
+                    <tr>
+                      <td class="total-label">{{ fee.title | downcase }}</td>
+                      <td class="total-value">
+                        {{ fee.subtotal | money_with_currency | replace: 'Rs.',
+                        '₹' }}
+                      </td>
+                    </tr>
+                  </table>
+                  {% endfor %}
+
+                  <table class="total-row">
+                    <tr>
+                      <td class="total-label">taxes</td>
+                      <td class="total-value">
+                        {{ tax_price | money_with_currency | replace: 'Rs.', '₹'
+                        }}
+                      </td>
+                    </tr>
+                  </table>
+
+                  {% if total_tip and total_tip > 0 %}
+                  <table class="total-row">
+                    <tr>
+                      <td class="total-label">tip</td>
+                      <td class="total-value">
+                        {{ total_tip | money_with_currency | replace: 'Rs.', '₹'
+                        }}
+                      </td>
+                    </tr>
+                  </table>
+                  {% endif %} {% assign transaction_size = 0 %} {% assign
+                  transaction_amount = 0 %} {% for transaction in transactions
+                  %} {% if transaction.status == "success" %} {% if
+                  transaction.kind == "sale" or transaction.kind == "capture" %}
+                  {% assign transaction_size = transaction_size | plus: 1 %} {%
+                  assign transaction_amount = transaction_amount | plus:
+                  transaction.amount %} {% elsif transaction.kind == "refund" or
+                  transaction.kind == "change" %} {% assign transaction_size =
+                  transaction_size | plus: 1 %} {% assign transaction_amount =
+                  transaction_amount | minus: transaction.amount %} {% endif %}
+                  {% endif %} {% endfor %}
+
+                  <table class="total-row final">
+                    <tr>
+                      <td class="total-label">total</td>
+                      <td class="total-value">
+                        {{ total_price | money_with_currency | replace: 'Rs.',
+                        '₹' }}
+                      </td>
+                    </tr>
+                  </table>
+
+                  {% if total_discounts > 0 %}
+                  <div class="total-discount">
+                    you saved {{ total_discounts | money_with_currency |
+                    replace: 'Rs.', '₹' }}
+                  </div>
+                  {% endif %}
+
+                  <!-- Refund Details -->
+                  {% if transaction_size > 1 or transaction_amount < total_price
+                  %}
+                  <div class="refund-highlight">
+                    <p><strong>refund details:</strong></p>
+                    {% for transaction in transactions %} {% if transaction.kind
+                    == 'refund' and transaction.gateway != "shop_offer" %} {% if
+                    transaction.payment_details.credit_card_company %} {% assign
+                    refund_method_title =
+                    transaction.payment_details.credit_card_company %} {% else
+                    %} {% assign refund_method_title =
+                    transaction.gateway_display_name %} {% endif %}
+                    <p>
+                      {{ refund_method_title | replace: '_', ' ' | downcase }}:
+                      {{ transaction.amount | money_with_currency | replace:
+                      'Rs.', '₹' }}
+                    </p>
+                    {% endif %} {% endfor %}
+                  </div>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="footer">
+              <p>
+                if you have any questions, reply to this email or contact us at
+                <a href="mailto:{{ shop.email }}">{{ shop.email }}</a>
+              </p>
+            </div>
+          </div>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
