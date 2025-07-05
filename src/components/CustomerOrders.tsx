@@ -112,6 +112,30 @@ interface CustomerOrdersResponse {
   };
 }
 
+interface ExchangeItem {
+  id: string;
+  name: string;
+  variantTitle: string;
+  quantity: number;
+  image: {
+    url: string;
+    altText: string;
+  } | null;
+}
+
+interface ActiveExchange {
+  returnId: string;
+  returnName: string;
+  status: string;
+  returnedItems: ExchangeItem[];
+  exchangeItems: ExchangeItem[];
+}
+
+interface OrderExchangeData {
+  orderId: string;
+  activeExchanges: ActiveExchange[];
+}
+
 interface CustomerOrdersProps {
   config: ShopifyAuthConfig;
   tokens?: TokenStorage | null;
@@ -141,6 +165,8 @@ export default function CustomerOrders({
   const [exchangeQuantity, setExchangeQuantity] = useState(1);
   const [exchangeReason, setExchangeReason] = useState("SIZE_TOO_SMALL");
   const [exchangingItemId, setExchangingItemId] = useState<string | null>(null);
+  const [orderExchanges, setOrderExchanges] = useState<OrderExchangeData[]>([]);
+  const [exchangesLoading, setExchangesLoading] = useState(false);
   const hasFetchedRef = useRef(false);
 
   // Memoize config to prevent unnecessary re-renders
@@ -182,6 +208,42 @@ export default function CustomerOrders({
       console.error("Error fetching order statuses:", error);
     } finally {
       setStatusLoading(false);
+    }
+  }, []);
+
+  // Fetch exchange data for orders
+  const fetchOrderExchanges = useCallback(async (orderIds: string[]) => {
+    if (orderIds.length === 0) return;
+
+    console.log("🔄 About to call order exchanges API with IDs:", orderIds);
+
+    try {
+      setExchangesLoading(true);
+      const response = await fetch("/api/customer/order-exchanges", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ orderIds }),
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          `Failed to fetch order exchanges: ${response.statusText}`
+        );
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        setOrderExchanges(data.exchanges);
+        console.log("✅ Order exchanges loaded successfully:", data.exchanges);
+      } else {
+        console.error("Failed to fetch order exchanges:", data.error);
+      }
+    } catch (error) {
+      console.error("Error fetching order exchanges:", error);
+    } finally {
+      setExchangesLoading(false);
     }
   }, []);
 
@@ -268,6 +330,9 @@ export default function CustomerOrders({
           const orderIds = orderNodes.map((order) => order.id);
           console.log("🎯 Extracted order IDs for status check:", orderIds);
           await fetchOrderStatuses(orderIds);
+
+          // Fetch exchange data for orders
+          await fetchOrderExchanges(orderIds);
         } else {
           console.warn("⚠️ No data received from GraphQL query");
           setOrders([]);
@@ -281,7 +346,7 @@ export default function CustomerOrders({
         setLoading(false);
       }
     },
-    [memoizedConfig, fetchOrderStatuses]
+    [memoizedConfig, fetchOrderStatuses, fetchOrderExchanges]
   );
 
   // Public function to load tokens and fetch orders
@@ -378,6 +443,14 @@ export default function CustomerOrders({
   const isCancelledOrder = (order: OrderNode) => {
     const status = orderStatuses[order.id];
     return status?.isCancelled || false;
+  };
+
+  // Get active exchanges for a specific order
+  const getOrderExchanges = (orderId: string): ActiveExchange[] => {
+    const orderExchangeData = orderExchanges.find(
+      (exchange) => exchange.orderId === orderId
+    );
+    return orderExchangeData?.activeExchanges || [];
   };
 
   // Open exchange dialog
@@ -528,11 +601,15 @@ export default function CustomerOrders({
 
   return (
     <div className="space-y-8">
-      {statusLoading && (
+      {(statusLoading || exchangesLoading) && (
         <div className="flex justify-center items-center py-2">
           <Loader2 className="h-4 w-4 animate-spin text-gray-600" />
           <span className="ml-2 text-sm text-gray-600 lowercase tracking-wider">
-            checking order statuses...
+            {statusLoading && exchangesLoading
+              ? "loading order data..."
+              : statusLoading
+              ? "checking order statuses..."
+              : "loading exchange data..."}
           </span>
         </div>
       )}
@@ -609,6 +686,122 @@ export default function CustomerOrders({
                         )}
                       </span>
                     </div>
+
+                    {/* Active Exchanges */}
+                    {getOrderExchanges(order.id).length > 0 && (
+                      <div className="pt-4 border-t border-gray-200">
+                        <h4 className="font-medium lowercase tracking-wider text-black mb-3">
+                          active exchanges
+                        </h4>
+                        <div className="space-y-4">
+                          {getOrderExchanges(order.id).map((exchange) => (
+                            <div
+                              key={exchange.returnId}
+                              className="bg-gray-50 p-3 rounded-lg"
+                            >
+                              <p className="text-sm lowercase tracking-wider text-gray-600 mb-3">
+                                return #{exchange.returnName} -{" "}
+                                {exchange.status.toLowerCase()}
+                              </p>
+
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {/* Returned Items */}
+                                <div>
+                                  <h5 className="text-sm font-medium lowercase tracking-wider text-gray-700 mb-2">
+                                    returned items
+                                  </h5>
+                                  <div className="space-y-2">
+                                    {exchange.returnedItems.map((item) => (
+                                      <div
+                                        key={item.id}
+                                        className="relative flex items-center space-x-3 p-2 bg-white rounded opacity-60 line-through decoration-2 decoration-red-500"
+                                      >
+                                        <div className="w-10 h-10 bg-gray-100 rounded-md flex items-center justify-center overflow-hidden">
+                                          {item.image ? (
+                                            <Image
+                                              src={item.image.url}
+                                              alt={
+                                                item.image.altText || item.name
+                                              }
+                                              width={40}
+                                              height={40}
+                                              className="w-full h-full object-cover grayscale"
+                                            />
+                                          ) : (
+                                            <div className="text-gray-400 text-xs">
+                                              No Image
+                                            </div>
+                                          )}
+                                        </div>
+                                        <div className="flex-1">
+                                          <h6 className="text-sm font-medium lowercase tracking-wider text-gray-500">
+                                            {item.name}
+                                          </h6>
+                                          {item.variantTitle && (
+                                            <p className="text-xs text-gray-400 lowercase tracking-wider">
+                                              {item.variantTitle}
+                                            </p>
+                                          )}
+                                          <p className="text-xs text-gray-400 lowercase tracking-wider">
+                                            qty: {item.quantity}
+                                          </p>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+
+                                {/* Exchange Items */}
+                                <div>
+                                  <h5 className="text-sm font-medium lowercase tracking-wider text-gray-700 mb-2">
+                                    replacement items
+                                  </h5>
+                                  <div className="space-y-2">
+                                    {exchange.exchangeItems.map((item) => (
+                                      <div
+                                        key={item.id}
+                                        className="flex items-center space-x-3 p-2 bg-green-50 rounded border border-green-200"
+                                      >
+                                        <div className="w-10 h-10 bg-gray-100 rounded-md flex items-center justify-center overflow-hidden">
+                                          {item.image ? (
+                                            <Image
+                                              src={item.image.url}
+                                              alt={
+                                                item.image.altText || item.name
+                                              }
+                                              width={40}
+                                              height={40}
+                                              className="w-full h-full object-cover"
+                                            />
+                                          ) : (
+                                            <div className="text-gray-400 text-xs">
+                                              No Image
+                                            </div>
+                                          )}
+                                        </div>
+                                        <div className="flex-1">
+                                          <h6 className="text-sm font-medium lowercase tracking-wider text-black">
+                                            {item.name}
+                                          </h6>
+                                          {item.variantTitle && (
+                                            <p className="text-xs text-gray-600 lowercase tracking-wider">
+                                              {item.variantTitle}
+                                            </p>
+                                          )}
+                                          <p className="text-xs text-gray-600 lowercase tracking-wider">
+                                            qty: {item.quantity}
+                                          </p>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     {/* Order Status and Actions */}
                     <div className="flex justify-between items-start pt-4 border-t border-gray-200">
@@ -743,6 +936,122 @@ export default function CustomerOrders({
                         )}
                       </span>
                     </div>
+
+                    {/* Active Exchanges */}
+                    {getOrderExchanges(order.id).length > 0 && (
+                      <div className="pt-4 border-t border-gray-200">
+                        <h4 className="font-medium lowercase tracking-wider text-black mb-3">
+                          active exchanges
+                        </h4>
+                        <div className="space-y-4">
+                          {getOrderExchanges(order.id).map((exchange) => (
+                            <div
+                              key={exchange.returnId}
+                              className="bg-gray-50 p-3 rounded-lg"
+                            >
+                              <p className="text-sm lowercase tracking-wider text-gray-600 mb-3">
+                                return #{exchange.returnName} -{" "}
+                                {exchange.status.toLowerCase()}
+                              </p>
+
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {/* Returned Items */}
+                                <div>
+                                  <h5 className="text-sm font-medium lowercase tracking-wider text-gray-700 mb-2">
+                                    returned items
+                                  </h5>
+                                  <div className="space-y-2">
+                                    {exchange.returnedItems.map((item) => (
+                                      <div
+                                        key={item.id}
+                                        className="relative flex items-center space-x-3 p-2 bg-white rounded opacity-60 line-through decoration-2 decoration-red-500"
+                                      >
+                                        <div className="w-10 h-10 bg-gray-100 rounded-md flex items-center justify-center overflow-hidden">
+                                          {item.image ? (
+                                            <Image
+                                              src={item.image.url}
+                                              alt={
+                                                item.image.altText || item.name
+                                              }
+                                              width={40}
+                                              height={40}
+                                              className="w-full h-full object-cover grayscale"
+                                            />
+                                          ) : (
+                                            <div className="text-gray-400 text-xs">
+                                              No Image
+                                            </div>
+                                          )}
+                                        </div>
+                                        <div className="flex-1">
+                                          <h6 className="text-sm font-medium lowercase tracking-wider text-gray-500">
+                                            {item.name}
+                                          </h6>
+                                          {item.variantTitle && (
+                                            <p className="text-xs text-gray-400 lowercase tracking-wider">
+                                              {item.variantTitle}
+                                            </p>
+                                          )}
+                                          <p className="text-xs text-gray-400 lowercase tracking-wider">
+                                            qty: {item.quantity}
+                                          </p>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+
+                                {/* Exchange Items */}
+                                <div>
+                                  <h5 className="text-sm font-medium lowercase tracking-wider text-gray-700 mb-2">
+                                    replacement items
+                                  </h5>
+                                  <div className="space-y-2">
+                                    {exchange.exchangeItems.map((item) => (
+                                      <div
+                                        key={item.id}
+                                        className="flex items-center space-x-3 p-2 bg-green-50 rounded border border-green-200"
+                                      >
+                                        <div className="w-10 h-10 bg-gray-100 rounded-md flex items-center justify-center overflow-hidden">
+                                          {item.image ? (
+                                            <Image
+                                              src={item.image.url}
+                                              alt={
+                                                item.image.altText || item.name
+                                              }
+                                              width={40}
+                                              height={40}
+                                              className="w-full h-full object-cover"
+                                            />
+                                          ) : (
+                                            <div className="text-gray-400 text-xs">
+                                              No Image
+                                            </div>
+                                          )}
+                                        </div>
+                                        <div className="flex-1">
+                                          <h6 className="text-sm font-medium lowercase tracking-wider text-black">
+                                            {item.name}
+                                          </h6>
+                                          {item.variantTitle && (
+                                            <p className="text-xs text-gray-600 lowercase tracking-wider">
+                                              {item.variantTitle}
+                                            </p>
+                                          )}
+                                          <p className="text-xs text-gray-600 lowercase tracking-wider">
+                                            qty: {item.quantity}
+                                          </p>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     {/* Order Status */}
                     <div className="pt-4 border-t border-gray-200">
