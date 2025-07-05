@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create a GraphQL client for the Admin API
-    const adminApiUrl = `https://${shopDomain}/admin/api/2025-07/graphql.json`;
+    const adminApiUrl = `https://${shopDomain}/admin/api/2024-10/graphql.json`;
     const adminClient = new GraphQLClient(adminApiUrl, {
       headers: {
         "X-Shopify-Access-Token": adminApiToken,
@@ -203,13 +203,32 @@ export async function POST(request: NextRequest) {
           { orderId }
         );
 
+        console.log(
+          `📋 Order ${orderId} response:`,
+          JSON.stringify(response, null, 2)
+        );
+
         // Verify order ownership
         if (!response.order || response.order.customer?.id !== customerId) {
           console.warn(`Order ${orderId} not found or access denied`);
           continue;
         }
 
+        console.log(`✅ Order ${orderId} verified for customer ${customerId}`);
+        console.log(`📦 Returns found:`, response.order.returns.edges.length);
+
         // Process returns that have both return and exchange line items
+        console.log(`🔍 Processing returns for order ${orderId}:`);
+        response.order.returns.edges.forEach((edge, index) => {
+          console.log(`  Return ${index + 1}:`, {
+            id: edge.node.id,
+            name: edge.node.name,
+            status: edge.node.status,
+            returnLineItems: edge.node.returnLineItems.edges.length,
+            exchangeLineItems: edge.node.exchangeLineItems.edges.length,
+          });
+        });
+
         const activeExchanges = response.order.returns.edges
           .map((edge) => edge.node)
           .filter(
@@ -236,6 +255,11 @@ export async function POST(request: NextRequest) {
               image: edge.node.lineItem.image,
             })),
           }));
+
+        console.log(
+          `✨ Active exchanges found for order ${orderId}:`,
+          activeExchanges.length
+        );
 
         if (activeExchanges.length > 0) {
           exchanges.push({
