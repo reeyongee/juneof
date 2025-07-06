@@ -5,14 +5,17 @@ import { authenticateRequest } from "@/lib/api-auth-helpers";
 interface ReturnLineItem {
   id: string;
   quantity: number;
-  lineItem: {
+  fulfillmentLineItem: {
     id: string;
-    name: string;
-    variantTitle: string;
-    image: {
-      url: string;
-      altText: string;
-    } | null;
+    lineItem: {
+      id: string;
+      name: string;
+      variantTitle: string;
+      image: {
+        url: string;
+        altText: string;
+      } | null;
+    };
   };
 }
 
@@ -155,13 +158,16 @@ export async function POST(request: NextRequest) {
                         node {
                           id
                           quantity
-                          lineItem {
+                          fulfillmentLineItem {
                             id
-                            name
-                            variantTitle
-                            image {
-                              url
-                              altText
+                            lineItem {
+                              id
+                              name
+                              variantTitle
+                              image {
+                                url
+                                altText
+                              }
                             }
                           }
                         }
@@ -213,11 +219,11 @@ export async function POST(request: NextRequest) {
             returnName: returnData.name,
             status: returnData.status,
             returnedItems: returnData.returnLineItems.edges.map((edge) => ({
-              id: edge.node.lineItem.id,
-              name: edge.node.lineItem.name,
-              variantTitle: edge.node.lineItem.variantTitle,
+              id: edge.node.fulfillmentLineItem.lineItem.id,
+              name: edge.node.fulfillmentLineItem.lineItem.name,
+              variantTitle: edge.node.fulfillmentLineItem.lineItem.variantTitle,
               quantity: edge.node.quantity,
-              image: edge.node.lineItem.image,
+              image: edge.node.fulfillmentLineItem.lineItem.image,
             })),
             exchangeItems: returnData.exchangeLineItems.edges.map((edge) => ({
               id: edge.node.lineItem.id,
