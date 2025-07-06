@@ -7,6 +7,17 @@ interface ReturnLineItemNode {
   quantity: number;
   returnReason: string;
   returnReasonNote: string;
+  fulfillmentLineItem: {
+    lineItem: {
+      id: string;
+      name: string;
+      variantTitle: string;
+      image: {
+        url: string;
+        altText: string;
+      } | null;
+    };
+  };
 }
 
 interface ExchangeLineItemNode {
@@ -100,12 +111,14 @@ interface ReturnDetailsResponse {
 
 interface OrderExchangeData {
   orderId: string;
+  exchangedLineItemIds: string[];
   activeExchanges: Array<{
     returnId: string;
     returnName: string;
     status: string;
     returnedItems: Array<{
       id: string;
+      originalLineItemId: string;
       name: string;
       variantTitle: string;
       quantity: number;
@@ -282,6 +295,17 @@ export async function POST(request: NextRequest) {
                         quantity
                         returnReason
                         returnReasonNote
+                        fulfillmentLineItem {
+                          lineItem {
+                            id
+                            name
+                            variantTitle
+                            image {
+                              url
+                              altText
+                            }
+                          }
+                        }
                       }
                     }
                     exchangeLineItems(first: 10) {
@@ -340,8 +364,16 @@ export async function POST(request: NextRequest) {
         );
 
         if (validReturns.length > 0) {
+          // Collect all line item IDs that are part of exchanges
+          const exchangedLineItemIds = validReturns.flatMap((returnData) =>
+            returnData.returnLineItems.nodes.map(
+              (node) => node.fulfillmentLineItem.lineItem.id
+            )
+          );
+
           exchanges.push({
             orderId: orderResponse.order.id,
+            exchangedLineItemIds: exchangedLineItemIds,
             activeExchanges: validReturns.map((returnData) => {
               // Check fulfillment status for exchange items
               const fulfilledExchangeLineItemIds = new Set(
@@ -358,17 +390,15 @@ export async function POST(request: NextRequest) {
                 returnId: returnData.id,
                 returnName: returnData.name,
                 status: returnData.status,
-                returnedItems: returnData.returnLineItems.nodes.map((node) => {
-                  // Try to find the original line item to get proper name and image
-                  // Since we don't have direct mapping, we'll use generic data
-                  return {
-                    id: node.id,
-                    name: `Returned Item`, // Generic name since we can't easily map
-                    variantTitle: node.returnReason || "N/A",
-                    quantity: node.quantity,
-                    image: null, // Will be handled in UI
-                  };
-                }),
+                returnedItems: returnData.returnLineItems.nodes.map((node) => ({
+                  id: node.id,
+                  originalLineItemId: node.fulfillmentLineItem.lineItem.id,
+                  name: node.fulfillmentLineItem.lineItem.name,
+                  variantTitle:
+                    node.fulfillmentLineItem.lineItem.variantTitle || "N/A",
+                  quantity: node.quantity,
+                  image: node.fulfillmentLineItem.lineItem.image,
+                })),
                 exchangeItems: returnData.exchangeLineItems.nodes.map(
                   (node) => ({
                     id: node.lineItem.id,

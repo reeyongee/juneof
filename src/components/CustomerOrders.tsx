@@ -134,6 +134,7 @@ interface ActiveExchange {
 
 interface OrderExchangeData {
   orderId: string;
+  exchangedLineItemIds: string[];
   activeExchanges: ActiveExchange[];
 }
 
@@ -437,6 +438,11 @@ export default function CustomerOrders({
       return false;
     }
 
+    // Orders with active exchanges cannot be cancelled
+    if (hasActiveExchanges(order.id)) {
+      return false;
+    }
+
     return order.fulfillmentStatus !== "FULFILLED" && !status.isCancelled;
   };
 
@@ -452,6 +458,31 @@ export default function CustomerOrders({
       (exchange) => exchange.orderId === orderId
     );
     return orderExchangeData?.activeExchanges || [];
+  };
+
+  // Check if a line item is part of an exchange
+  const isLineItemExchanged = (
+    orderId: string,
+    lineItemId: string
+  ): boolean => {
+    const orderExchangeData = orderExchanges.find(
+      (exchange) => exchange.orderId === orderId
+    );
+    return (
+      orderExchangeData?.exchangedLineItemIds.includes(lineItemId) || false
+    );
+  };
+
+  // Check if an order has active exchanges
+  const hasActiveExchanges = (orderId: string): boolean => {
+    return getOrderExchanges(orderId).length > 0;
+  };
+
+  // Filter line items to exclude those that are part of exchanges
+  const getFilteredLineItems = (order: OrderNode) => {
+    return order.lineItems.edges.filter(
+      (edge) => !isLineItemExchanged(order.id, edge.node.id)
+    );
   };
 
   // Open exchange dialog
@@ -639,7 +670,7 @@ export default function CustomerOrders({
                 <CardContent>
                   <div className="space-y-4">
                     {/* Line Items */}
-                    {order.lineItems.edges.map(({ node: item }) => (
+                    {getFilteredLineItems(order).map(({ node: item }) => (
                       <div
                         key={item.id}
                         className="flex items-center space-x-4"
@@ -879,7 +910,7 @@ export default function CustomerOrders({
                 <CardContent>
                   <div className="space-y-4">
                     {/* Line Items */}
-                    {order.lineItems.edges.map(({ node: item }) => (
+                    {getFilteredLineItems(order).map(({ node: item }) => (
                       <div
                         key={item.id}
                         className="flex items-center space-x-4"
@@ -1122,7 +1153,7 @@ export default function CustomerOrders({
                   <CardContent>
                     <div className="space-y-4">
                       {/* Line Items */}
-                      {order.lineItems.edges.map(({ node: item }) => (
+                      {getFilteredLineItems(order).map(({ node: item }) => (
                         <div
                           key={item.id}
                           className="flex items-center space-x-4"
