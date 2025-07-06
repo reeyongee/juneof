@@ -62,6 +62,16 @@ interface OrderReturnsResponse {
         node: BasicReturn;
       }>;
     };
+    fulfillmentOrders: {
+      nodes: Array<{
+        id: string;
+        status: string;
+        fulfillmentHolds: Array<{
+          id: string;
+          reason: string;
+        }>;
+      }>;
+    };
   } | null;
 }
 
@@ -162,6 +172,16 @@ export async function POST(request: NextRequest) {
                   }
                 }
               }
+              fulfillmentOrders(first: 10) {
+                nodes {
+                  id
+                  status
+                  fulfillmentHolds {
+                    id
+                    reason
+                  }
+                }
+              }
             }
           }
         `;
@@ -227,7 +247,26 @@ export async function POST(request: NextRequest) {
           (edge) => edge.node.id
         );
         console.log(
-          `📋 Found ${returnIds.length} returns for order ${orderId}`
+          `📋 Found ${returnIds.length} returns for order ${orderId}:`,
+          orderResponse.order.returns.edges.map((edge) => ({
+            id: edge.node.id,
+            name: edge.node.name,
+            status: edge.node.status,
+            totalQuantity: edge.node.totalQuantity,
+          }))
+        );
+
+        // Also log fulfillment orders to see if there are any exchange-related fulfillment orders
+        console.log(
+          `🚚 Found ${orderResponse.order.fulfillmentOrders.nodes.length} fulfillment orders for order ${orderId}:`,
+          orderResponse.order.fulfillmentOrders.nodes.map((node) => ({
+            id: node.id,
+            status: node.status,
+            holds: node.fulfillmentHolds.map((hold) => ({
+              id: hold.id,
+              reason: hold.reason,
+            })),
+          }))
         );
 
         if (returnIds.length === 0) {
@@ -278,11 +317,23 @@ export async function POST(request: NextRequest) {
 
             const returnData = returnResponse.return;
 
+            console.log(`📊 Return ${returnId} analysis:`, {
+              returnLineItems: returnData.returnLineItems.nodes.length,
+              exchangeLineItems: returnData.exchangeLineItems.nodes.length,
+              status: returnData.status,
+            });
+
             // Only process returns that have both return and exchange line items
             if (
               returnData.returnLineItems.nodes.length > 0 &&
               returnData.exchangeLineItems.nodes.length > 0
             ) {
+              console.log(`✅ Processing return ${returnId} with exchanges`);
+              console.log(`📦 Exchange details:`, {
+                returnItems: returnData.returnLineItems.nodes.length,
+                exchangeItems: returnData.exchangeLineItems.nodes.length,
+                status: returnData.status,
+              });
               const activeExchange = {
                 returnId: returnData.id,
                 returnName: returnData.name,
