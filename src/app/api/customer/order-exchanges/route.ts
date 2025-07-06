@@ -3,10 +3,22 @@ import { GraphQLClient } from "graphql-request";
 import { authenticateRequest } from "@/lib/api-auth-helpers";
 
 interface ReturnLineItemNode {
+  __typename: string;
   id: string;
   quantity: number;
   returnReason: string;
   returnReasonNote: string;
+  fulfillmentLineItem?: {
+    lineItem: {
+      id: string;
+      name: string;
+      variantTitle: string | null;
+      image: {
+        url: string;
+        altText: string;
+      } | null;
+    };
+  };
 }
 
 interface ExchangeLineItemNode {
@@ -280,10 +292,24 @@ export async function POST(request: NextRequest) {
                     totalQuantity
                     returnLineItems(first: 10) {
                       nodes {
-                        id
-                        quantity
-                        returnReason
-                        returnReasonNote
+                        __typename
+                        ... on ReturnLineItem {
+                          id
+                          quantity
+                          returnReason
+                          returnReasonNote
+                          fulfillmentLineItem {
+                            lineItem {
+                              id
+                              name
+                              variantTitle
+                              image {
+                                url
+                                altText
+                              }
+                            }
+                          }
+                        }
                       }
                     }
                     exchangeLineItems(first: 10) {
@@ -342,17 +368,13 @@ export async function POST(request: NextRequest) {
         );
 
         if (validReturns.length > 0) {
-          // Since we can't access fulfillmentLineItem on return line items, we'll use a workaround
-          const originalLineItems = orderResponse.order.lineItems.nodes;
-
           const exchangedLineItemIds = validReturns
-            .flatMap((ret) =>
-              ret.returnLineItems.nodes.map(
-                (node, index) =>
-                  (originalLineItems[index] || originalLineItems[0])?.id
+            .flatMap((returnData) =>
+              returnData.returnLineItems.nodes.map(
+                (node) => node.fulfillmentLineItem?.lineItem.id
               )
             )
-            .filter((id) => id);
+            .filter((id): id is string => !!id);
 
           exchanges.push({
             orderId: orderResponse.order.id,
@@ -373,23 +395,20 @@ export async function POST(request: NextRequest) {
                 returnId: returnData.id,
                 returnName: returnData.name,
                 status: returnData.status,
-                returnedItems: returnData.returnLineItems.nodes.map(
-                  (node, index) => {
-                    const originalItem =
-                      originalLineItems[index] || originalLineItems[0];
-                    return {
-                      id: node.id,
-                      originalLineItemId: originalItem?.id || "unknown",
-                      name:
-                        originalItem?.name ||
-                        `Returned Item (${node.returnReason})`,
-                      variantTitle:
-                        originalItem?.variantTitle || node.returnReason,
-                      quantity: node.quantity,
-                      image: originalItem?.image || null,
-                    };
-                  }
-                ),
+                returnedItems: returnData.returnLineItems.nodes.map((node) => {
+                  const originalItem = node.fulfillmentLineItem?.lineItem;
+                  return {
+                    id: node.id,
+                    originalLineItemId: originalItem?.id || "unknown",
+                    name:
+                      originalItem?.name ||
+                      `Returned Item (${node.returnReason})`,
+                    variantTitle:
+                      originalItem?.variantTitle || node.returnReason,
+                    quantity: node.quantity,
+                    image: originalItem?.image || null,
+                  };
+                }),
                 exchangeItems: returnData.exchangeLineItems.nodes.map(
                   (node) => ({
                     id: node.lineItem.id,
