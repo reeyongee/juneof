@@ -40,6 +40,22 @@ interface DetailedReturn {
   exchangeLineItems: {
     nodes: ExchangeLineItemNode[];
   };
+  reverseFulfillmentOrders: {
+    nodes: Array<{
+      id: string;
+      status: string;
+      lineItems: {
+        nodes: Array<{
+          id: string;
+          fulfillmentLineItem: {
+            lineItem: {
+              id: string;
+            };
+          };
+        }>;
+      };
+    }>;
+  };
 }
 
 interface OrderReturnsResponse {
@@ -48,6 +64,18 @@ interface OrderReturnsResponse {
     customer: {
       id: string;
     } | null;
+    lineItems: {
+      nodes: Array<{
+        id: string;
+        name: string;
+        variantTitle: string;
+        quantity: number;
+        image: {
+          url: string;
+          altText: string;
+        } | null;
+      }>;
+    };
     returns: {
       edges: Array<{
         node: BasicReturn;
@@ -95,6 +123,7 @@ interface OrderExchangeData {
         url: string;
         altText: string;
       } | null;
+      fulfilled: boolean;
     }>;
   }>;
 }
@@ -152,6 +181,18 @@ export async function POST(request: NextRequest) {
               id
               customer {
                 id
+              }
+              lineItems(first: 50) {
+                nodes {
+                  id
+                  name
+                  variantTitle
+                  quantity
+                  image {
+                    url
+                    altText
+                  }
+                }
               }
               returns(first: 10) {
                 edges {
@@ -257,6 +298,22 @@ export async function POST(request: NextRequest) {
                         }
                       }
                     }
+                    reverseFulfillmentOrders(first: 10) {
+                      nodes {
+                        id
+                        status
+                        lineItems(first: 10) {
+                          nodes {
+                            id
+                            fulfillmentLineItem {
+                              lineItem {
+                                id
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
                   }
                 }
               `;
@@ -285,25 +342,47 @@ export async function POST(request: NextRequest) {
         if (validReturns.length > 0) {
           exchanges.push({
             orderId: orderResponse.order.id,
-            activeExchanges: validReturns.map((returnData) => ({
-              returnId: returnData.id,
-              returnName: returnData.name,
-              status: returnData.status,
-              returnedItems: returnData.returnLineItems.nodes.map((node) => ({
-                id: node.id,
-                name: `Return Item ${node.id}`, // Generic name since not available
-                variantTitle: node.returnReason || "N/A", // Use return reason as substitute
-                quantity: node.quantity,
-                image: null, // Not available for return line items
-              })),
-              exchangeItems: returnData.exchangeLineItems.nodes.map((node) => ({
-                id: node.lineItem.id,
-                name: node.lineItem.name,
-                variantTitle: node.lineItem.variantTitle,
-                quantity: 1, // Default quantity since it's not available in the API
-                image: node.lineItem.image,
-              })),
-            })),
+            activeExchanges: validReturns.map((returnData) => {
+              // Check fulfillment status for exchange items
+              const fulfilledExchangeLineItemIds = new Set(
+                returnData.reverseFulfillmentOrders.nodes
+                  .filter((rfo) => rfo.status === "CLOSED")
+                  .flatMap((rfo) =>
+                    rfo.lineItems.nodes.map(
+                      (li) => li.fulfillmentLineItem.lineItem.id
+                    )
+                  )
+              );
+
+              return {
+                returnId: returnData.id,
+                returnName: returnData.name,
+                status: returnData.status,
+                returnedItems: returnData.returnLineItems.nodes.map((node) => {
+                  // Try to find the original line item to get proper name and image
+                  // Since we don't have direct mapping, we'll use generic data
+                  return {
+                    id: node.id,
+                    name: `Returned Item`, // Generic name since we can't easily map
+                    variantTitle: node.returnReason || "N/A",
+                    quantity: node.quantity,
+                    image: null, // Will be handled in UI
+                  };
+                }),
+                exchangeItems: returnData.exchangeLineItems.nodes.map(
+                  (node) => ({
+                    id: node.lineItem.id,
+                    name: node.lineItem.name,
+                    variantTitle: node.lineItem.variantTitle,
+                    quantity: 1, // Default quantity since it's not available in the API
+                    image: node.lineItem.image,
+                    fulfilled: fulfilledExchangeLineItemIds.has(
+                      node.lineItem.id
+                    ),
+                  })
+                ),
+              };
+            }),
           });
         }
       } catch (error) {

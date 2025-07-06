@@ -121,6 +121,7 @@ interface ExchangeItem {
     url: string;
     altText: string;
   } | null;
+  fulfilled?: boolean; // Only for exchange items
 }
 
 interface ActiveExchange {
@@ -714,7 +715,7 @@ export default function CustomerOrders({
                                     {exchange.returnedItems.map((item) => (
                                       <div
                                         key={item.id}
-                                        className="relative flex items-center space-x-3 p-2 bg-white rounded opacity-60 line-through decoration-2 decoration-red-500"
+                                        className="relative flex items-center space-x-3 p-2 bg-white rounded opacity-60"
                                       >
                                         <div className="w-10 h-10 bg-gray-100 rounded-md flex items-center justify-center overflow-hidden">
                                           {item.image ? (
@@ -737,11 +738,12 @@ export default function CustomerOrders({
                                           <h6 className="text-sm font-medium lowercase tracking-wider text-gray-500">
                                             {item.name}
                                           </h6>
-                                          {item.variantTitle && (
-                                            <p className="text-xs text-gray-400 lowercase tracking-wider">
-                                              {item.variantTitle}
-                                            </p>
-                                          )}
+                                          {item.variantTitle &&
+                                            item.variantTitle !== "N/A" && (
+                                              <p className="text-xs text-gray-400 lowercase tracking-wider">
+                                                reason: {item.variantTitle}
+                                              </p>
+                                            )}
                                           <p className="text-xs text-gray-400 lowercase tracking-wider">
                                             qty: {item.quantity}
                                           </p>
@@ -758,40 +760,46 @@ export default function CustomerOrders({
                                   </h5>
                                   <div className="space-y-2">
                                     {exchange.exchangeItems.map((item) => (
-                                      <div
-                                        key={item.id}
-                                        className="flex items-center space-x-3 p-2 bg-green-50 rounded border border-green-200"
-                                      >
-                                        <div className="w-10 h-10 bg-gray-100 rounded-md flex items-center justify-center overflow-hidden">
-                                          {item.image ? (
-                                            <Image
-                                              src={item.image.url}
-                                              alt={
-                                                item.image.altText || item.name
-                                              }
-                                              width={40}
-                                              height={40}
-                                              className="w-full h-full object-cover"
-                                            />
-                                          ) : (
-                                            <div className="text-gray-400 text-xs">
-                                              No Image
-                                            </div>
-                                          )}
-                                        </div>
-                                        <div className="flex-1">
-                                          <h6 className="text-sm font-medium lowercase tracking-wider text-black">
-                                            {item.name}
-                                          </h6>
-                                          {item.variantTitle && (
+                                      <div key={item.id}>
+                                        <div className="flex items-center space-x-3 p-2 bg-green-50 rounded border border-green-200">
+                                          <div className="w-10 h-10 bg-gray-100 rounded-md flex items-center justify-center overflow-hidden">
+                                            {item.image ? (
+                                              <Image
+                                                src={item.image.url}
+                                                alt={
+                                                  item.image.altText ||
+                                                  item.name
+                                                }
+                                                width={40}
+                                                height={40}
+                                                className="w-full h-full object-cover"
+                                              />
+                                            ) : (
+                                              <div className="text-gray-400 text-xs">
+                                                No Image
+                                              </div>
+                                            )}
+                                          </div>
+                                          <div className="flex-1">
+                                            <h6 className="text-sm font-medium lowercase tracking-wider text-black">
+                                              {item.name}
+                                            </h6>
+                                            {item.variantTitle && (
+                                              <p className="text-xs text-gray-600 lowercase tracking-wider">
+                                                {item.variantTitle}
+                                              </p>
+                                            )}
                                             <p className="text-xs text-gray-600 lowercase tracking-wider">
-                                              {item.variantTitle}
+                                              qty: {item.quantity}
                                             </p>
-                                          )}
-                                          <p className="text-xs text-gray-600 lowercase tracking-wider">
-                                            qty: {item.quantity}
-                                          </p>
+                                          </div>
                                         </div>
+                                        {item.fulfilled === false && (
+                                          <p className="text-xs text-orange-600 lowercase tracking-wider mt-1 ml-2">
+                                            we&apos;re working on fulfilling
+                                            your replacement soon
+                                          </p>
+                                        )}
                                       </div>
                                     ))}
                                   </div>
@@ -964,7 +972,7 @@ export default function CustomerOrders({
                                     {exchange.returnedItems.map((item) => (
                                       <div
                                         key={item.id}
-                                        className="relative flex items-center space-x-3 p-2 bg-white rounded opacity-60 line-through decoration-2 decoration-red-500"
+                                        className="relative flex items-center space-x-3 p-2 bg-white rounded opacity-60"
                                       >
                                         <div className="w-10 h-10 bg-gray-100 rounded-md flex items-center justify-center overflow-hidden">
                                           {item.image ? (
@@ -987,11 +995,12 @@ export default function CustomerOrders({
                                           <h6 className="text-sm font-medium lowercase tracking-wider text-gray-500">
                                             {item.name}
                                           </h6>
-                                          {item.variantTitle && (
-                                            <p className="text-xs text-gray-400 lowercase tracking-wider">
-                                              {item.variantTitle}
-                                            </p>
-                                          )}
+                                          {item.variantTitle &&
+                                            item.variantTitle !== "N/A" && (
+                                              <p className="text-xs text-gray-400 lowercase tracking-wider">
+                                                reason: {item.variantTitle}
+                                              </p>
+                                            )}
                                           <p className="text-xs text-gray-400 lowercase tracking-wider">
                                             qty: {item.quantity}
                                           </p>
@@ -1008,40 +1017,46 @@ export default function CustomerOrders({
                                   </h5>
                                   <div className="space-y-2">
                                     {exchange.exchangeItems.map((item) => (
-                                      <div
-                                        key={item.id}
-                                        className="flex items-center space-x-3 p-2 bg-green-50 rounded border border-green-200"
-                                      >
-                                        <div className="w-10 h-10 bg-gray-100 rounded-md flex items-center justify-center overflow-hidden">
-                                          {item.image ? (
-                                            <Image
-                                              src={item.image.url}
-                                              alt={
-                                                item.image.altText || item.name
-                                              }
-                                              width={40}
-                                              height={40}
-                                              className="w-full h-full object-cover"
-                                            />
-                                          ) : (
-                                            <div className="text-gray-400 text-xs">
-                                              No Image
-                                            </div>
-                                          )}
-                                        </div>
-                                        <div className="flex-1">
-                                          <h6 className="text-sm font-medium lowercase tracking-wider text-black">
-                                            {item.name}
-                                          </h6>
-                                          {item.variantTitle && (
+                                      <div key={item.id}>
+                                        <div className="flex items-center space-x-3 p-2 bg-green-50 rounded border border-green-200">
+                                          <div className="w-10 h-10 bg-gray-100 rounded-md flex items-center justify-center overflow-hidden">
+                                            {item.image ? (
+                                              <Image
+                                                src={item.image.url}
+                                                alt={
+                                                  item.image.altText ||
+                                                  item.name
+                                                }
+                                                width={40}
+                                                height={40}
+                                                className="w-full h-full object-cover"
+                                              />
+                                            ) : (
+                                              <div className="text-gray-400 text-xs">
+                                                No Image
+                                              </div>
+                                            )}
+                                          </div>
+                                          <div className="flex-1">
+                                            <h6 className="text-sm font-medium lowercase tracking-wider text-black">
+                                              {item.name}
+                                            </h6>
+                                            {item.variantTitle && (
+                                              <p className="text-xs text-gray-600 lowercase tracking-wider">
+                                                {item.variantTitle}
+                                              </p>
+                                            )}
                                             <p className="text-xs text-gray-600 lowercase tracking-wider">
-                                              {item.variantTitle}
+                                              qty: {item.quantity}
                                             </p>
-                                          )}
-                                          <p className="text-xs text-gray-600 lowercase tracking-wider">
-                                            qty: {item.quantity}
-                                          </p>
+                                          </div>
                                         </div>
+                                        {item.fulfilled === false && (
+                                          <p className="text-xs text-orange-600 lowercase tracking-wider mt-1 ml-2">
+                                            we&apos;re working on fulfilling
+                                            your replacement soon
+                                          </p>
+                                        )}
                                       </div>
                                     ))}
                                   </div>
