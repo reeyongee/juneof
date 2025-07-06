@@ -21,7 +21,6 @@ interface ReturnLineItem {
 
 interface ExchangeLineItem {
   id: string;
-  quantity: number;
   lineItem: {
     id: string;
     name: string;
@@ -178,7 +177,6 @@ export async function POST(request: NextRequest) {
                       edges {
                         node {
                           id
-                          quantity
                           lineItem {
                             id
                             name
@@ -203,31 +201,11 @@ export async function POST(request: NextRequest) {
           { orderId }
         );
 
-        console.log(
-          `📋 Order ${orderId} response:`,
-          JSON.stringify(response, null, 2)
-        );
-
         // Verify order ownership
         if (!response.order || response.order.customer?.id !== customerId) {
           console.warn(`Order ${orderId} not found or access denied`);
           continue;
         }
-
-        console.log(`✅ Order ${orderId} verified for customer ${customerId}`);
-        console.log(`📦 Returns found:`, response.order.returns.edges.length);
-
-        // Process returns that have both return and exchange line items
-        console.log(`🔍 Processing returns for order ${orderId}:`);
-        response.order.returns.edges.forEach((edge, index) => {
-          console.log(`  Return ${index + 1}:`, {
-            id: edge.node.id,
-            name: edge.node.name,
-            status: edge.node.status,
-            returnLineItems: edge.node.returnLineItems.edges.length,
-            exchangeLineItems: edge.node.exchangeLineItems.edges.length,
-          });
-        });
 
         const activeExchanges = response.order.returns.edges
           .map((edge) => edge.node)
@@ -251,15 +229,10 @@ export async function POST(request: NextRequest) {
               id: edge.node.lineItem.id,
               name: edge.node.lineItem.name,
               variantTitle: edge.node.lineItem.variantTitle,
-              quantity: edge.node.quantity,
+              quantity: 1, // Default quantity since it's not available in the API
               image: edge.node.lineItem.image,
             })),
           }));
-
-        console.log(
-          `✨ Active exchanges found for order ${orderId}:`,
-          activeExchanges.length
-        );
 
         if (activeExchanges.length > 0) {
           exchanges.push({
