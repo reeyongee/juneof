@@ -307,7 +307,11 @@ export async function POST(request: NextRequest) {
                         lineItems(first: 10) {
                           nodes {
                             id
-                            quantity
+                            fulfillmentLineItem {
+                              lineItem {
+                                id
+                              }
+                            }
                           }
                         }
                       }
@@ -338,19 +342,31 @@ export async function POST(request: NextRequest) {
         );
 
         if (validReturns.length > 0) {
-          // Since we can't access fulfillmentLineItem, we'll use the original order line items
-          // and match them with return line items based on available data
+          // Since we can't access fulfillmentLineItem on return line items, we'll use a workaround
           const originalLineItems = orderResponse.order.lineItems.nodes;
+
+          const exchangedLineItemIds = validReturns
+            .flatMap((ret) =>
+              ret.returnLineItems.nodes.map(
+                (node, index) =>
+                  (originalLineItems[index] || originalLineItems[0])?.id
+              )
+            )
+            .filter((id) => id);
 
           exchanges.push({
             orderId: orderResponse.order.id,
-            exchangedLineItemIds: [], // We'll populate this based on what we can determine
+            exchangedLineItemIds: exchangedLineItemIds,
             activeExchanges: validReturns.map((returnData) => {
               // Check fulfillment status for exchange items
               const fulfilledExchangeLineItemIds = new Set(
                 returnData.reverseFulfillmentOrders.nodes
                   .filter((rfo) => rfo.status === "CLOSED")
-                  .flatMap((rfo) => rfo.lineItems.nodes.map((li) => li.id))
+                  .flatMap((rfo) =>
+                    rfo.lineItems.nodes.map(
+                      (li) => li.fulfillmentLineItem.lineItem.id
+                    )
+                  )
               );
 
               return {
@@ -359,8 +375,6 @@ export async function POST(request: NextRequest) {
                 status: returnData.status,
                 returnedItems: returnData.returnLineItems.nodes.map(
                   (node, index) => {
-                    // Since we can't get the exact original line item, we'll use the first available
-                    // This is a workaround until we can properly match items
                     const originalItem =
                       originalLineItems[index] || originalLineItems[0];
                     return {
