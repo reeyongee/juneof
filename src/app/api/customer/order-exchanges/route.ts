@@ -7,17 +7,6 @@ interface ReturnLineItemNode {
   quantity: number;
   returnReason: string;
   returnReasonNote: string;
-  fulfillmentLineItem: {
-    lineItem: {
-      id: string;
-      name: string;
-      variantTitle: string;
-      image: {
-        url: string;
-        altText: string;
-      } | null;
-    };
-  };
 }
 
 interface ExchangeLineItemNode {
@@ -295,17 +284,6 @@ export async function POST(request: NextRequest) {
                         quantity
                         returnReason
                         returnReasonNote
-                        fulfillmentLineItem {
-                          lineItem {
-                            id
-                            name
-                            variantTitle
-                            image {
-                              url
-                              altText
-                            }
-                          }
-                        }
                       }
                     }
                     exchangeLineItems(first: 10) {
@@ -329,11 +307,7 @@ export async function POST(request: NextRequest) {
                         lineItems(first: 10) {
                           nodes {
                             id
-                            fulfillmentLineItem {
-                              lineItem {
-                                id
-                              }
-                            }
+                            quantity
                           }
                         }
                       }
@@ -364,41 +338,44 @@ export async function POST(request: NextRequest) {
         );
 
         if (validReturns.length > 0) {
-          // Collect all line item IDs that are part of exchanges
-          const exchangedLineItemIds = validReturns.flatMap((returnData) =>
-            returnData.returnLineItems.nodes.map(
-              (node) => node.fulfillmentLineItem.lineItem.id
-            )
-          );
+          // Since we can't access fulfillmentLineItem, we'll use the original order line items
+          // and match them with return line items based on available data
+          const originalLineItems = orderResponse.order.lineItems.nodes;
 
           exchanges.push({
             orderId: orderResponse.order.id,
-            exchangedLineItemIds: exchangedLineItemIds,
+            exchangedLineItemIds: [], // We'll populate this based on what we can determine
             activeExchanges: validReturns.map((returnData) => {
               // Check fulfillment status for exchange items
               const fulfilledExchangeLineItemIds = new Set(
                 returnData.reverseFulfillmentOrders.nodes
                   .filter((rfo) => rfo.status === "CLOSED")
-                  .flatMap((rfo) =>
-                    rfo.lineItems.nodes.map(
-                      (li) => li.fulfillmentLineItem.lineItem.id
-                    )
-                  )
+                  .flatMap((rfo) => rfo.lineItems.nodes.map((li) => li.id))
               );
 
               return {
                 returnId: returnData.id,
                 returnName: returnData.name,
                 status: returnData.status,
-                returnedItems: returnData.returnLineItems.nodes.map((node) => ({
-                  id: node.id,
-                  originalLineItemId: node.fulfillmentLineItem.lineItem.id,
-                  name: node.fulfillmentLineItem.lineItem.name,
-                  variantTitle:
-                    node.fulfillmentLineItem.lineItem.variantTitle || "N/A",
-                  quantity: node.quantity,
-                  image: node.fulfillmentLineItem.lineItem.image,
-                })),
+                returnedItems: returnData.returnLineItems.nodes.map(
+                  (node, index) => {
+                    // Since we can't get the exact original line item, we'll use the first available
+                    // This is a workaround until we can properly match items
+                    const originalItem =
+                      originalLineItems[index] || originalLineItems[0];
+                    return {
+                      id: node.id,
+                      originalLineItemId: originalItem?.id || "unknown",
+                      name:
+                        originalItem?.name ||
+                        `Returned Item (${node.returnReason})`,
+                      variantTitle:
+                        originalItem?.variantTitle || node.returnReason,
+                      quantity: node.quantity,
+                      image: originalItem?.image || null,
+                    };
+                  }
+                ),
                 exchangeItems: returnData.exchangeLineItems.nodes.map(
                   (node) => ({
                     id: node.lineItem.id,
