@@ -825,12 +825,13 @@ export default function CustomerOrders({
                                             </p>
                                           </div>
                                         </div>
-                                        {item.fulfilled === false && (
-                                          <p className="text-xs text-orange-600 lowercase tracking-wider mt-1 ml-2">
-                                            we&apos;re working on fulfilling
-                                            your replacement soon
-                                          </p>
-                                        )}
+                                        {item.fulfilled !== true &&
+                                          exchange.status === "OPEN" && (
+                                            <p className="text-xs text-orange-600 lowercase tracking-wider mt-1 ml-2">
+                                              we&apos;re working on fulfilling
+                                              your replacement soon
+                                            </p>
+                                          )}
                                       </div>
                                     ))}
                                   </div>
@@ -1082,12 +1083,13 @@ export default function CustomerOrders({
                                             </p>
                                           </div>
                                         </div>
-                                        {item.fulfilled === false && (
-                                          <p className="text-xs text-orange-600 lowercase tracking-wider mt-1 ml-2">
-                                            we&apos;re working on fulfilling
-                                            your replacement soon
-                                          </p>
-                                        )}
+                                        {item.fulfilled !== true &&
+                                          exchange.status === "OPEN" && (
+                                            <p className="text-xs text-orange-600 lowercase tracking-wider mt-1 ml-2">
+                                              we&apos;re working on fulfilling
+                                              your replacement soon
+                                            </p>
+                                          )}
                                       </div>
                                     ))}
                                   </div>
