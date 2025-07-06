@@ -5,17 +5,8 @@ import { authenticateRequest } from "@/lib/api-auth-helpers";
 interface ReturnLineItemNode {
   id: string;
   quantity: number;
-  fulfillmentLineItem: {
-    lineItem: {
-      id: string;
-      name: string;
-      variantTitle: string;
-      image: {
-        url: string;
-        altText: string;
-      } | null;
-    };
-  };
+  returnReason: string;
+  returnReasonNote: string;
 }
 
 interface ExchangeLineItemNode {
@@ -186,48 +177,6 @@ export async function POST(request: NextRequest) {
           }
         `;
 
-        const returnDetailsQuery = `
-          query GetReturnDetails($returnId: ID!) {
-            return(id: $returnId) {
-              id
-              name
-              status
-              totalQuantity
-              returnLineItems(first: 10) {
-                nodes {
-                  id
-                  quantity
-                  fulfillmentLineItem {
-                    lineItem {
-                      id
-                      name
-                      variantTitle
-                      image {
-                        url
-                        altText
-                      }
-                    }
-                  }
-                }
-              }
-              exchangeLineItems(first: 10) {
-                nodes {
-                  id
-                  lineItem {
-                    id
-                    name
-                    variantTitle
-                    image {
-                      url
-                      altText
-                    }
-                  }
-                }
-              }
-            }
-          }
-        `;
-
         // Step 1: Get basic return information for the order
         const orderResponse = await adminClient.request<OrderReturnsResponse>(
           orderReturnsQuery,
@@ -273,103 +222,88 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
-        // Step 2: Fetch detailed return information for each return
-        const activeExchanges: Array<{
-          returnId: string;
-          returnName: string;
-          status: string;
-          returnedItems: Array<{
-            id: string;
-            name: string;
-            variantTitle: string;
-            quantity: number;
-            image: {
-              url: string;
-              altText: string;
-            } | null;
-          }>;
-          exchangeItems: Array<{
-            id: string;
-            name: string;
-            variantTitle: string;
-            quantity: number;
-            image: {
-              url: string;
-              altText: string;
-            } | null;
-          }>;
-        }> = [];
+        // Step 2: Get detailed return information for each return
+        const returnDetails = await Promise.all(
+          returnIds.map(async (returnId) => {
+            try {
+              console.log(`🔍 Fetching details for return: ${returnId}`);
 
-        for (const returnId of returnIds) {
-          try {
-            console.log(`🔍 Fetching details for return: ${returnId}`);
+              const returnQuery = `
+                query GetReturnDetails($returnId: ID!) {
+                  return(id: $returnId) {
+                    id
+                    name
+                    status
+                    totalQuantity
+                    returnLineItems(first: 10) {
+                      nodes {
+                        id
+                        quantity
+                        returnReason
+                        returnReasonNote
+                      }
+                    }
+                    exchangeLineItems(first: 10) {
+                      nodes {
+                        id
+                        lineItem {
+                          id
+                          name
+                          variantTitle
+                          image {
+                            url
+                            altText
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              `;
 
-            const returnResponse =
-              await adminClient.request<ReturnDetailsResponse>(
-                returnDetailsQuery,
-                { returnId }
+              const returnResponse =
+                await adminClient.request<ReturnDetailsResponse>(returnQuery, {
+                  returnId,
+                });
+
+              return returnResponse.return;
+            } catch (error) {
+              console.error(
+                `Error fetching details for return ${returnId}:`,
+                error
               );
-
-            if (!returnResponse.return) {
-              console.warn(`Return ${returnId} not found`);
-              continue;
+              return null;
             }
+          })
+        );
 
-            const returnData = returnResponse.return;
+        // Filter out null returns and process valid ones
+        const validReturns = returnDetails.filter(
+          (returnData) => returnData !== null
+        );
 
-            console.log(`📊 Return ${returnId} analysis:`, {
-              returnLineItems: returnData.returnLineItems.nodes.length,
-              exchangeLineItems: returnData.exchangeLineItems.nodes.length,
-              status: returnData.status,
-            });
-
-            // Only process returns that have both return and exchange line items
-            if (
-              returnData.returnLineItems.nodes.length > 0 &&
-              returnData.exchangeLineItems.nodes.length > 0
-            ) {
-              console.log(`✅ Processing return ${returnId} with exchanges`);
-              console.log(`📦 Exchange details:`, {
-                returnItems: returnData.returnLineItems.nodes.length,
-                exchangeItems: returnData.exchangeLineItems.nodes.length,
-                status: returnData.status,
-              });
-              const activeExchange = {
-                returnId: returnData.id,
-                returnName: returnData.name,
-                status: returnData.status,
-                returnedItems: returnData.returnLineItems.nodes.map((node) => ({
-                  id: node.fulfillmentLineItem.lineItem.id,
-                  name: node.fulfillmentLineItem.lineItem.name,
-                  variantTitle: node.fulfillmentLineItem.lineItem.variantTitle,
-                  quantity: node.quantity,
-                  image: node.fulfillmentLineItem.lineItem.image,
-                })),
-                exchangeItems: returnData.exchangeLineItems.nodes.map(
-                  (node) => ({
-                    id: node.lineItem.id,
-                    name: node.lineItem.name,
-                    variantTitle: node.lineItem.variantTitle,
-                    quantity: 1, // Default quantity since it's not available in the API
-                    image: node.lineItem.image,
-                  })
-                ),
-              };
-
-              activeExchanges.push(activeExchange);
-            }
-          } catch (error) {
-            console.error(
-              `Error fetching details for return ${returnId}:`,
-              error
-            );
-          }
-        }
-
-        if (activeExchanges.length > 0) {
+        if (validReturns.length > 0) {
           exchanges.push({
             orderId: orderResponse.order.id,
-            activeExchanges,
+            activeExchanges: validReturns.map((returnData) => ({
+              returnId: returnData.id,
+              returnName: returnData.name,
+              status: returnData.status,
+              returnedItems: returnData.returnLineItems.nodes.map((node) => ({
+                id: node.id,
+                name: `Return Item ${node.id}`, // Generic name since not available
+                variantTitle: node.returnReason || "N/A", // Use return reason as substitute
+                quantity: node.quantity,
+                image: null, // Not available for return line items
+              })),
+              exchangeItems: returnData.exchangeLineItems.nodes.map((node) => ({
+                id: node.lineItem.id,
+                name: node.lineItem.name,
+                variantTitle: node.lineItem.variantTitle,
+                quantity: 1, // Default quantity since it's not available in the API
+                image: node.lineItem.image,
+              })),
+            })),
           });
         }
       } catch (error) {
