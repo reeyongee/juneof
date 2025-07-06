@@ -478,6 +478,35 @@ export default function CustomerOrders({
     return getOrderExchanges(orderId).length > 0;
   };
 
+  // Check if a line item is a replacement item from an exchange
+  const isReplacementItem = (orderId: string, lineItemId: string): boolean => {
+    const exchangesForOrder = getOrderExchanges(orderId);
+    if (exchangesForOrder.length === 0) {
+      return false;
+    }
+    return exchangesForOrder.some((exchange) =>
+      exchange.exchangeItems.some((item) => item.id === lineItemId)
+    );
+  };
+
+  // Check if a specific line item can be exchanged
+  const canExchangeItem = (order: OrderNode, itemNode: { id: string }) => {
+    const isShipped =
+      order.fulfillmentStatus === "FULFILLED" ||
+      order.fulfillmentStatus === "PARTIALLY_FULFILLED";
+
+    if (!isShipped || isCancelledOrder(order)) {
+      return false;
+    }
+
+    // Replacement items cannot be exchanged
+    if (isReplacementItem(order.id, itemNode.id)) {
+      return false;
+    }
+
+    return true;
+  };
+
   // Filter line items to exclude those that are part of exchanges
   const getFilteredLineItems = (order: OrderNode) => {
     return order.lineItems.edges.filter(
@@ -702,6 +731,25 @@ export default function CustomerOrders({
                           <p className="text-sm text-gray-600 lowercase tracking-wider">
                             qty: {item.quantity}
                           </p>
+                        </div>
+                        <div className="flex flex-col gap-2 w-24 text-right">
+                          {canExchangeItem(order, item) && (
+                            <Button
+                              onClick={() =>
+                                openExchangeDialog(order.id, item.id)
+                              }
+                              disabled={exchangingItemId === item.id}
+                              variant="outline"
+                              size="sm"
+                              className="lowercase tracking-wider text-xs"
+                            >
+                              {exchangingItemId === item.id ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                              ) : (
+                                "exchange"
+                              )}
+                            </Button>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -945,21 +993,23 @@ export default function CustomerOrders({
                           </p>
                         </div>
                         <div className="flex flex-col gap-2">
-                          <Button
-                            onClick={() =>
-                              openExchangeDialog(order.id, item.id)
-                            }
-                            disabled={exchangingItemId === item.id}
-                            variant="outline"
-                            size="sm"
-                            className="lowercase tracking-wider text-xs"
-                          >
-                            {exchangingItemId === item.id ? (
-                              <Loader2 className="h-3 w-3 animate-spin" />
-                            ) : (
-                              "exchange"
-                            )}
-                          </Button>
+                          {canExchangeItem(order, item) && (
+                            <Button
+                              onClick={() =>
+                                openExchangeDialog(order.id, item.id)
+                              }
+                              disabled={exchangingItemId === item.id}
+                              variant="outline"
+                              size="sm"
+                              className="lowercase tracking-wider text-xs"
+                            >
+                              {exchangingItemId === item.id ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                              ) : (
+                                "exchange"
+                              )}
+                            </Button>
+                          )}
                         </div>
                       </div>
                     ))}
