@@ -142,10 +142,7 @@ const Navbar: React.FC = () => {
   // Determine if transparency is allowed on current page
   const isTransparencyAllowed =
     pathname === "/" ||
-    pathname === "/privacy-policy" ||
-    pathname === "/terms-and-conditions" ||
-    pathname === "/shipping-and-delivery" ||
-    pathname === "/cancellations-and-refund" ||
+    pathname.startsWith("/legal/") ||
     pathname === "/about-us" ||
     pathname === "/contact-us";
 
@@ -348,14 +345,11 @@ const Navbar: React.FC = () => {
     "/product-listing",
     "/product",
     "/contact-us",
-    "/terms-and-conditions",
-    "/privacy-policy",
-    "/shipping-and-delivery",
-    "/cancellations-and-refund",
   ];
   const isAlwaysTransparent =
     alwaysTransparentPages.includes(pathname) ||
-    pathname.startsWith("/product/");
+    pathname.startsWith("/product/") ||
+    pathname.startsWith("/legal/");
 
   const dynamicHeaderClasses = `fixed top-0 left-0 right-0 z-50 text-black p-4 transition-all duration-300 ${
     visible ? "translate-y-0" : "-translate-y-full"

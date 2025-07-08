@@ -47,28 +47,28 @@ const Footer = () => {
   const LegalLinks = ({ className }: { className?: string }) => (
     <div className={className}>
       <Link
-        href="/terms-and-conditions"
+        href="/legal/terms-and-conditions"
         className="hover:opacity-75 mb-1"
         data-underline-button-effect
       >
         terms &amp; conditions
       </Link>
       <Link
-        href="/privacy-policy"
+        href="/legal/privacy-policy"
         className="hover:opacity-75 mb-1"
         data-underline-button-effect
       >
         privacy policy
       </Link>
       <Link
-        href="/shipping-and-delivery"
+        href="/legal/shipping-and-delivery"
         className="hover:opacity-75 mb-1"
         data-underline-button-effect
       >
         shipping &amp; delivery
       </Link>
       <Link
-        href="/cancellations-and-refund"
+        href="/legal/cancellations-and-refund"
         className="hover:opacity-75"
         data-underline-button-effect
       >
