@@ -574,6 +574,20 @@ input[type="text"]:invalid:not(:focus):not(:placeholder-shown) {
   -ms-overflow-style: none; /* Internet Explorer 10+ */
   scrollbar-width: none; /* Firefox */
 }
+
 .scrollbar-hide::-webkit-scrollbar {
   display: none; /* Safari and Chrome */
+}
+
+/* Fix for Sanity Studio upload compatibility */
+body[data-admin-route="true"] input[type="file"] {
+  cursor: pointer !important;
+}
+
+body[data-admin-route="true"] button {
+  cursor: pointer !important;
+}
+
+body[data-admin-route="true"] .sanity-upload-area {
+  cursor: pointer !important;
 }
