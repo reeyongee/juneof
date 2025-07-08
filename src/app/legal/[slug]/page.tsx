@@ -103,7 +103,7 @@ export default function LegalPage() {
             </h1>
 
             <div
-              className="text-sm lowercase tracking-wider text-black space-y-4"
+              className="legal-content text-sm lowercase tracking-wider text-black space-y-4"
               dangerouslySetInnerHTML={{ __html: pageData.content }}
             />
           </div>
@@ -139,7 +139,7 @@ export default function LegalPage() {
           <div className="relative z-10 flex-grow p-8 bg-[rgba(0,0,0,0.02)] backdrop-blur-md">
             <div
               ref={contentRef}
-              className="text-xl lowercase tracking-wider text-black space-y-4 mix-blend-difference"
+              className="legal-content text-xl lowercase tracking-wider text-black space-y-4 mix-blend-difference"
               dangerouslySetInnerHTML={{ __html: pageData.content }}
             />
           </div>

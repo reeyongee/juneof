@@ -579,6 +579,27 @@ input[type="text"]:invalid:not(:focus):not(:placeholder-shown) {
   display: none; /* Safari and Chrome */
 }
 
+/* Legal page content styles */
+.legal-content p {
+  margin-bottom: 1rem;
+  line-height: 1.6;
+}
+
+.legal-content p.font-bold,
+.legal-content p[class*="font-bold"] {
+  font-weight: 700 !important;
+}
+
+.legal-content p:last-child {
+  margin-bottom: 0;
+}
+
+.legal-content br {
+  display: block;
+  margin: 0.5rem 0;
+  content: "";
+}
+
 /* Fix for Sanity Studio upload compatibility */
 body[data-admin-route="true"] input[type="file"] {
   cursor: pointer !important;
