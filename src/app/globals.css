@@ -43,7 +43,8 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
-html, body {
+html,
+body {
   overscroll-behavior-y: none;
 }
 
@@ -107,6 +108,39 @@ input[type="reset"] {
   html,
   body {
     cursor: none !important;
+  }
+
+  /* Restore native cursor for admin routes */
+  body[data-admin-route="true"] *,
+  body[data-admin-route="true"] *::before,
+  body[data-admin-route="true"] *::after {
+    cursor: auto !important;
+  }
+
+  body[data-admin-route="true"] {
+    cursor: auto !important;
+  }
+
+  /* Ensure interactive elements have proper cursors on admin routes */
+  body[data-admin-route="true"] button,
+  body[data-admin-route="true"] a,
+  body[data-admin-route="true"] input[type="button"],
+  body[data-admin-route="true"] input[type="submit"],
+  body[data-admin-route="true"] input[type="reset"],
+  body[data-admin-route="true"] select,
+  body[data-admin-route="true"] textarea,
+  body[data-admin-route="true"] input {
+    cursor: pointer !important;
+  }
+
+  body[data-admin-route="true"] input[type="text"],
+  body[data-admin-route="true"] input[type="email"],
+  body[data-admin-route="true"] input[type="password"],
+  body[data-admin-route="true"] input[type="search"],
+  body[data-admin-route="true"] input[type="tel"],
+  body[data-admin-route="true"] input[type="url"],
+  body[data-admin-route="true"] textarea {
+    cursor: text !important;
   }
 }
 
@@ -298,7 +332,9 @@ button:not(.add-to-cart-btn):not(.clear-cart-btn):not(.checkout-btn):not(.size-b
   opacity: 0;
   transform-origin: 50% 50%; /* Underline grows from the center */
   transform: scaleX(0);
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease-out;
+  transition:
+    transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.2s ease-out;
 }
 
 button:not(.add-to-cart-btn):not(.clear-cart-btn):not(.checkout-btn):not(.size-btn):not(.no-underline-effect):hover::after,

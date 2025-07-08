@@ -17,6 +17,14 @@ const nextConfig: NextConfig = {
         port: "",
         pathname: "/**", // Allows any path under cdn.shopify.com
       },
+      {
+        // --- ADD THIS NEW ENTRY FOR SANITY ---
+        protocol: "https",
+        hostname: "cdn.sanity.io",
+        port: "",
+        pathname: "/**",
+      },
+      // --- END OF NEW ENTRY ---
     ],
   },
 };

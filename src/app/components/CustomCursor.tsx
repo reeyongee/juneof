@@ -54,6 +54,21 @@ export default function CustomCursor() {
   const pathname = usePathname();
   const { showSplash } = useSplash();
 
+  // Disable custom cursor for admin routes
+  const isAdminRoute = pathname.startsWith("/admin");
+
+  // Restore native cursor for admin routes
+  useEffect(() => {
+    if (isAdminRoute) {
+      document.body.classList.remove("custom-cursor-active");
+      document.body.style.cursor = "auto";
+      document.body.setAttribute("data-admin-route", "true");
+      return;
+    } else {
+      document.body.removeAttribute("data-admin-route");
+    }
+  }, [isAdminRoute]);
+
   // Configuration
   const fullCursorSize = 40;
   const easing = "power2.out";
@@ -852,8 +867,8 @@ export default function CustomCursor() {
     };
   }, [stopRenderLoop, stopShapeMonitoring]);
 
-  // Don't render cursor on mobile devices
-  if (isMobile) {
+  // Don't render cursor on mobile devices or admin routes
+  if (isMobile || isAdminRoute) {
     return null;
   }
 

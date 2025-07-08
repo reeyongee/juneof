@@ -9,10 +9,41 @@ import ScrollIndicator from "./ScrollIndicator";
 import { useViewportHeight } from "@/hooks/useViewportHeight";
 import "../landing-page.css";
 
+// --- Sanity Imports ---
+import { client } from "@/sanity/lib/client";
+import { urlFor } from "@/sanity/lib/image";
+import type { SanityImageSource } from "@sanity/image-url/lib/types/types";
+
 // Register GSAP plugins
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
 }
+
+// --- Define an interface for our fetched image data ---
+interface LandingPageData {
+  _id: string;
+  title: string;
+  section1_image1: SanityImageSource;
+  section1_image2: SanityImageSource;
+  section1_image3: SanityImageSource;
+  section1_image4: SanityImageSource;
+  sticky_image: SanityImageSource;
+  text_section_image: SanityImageSource;
+  galleryImages: SanityImageSource[];
+}
+
+// --- The GROQ Query to fetch our data ---
+const LANDING_PAGE_QUERY = `*[_type == "landingPage" && !(_id in path("drafts.**"))][0] {
+  _id,
+  title,
+  section1_image1,
+  section1_image2,
+  section1_image3,
+  section1_image4,
+  sticky_image,
+  text_section_image,
+  galleryImages
+}`;
 
 export default function LandingPageContent() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -22,52 +53,65 @@ export default function LandingPageContent() {
   const section4Ref = useRef<HTMLDivElement>(null);
   const spacerRef = useRef<HTMLDivElement>(null);
 
-  // Use our custom viewport height hook
+  // --- State for our fetched Sanity data ---
+  const [pageData, setPageData] = useState<LandingPageData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // --- Restored layout state ---
   const {
     dimensions,
     isMobile,
     isInitialized: isViewportInitialized,
   } = useViewportHeight();
-
-  // State for mobile overlay visibility
   const [isMobileOverlayVisible, setIsMobileOverlayVisible] = useState(false);
-
-  // Track image loading state
   const [imagesLoaded, setImagesLoaded] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
   const loadedImagesRef = useRef(new Set<string>());
   const animationsInitializedRef = useRef(false);
 
-  // Critical images that must load before animations
-  const criticalImages = [
-    "/landing-images/1.jpg",
-    "/landing-images/2.jpg",
-    "/landing-images/3.jpg",
-    "/landing-images/4.jpg",
-    "/landing-images/5.jpg",
-    "/landing-images/6.jpg",
-  ];
-
-  // Handle individual image load
-  const handleImageLoad = useCallback(
-    (src: string) => {
-      loadedImagesRef.current.add(src);
-
-      // Check if all critical images are loaded
-      if (loadedImagesRef.current.size >= criticalImages.length) {
-        setImagesLoaded(true);
+  // --- Fetch data from Sanity ---
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        console.log("Fetching landing page data from Sanity...");
+        const data: LandingPageData = await client.fetch(LANDING_PAGE_QUERY);
+        if (data) {
+          setPageData(data);
+          console.log("Sanity data loaded successfully:", data);
+        } else {
+          console.error("No landing page data found in Sanity.");
+        }
+      } catch (error) {
+        console.error("Failed to fetch landing page data:", error);
+      } finally {
+        setIsLoading(false);
       }
-    },
-    [criticalImages.length]
-  );
+    };
+
+    fetchData();
+  }, []);
+
+  // --- Helper to safely get image URLs ---
+  const getImageUrl = (source: SanityImageSource | undefined) => {
+    if (!source) return "/placeholder.jpg"; // Fallback image
+    return urlFor(source).url();
+  };
+
+  // Track image loading for animations
+  const handleImageLoad = useCallback((src: string) => {
+    loadedImagesRef.current.add(src);
+    // Check if we have loaded enough critical images
+    if (loadedImagesRef.current.size >= 6) {
+      // 6 critical images
+      setImagesLoaded(true);
+    }
+  }, []);
 
   // Ensure DOM is ready and CSS is painted
   const ensureDOMReady = useCallback((): Promise<void> => {
     return new Promise((resolve) => {
-      // Use requestAnimationFrame to ensure paint is complete
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-          // Double RAF ensures layout is complete
           resolve();
         });
       });
@@ -86,12 +130,10 @@ export default function LandingPageContent() {
     ) as HTMLElement;
     const images = section1Ref.current.querySelectorAll(".panel img");
 
-    // Check that panels have width
     if (!firstPanel?.offsetWidth || !lastPanel?.offsetWidth) {
       return false;
     }
 
-    // Check that images have dimensions
     for (const img of images) {
       const imgElement = img as HTMLImageElement;
       if (!imgElement.offsetHeight || !imgElement.offsetWidth) {
@@ -104,15 +146,13 @@ export default function LandingPageContent() {
 
   // Main animation initialization
   const initializeAnimations = useCallback(async () => {
-    if (!containerRef.current || animationsInitializedRef.current) return;
+    if (!containerRef.current || animationsInitializedRef.current || !pageData)
+      return;
 
     try {
-      // Ensure DOM is ready
       await ensureDOMReady();
 
-      // Validate dimensions before proceeding
       if (!validateDimensions()) {
-        // Retry after a short delay
         setTimeout(() => initializeAnimations(), 100);
         return;
       }
@@ -120,28 +160,22 @@ export default function LandingPageContent() {
       const width = dimensions.width;
       const height = dimensions.height;
 
-      // Log initialization for debugging
       console.log("[LandingPage] Starting GSAP animations with dimensions:", {
         width,
         height,
         isMobile,
-        source: "useViewportHeight",
       });
 
       gsap.defaults({ ease: "none", duration: 2 });
-
-      // Kill any existing ScrollTriggers to prevent conflicts
       ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
 
-      // Section 1 animations - with proper dimension validation
+      // Section 1 animations
       const section1panel = gsap.utils.toArray(".section1 .panel");
       const section1length = section1panel.length * height * 2;
 
-      // Get first panel width with validation
       const firstPanelElement = document.querySelector(
         ".section1 .panel.first"
       ) as HTMLElement;
-
       if (!firstPanelElement?.offsetWidth) {
         throw new Error("First panel has no width");
       }
@@ -149,7 +183,6 @@ export default function LandingPageContent() {
       const firstpanelpos = (width - firstPanelElement.offsetWidth) / 2;
       const section1gap = 40 * (width / 100);
 
-      // Set styles with proper validation
       if (section1Ref.current) {
         section1Ref.current.style.height = `${section1length}px`;
 
@@ -168,22 +201,18 @@ export default function LandingPageContent() {
           firstPanel.style.marginRight = `${firstpanelpos - section1gap / 4}px`;
         }
 
-        // Center images vertically with dimension validation
         const images = section1Ref.current.querySelectorAll(".panel img");
         images.forEach((img) => {
           const imgElement = img as HTMLImageElement;
-          // Skip the first image on mobile (pic1), but center all others
           if (isMobile && imgElement.classList.contains("pic1")) return;
 
           if (imgElement.offsetHeight > 0) {
-            imgElement.style.marginTop = `${
-              (height - imgElement.offsetHeight) / 2
-            }px`;
+            imgElement.style.marginTop = `${(height - imgElement.offsetHeight) / 2}px`;
           }
         });
       }
 
-      // Position sections with proper calculations
+      // Position sections
       if (section2Ref.current) {
         section2Ref.current.style.top = `${section1length - height}px`;
       }
@@ -191,7 +220,7 @@ export default function LandingPageContent() {
         section3Ref.current.style.top = `${section1length}px`;
       }
 
-      // GSAP animations with proper validation
+      // GSAP animations
       gsap.to(".section1 .container", {
         scrollTrigger: {
           trigger: ".section1",
@@ -207,7 +236,6 @@ export default function LandingPageContent() {
       const lastpanel = document.querySelector(
         ".section1 .panel.last"
       ) as HTMLElement;
-
       if (lastpanel?.offsetWidth) {
         const lastpanelmove =
           lastpanel.offsetLeft + lastpanel.offsetWidth - width;
@@ -225,7 +253,7 @@ export default function LandingPageContent() {
         });
       }
 
-      // Section 3 parallax with dimension validation
+      // Section 3 parallax
       const section3Image = document.querySelector(
         ".section3 .container img"
       ) as HTMLImageElement;
@@ -242,7 +270,7 @@ export default function LandingPageContent() {
         });
       }
 
-      // Position Section 4 with proper height calculation
+      // Position Section 4
       const section3length = section3Ref.current?.offsetHeight || 0;
       if (section4Ref.current) {
         section4Ref.current.style.top = `${section1length + section3length}px`;
@@ -260,7 +288,6 @@ export default function LandingPageContent() {
       ];
 
       section4Animations.forEach(({ selector, scrub, yPercent }) => {
-        // Ensure the element exists before creating animation
         const element = document.querySelector(selector);
         if (element) {
           gsap.to(selector, {
@@ -277,37 +304,92 @@ export default function LandingPageContent() {
         }
       });
 
-      // Force ScrollTrigger refresh after creating animations
       ScrollTrigger.refresh();
 
-      // Set spacer height with proper calculation
+      // Set spacer height
       const section4length = section4Ref.current?.offsetHeight || 0;
       if (spacerRef.current) {
-        spacerRef.current.style.height = `${
-          section1length + section3length + section4length + height * 0.0001
-        }px`;
+        spacerRef.current.style.height = `${section1length + section3length + section4length + height * 0.0001}px`;
       }
 
-      // Mark animations as initialized
       animationsInitializedRef.current = true;
     } catch (error) {
       console.error("Error initializing animations:", error);
-      // Retry after a delay if there was an error
       setTimeout(() => {
         animationsInitializedRef.current = false;
         initializeAnimations();
       }, 500);
     }
-  }, [ensureDOMReady, validateDimensions, dimensions, isMobile]);
+  }, [ensureDOMReady, validateDimensions, dimensions, isMobile, pageData]);
 
-  // Trigger re-initialization when dimensions change (handled by useViewportHeight)
+  // Handle hydration
   useEffect(() => {
-    if (isViewportInitialized && isHydrated && imagesLoaded) {
-      // Reset animations when viewport dimensions change
+    setIsHydrated(true);
+  }, []);
+
+  // Mobile scroll-based overlay visibility
+  useEffect(() => {
+    if (!isMobile || !section4Ref.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.intersectionRatio >= 0.5) {
+            setIsMobileOverlayVisible(true);
+          } else {
+            setIsMobileOverlayVisible(false);
+          }
+        });
+      },
+      {
+        threshold: [0, 0.5, 1],
+        rootMargin: "0px",
+      }
+    );
+
+    observer.observe(section4Ref.current);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [isMobile, isHydrated]);
+
+  // Initialize animations when all conditions are met
+  useEffect(() => {
+    if (!isHydrated || !imagesLoaded || !isViewportInitialized || !pageData)
+      return;
+
+    console.log("[LandingPage] Initializing animations:", {
+      isHydrated,
+      imagesLoaded,
+      isViewportInitialized,
+      pageData: !!pageData,
+      isMobile,
+      dimensions,
+    });
+
+    initializeAnimations();
+
+    return () => {
+      ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
+      animationsInitializedRef.current = false;
+    };
+  }, [
+    isHydrated,
+    imagesLoaded,
+    isViewportInitialized,
+    isMobile,
+    dimensions,
+    initializeAnimations,
+    pageData,
+  ]);
+
+  // Trigger re-initialization when dimensions change
+  useEffect(() => {
+    if (isViewportInitialized && isHydrated && imagesLoaded && pageData) {
       animationsInitializedRef.current = false;
       ScrollTrigger.refresh();
 
-      // Re-initialize animations with new dimensions
       const timeoutId = setTimeout(() => {
         initializeAnimations();
       }, 50);
@@ -322,76 +404,24 @@ export default function LandingPageContent() {
     isHydrated,
     imagesLoaded,
     initializeAnimations,
+    pageData,
   ]);
 
-  // Handle hydration
-  useEffect(() => {
-    setIsHydrated(true);
-  }, []);
-
-  // Mobile scroll-based overlay visibility
-  useEffect(() => {
-    if (!isMobile || !section4Ref.current) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          // Show overlay when section4 is 50% visible
-          if (entry.intersectionRatio >= 0.5) {
-            setIsMobileOverlayVisible(true);
-          } else {
-            setIsMobileOverlayVisible(false);
-          }
-        });
-      },
-      {
-        threshold: [0, 0.5, 1], // Trigger at 0%, 50%, and 100% visibility
-        rootMargin: "0px",
-      }
+  // --- Conditional Rendering ---
+  // Show a loading state until data is fetched
+  if (isLoading || !pageData) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-[#FDF3E1]">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-black"></div>
+      </div>
     );
-
-    observer.observe(section4Ref.current);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, [isMobile, isHydrated]);
-
-  // Initialize animations when all conditions are met
-  useEffect(() => {
-    if (!isHydrated || !imagesLoaded || !isViewportInitialized) return;
-
-    // Log initialization for debugging
-    console.log("[LandingPage] Initializing animations:", {
-      isHydrated,
-      imagesLoaded,
-      isViewportInitialized,
-      isMobile,
-      dimensions,
-    });
-
-    // All conditions met, initializing animations
-    initializeAnimations();
-
-    return () => {
-      ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
-      animationsInitializedRef.current = false;
-    };
-  }, [
-    isHydrated,
-    imagesLoaded,
-    isViewportInitialized,
-    isMobile,
-    dimensions,
-    initializeAnimations,
-  ]);
+  }
 
   return (
     <div ref={containerRef} className="relative w-full z-[2]">
-      {/* Scroll Indicator - Now shows on both desktop and mobile */}
       <ScrollIndicator />
 
-      {/* Section 1 - Image Panels */}
+      {/* --- SECTION 1 --- */}
       <div
         ref={section1Ref}
         className="section1 absolute block w-screen bg-[#FDF3E1] text-black md:bg-transparent"
@@ -400,70 +430,78 @@ export default function LandingPageContent() {
           <div className="panel first relative h-screen md:h-screen max-md:h-auto max-md:flex max-md:items-center max-md:justify-center max-md:pt-24 max-md:pb-12">
             <Image
               className="pic1 relative block w-auto md:w-full max-md:w-[90vw] max-md:h-auto"
-              src="/landing-images/1.jpg"
-              alt="june of sustainable fashion model wearing heritage-inspired clothing in natural setting"
+              src={getImageUrl(pageData.section1_image1)}
+              alt="june of sustainable fashion model wearing heritage-inspired clothing"
               width={800}
               height={600}
               priority
               sizes="(max-width: 768px) 90vw, 50vw"
-              onLoad={() => handleImageLoad("/landing-images/1.jpg")}
+              onLoad={() =>
+                handleImageLoad(getImageUrl(pageData.section1_image1))
+              }
             />
           </div>
           <div className="panel relative h-screen max-md:h-auto max-md:flex max-md:items-center max-md:justify-center max-md:pt-24 max-md:pb-12">
             <Image
               className="pic2 relative block w-full"
-              src="/landing-images/2.jpg"
-              alt="artisanal handwoven kantha cotton clothing from june of sustainable fashion collection"
+              src={getImageUrl(pageData.section1_image2)}
+              alt="artisanal handwoven kantha cotton clothing from june of"
               width={800}
               height={600}
               priority
               sizes="(max-width: 768px) 72vw, 35vw"
-              onLoad={() => handleImageLoad("/landing-images/2.jpg")}
+              onLoad={() =>
+                handleImageLoad(getImageUrl(pageData.section1_image2))
+              }
             />
           </div>
           <div className="panel relative h-screen max-md:h-auto max-md:flex max-md:items-center max-md:justify-center max-md:pt-24 max-md:pb-12">
             <Image
               className="pic3 relative block w-full"
-              src="/landing-images/3.jpg"
-              alt="june of ethical fashion model showcasing timeless silhouettes and heritage craftsmanship"
+              src={getImageUrl(pageData.section1_image3)}
+              alt="june of ethical fashion model showcasing timeless silhouettes"
               width={800}
               height={600}
               priority
               sizes="(max-width: 768px) 80vw, 20vw"
-              onLoad={() => handleImageLoad("/landing-images/3.jpg")}
+              onLoad={() =>
+                handleImageLoad(getImageUrl(pageData.section1_image3))
+              }
             />
           </div>
           <div className="panel last relative h-screen">
             <Image
               className="pic4 relative block w-full"
-              src="/landing-images/4.jpg"
-              alt="sustainable fashion portrait featuring june of's contemporary take on traditional indian textiles"
+              src={getImageUrl(pageData.section1_image4)}
+              alt="sustainable fashion portrait featuring june of's contemporary take on textiles"
               width={800}
               height={600}
               priority
               sizes="(max-width: 768px) 80vw, 55vw"
-              onLoad={() => handleImageLoad("/landing-images/4.jpg")}
+              onLoad={() =>
+                handleImageLoad(getImageUrl(pageData.section1_image4))
+              }
             />
           </div>
         </div>
       </div>
 
-      {/* Section 2 - Sticky Image */}
+      {/* --- SECTION 2 --- */}
       <div ref={section2Ref} className="section2">
         <div className="container">
           <Image
-            src="/landing-images/5.jpg"
-            alt="june of model in flowing sustainable garment representing heritage meets now philosophy"
+            src={getImageUrl(pageData.sticky_image)}
+            alt="june of model in flowing sustainable garment"
             width={1800}
             height={1200}
             priority
             sizes="(max-width: 768px) 80vw, 55vw"
-            onLoad={() => handleImageLoad("/landing-images/5.jpg")}
+            onLoad={() => handleImageLoad(getImageUrl(pageData.sticky_image))}
           />
         </div>
       </div>
 
-      {/* Section 3 - Text Section */}
+      {/* --- SECTION 3 --- */}
       <div
         ref={section3Ref}
         className="section3 absolute block top-0 left-0 w-screen bg-[#FDF3E1]"
@@ -496,18 +534,20 @@ export default function LandingPageContent() {
         <div className="container overflow-hidden bg-teal w-screen max-w-none left-0">
           <Image
             className="w-full scale-[1.3]"
-            src="/landing-images/6.jpg"
-            alt="june of sustainable fashion collection showcasing indian heritage craftsmanship and modern design"
+            src={getImageUrl(pageData.text_section_image)}
+            alt="june of sustainable fashion collection showcasing indian heritage"
             width={1200}
             height={800}
             priority
             sizes="100vw"
-            onLoad={() => handleImageLoad("/landing-images/6.jpg")}
+            onLoad={() =>
+              handleImageLoad(getImageUrl(pageData.text_section_image))
+            }
           />
         </div>
       </div>
 
-      {/* Section 4 - Floating Images with Instagram Overlay */}
+      {/* --- SECTION 4 --- */}
       <div
         ref={section4Ref}
         className={`section4 absolute block top-0 left-0 w-screen h-screen overflow-hidden bg-[#F8F4EC] group cursor-pointer ${
@@ -561,64 +601,37 @@ export default function LandingPageContent() {
             aria-hidden="true"
           />
         </div>
-        <Image
-          className="pic1 absolute min-w-[150px] max-w-[300px] w-[20vw] top-[50vh] left-[8.5vw]"
-          src="/landing-images/e4.jpg"
-          alt="june of sustainable fashion editorial featuring handcrafted textiles and ethical clothing"
-          width={300}
-          height={400}
-          sizes="(max-width: 768px) 200px, 20vw"
-        />
-        <Image
-          className="pic2 absolute min-w-[150px] max-w-[300px] w-[16vw] top-[90vh] left-[23vw]"
-          src="/landing-images/e1.jpg"
-          alt="artisanal june of garment showcasing traditional indian craft techniques and modern silhouettes"
-          width={300}
-          height={400}
-          sizes="(max-width: 768px) 200px, 16vw"
-        />
-        <Image
-          className="pic3 absolute min-w-[150px] max-w-[300px] w-[20vw] top-[20vh] left-[40vw]"
-          src="/landing-images/e3.jpg"
-          alt="june of model wearing sustainable fashion piece that represents heritage meets now philosophy"
-          width={300}
-          height={400}
-          sizes="(max-width: 768px) 200px, 20vw"
-        />
-        <Image
-          className="pic4 absolute min-w-[150px] max-w-[300px] w-[19vw] top-[99vh] left-[80vw]"
-          src="/landing-images/e2.jpg"
-          alt="contemporary june of design featuring timeless fabrics and intention behind every stitch"
-          width={300}
-          height={400}
-          sizes="(max-width: 768px) 200px, 19vw"
-        />
-        <Image
-          className="pic5 absolute min-w-[150px] max-w-[300px] w-[15vw] top-0 right-0"
-          src="/landing-images/e5.jpg"
-          alt="june of sustainable fashion editorial highlighting ethical clothing and indian heritage"
-          width={300}
-          height={400}
-          sizes="(max-width: 768px) 200px, 15vw"
-        />
-        <Image
-          className="pic6 absolute min-w-[150px] max-w-[300px] w-[17vw] top-[70vh] right-[15vw]"
-          src="/landing-images/e3.jpg"
-          alt="handwoven sustainable garment from june of collection showcasing artisanal craftsmanship"
-          width={300}
-          height={400}
-          sizes="(max-width: 768px) 200px, 17vw"
-        />
-        <Image
-          className="pic7 absolute min-w-[150px] max-w-[300px] w-[16vw] top-[40vh] right-[35vw]"
-          src="/landing-images/e1.jpg"
-          alt="june of model in sustainable fashion piece representing thoughtful design and heritage textiles"
-          width={300}
-          height={400}
-          sizes="(max-width: 768px) 200px, 16vw"
-        />
+
+        {/* We now map over the gallery images from Sanity */}
+        {pageData.galleryImages?.map((image, index) => {
+          // Define positions to match the original design
+          const positions = [
+            "top-[50vh] left-[8.5vw] w-[20vw]",
+            "top-[90vh] left-[23vw] w-[16vw]",
+            "top-[20vh] left-[40vw] w-[20vw]",
+            "top-[99vh] left-[80vw] w-[19vw]",
+            "top-0 right-0 w-[15vw]",
+            "top-[70vh] right-[15vw] w-[17vw]",
+            "top-[40vh] right-[35vw] w-[16vw]",
+          ];
+          const positionClass = positions[index % positions.length];
+          return (
+            <Image
+              key={index}
+              className={`pic${
+                index + 1
+              } absolute min-w-[150px] max-w-[300px] ${positionClass}`}
+              src={getImageUrl(image)}
+              alt={`Gallery image ${index + 1} from june of collection`}
+              width={300}
+              height={400}
+              sizes="(max-width: 768px) 200px, 20vw"
+            />
+          );
+        })}
       </div>
 
+      {/* This spacer element is still important for your scroll animations */}
       <div ref={spacerRef} id="spacer"></div>
     </div>
   );

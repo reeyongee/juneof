@@ -37,6 +37,10 @@ function PageViewTracker() {
 export default function ClientLayout({ children }: ClientLayoutProps) {
   const { showSplash, setShowSplash } = useSplash();
   const { isGlobalLoading } = useLoading();
+  const pathname = usePathname();
+
+  // Check if current route is an admin route
+  const isAdminRoute = pathname.startsWith("/admin");
 
   const handleLoadComplete = () => {
     setShowSplash(false);
@@ -71,9 +75,9 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
           }`}
           style={{ display: isGlobalLoading ? "none" : "block" }}
         >
-          <Navbar />
+          {!isAdminRoute && <Navbar />}
           <main className="min-h-screen bg-white">{children}</main>
-          <Footer />
+          {!isAdminRoute && <Footer />}
         </div>
         <Toaster position="bottom-left" />
       </CartProvider>
