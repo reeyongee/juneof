@@ -11,6 +11,12 @@ interface LegalPageData {
   content: string;
 }
 
+// Function to process HTML content and convert className to class
+const processHtmlContent = (htmlContent: string): string => {
+  // Replace className with class for proper HTML rendering
+  return htmlContent.replace(/className=/g, "class=");
+};
+
 export default function LegalPage() {
   const params = useParams();
   const slug = params.slug as string;
@@ -89,6 +95,9 @@ export default function LegalPage() {
     );
   }
 
+  // Process the HTML content to convert className to class
+  const processedContent = processHtmlContent(pageData.content);
+
   // Mobile Layout
   if (isMobile) {
     return (
@@ -104,7 +113,7 @@ export default function LegalPage() {
 
             <div
               className="legal-content text-sm lowercase tracking-wider text-black space-y-4"
-              dangerouslySetInnerHTML={{ __html: pageData.content }}
+              dangerouslySetInnerHTML={{ __html: processedContent }}
             />
           </div>
         </main>
@@ -140,7 +149,7 @@ export default function LegalPage() {
             <div
               ref={contentRef}
               className="legal-content text-xl lowercase tracking-wider text-black space-y-4 mix-blend-difference"
-              dangerouslySetInnerHTML={{ __html: pageData.content }}
+              dangerouslySetInnerHTML={{ __html: processedContent }}
             />
           </div>
         </main>
