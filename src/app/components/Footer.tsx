@@ -68,7 +68,7 @@ const Footer = () => {
         shipping &amp; delivery
       </Link>
       <Link
-        href="/legal/cancellations-and-refund"
+        href="/legal/cancellations-and-refunds"
         className="hover:opacity-75"
         data-underline-button-effect
       >
