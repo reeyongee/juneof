@@ -306,7 +306,7 @@ export default function CustomerOrders({
             }
           `,
           variables: {
-            first: 10,
+            first: 50,
           },
         };
 
@@ -669,8 +669,8 @@ export default function CustomerOrders({
             {statusLoading && exchangesLoading
               ? "loading order data..."
               : statusLoading
-              ? "checking order statuses..."
-              : "loading exchange data..."}
+                ? "checking order statuses..."
+                : "loading exchange data..."}
           </span>
         </div>
       )}
