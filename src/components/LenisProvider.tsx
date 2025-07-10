@@ -54,15 +54,15 @@ export default function LenisProvider({ children }: LenisProviderProps) {
 
   // Function to initialize Lenis
   const initializeLenis = useCallback(() => {
-    if (lenisRef.current || isMobile) return; // Don't initialize if already exists or on mobile
+    if (lenisRef.current) return; // Don't initialize if already exists
 
     const lenis = new Lenis({
-      duration: 1.5,
+      duration: isMobile ? 0.8 : 1.5, // Faster duration for mobile
       easing: (t) => (t === 1 ? 1 : 1 - Math.pow(2, -10 * t)),
       orientation: "vertical",
       gestureOrientation: "vertical",
-      smoothWheel: true,
-      touchMultiplier: 2,
+      smoothWheel: !isMobile, // Disable smooth wheel on mobile (use native touch)
+      touchMultiplier: isMobile ? 1.5 : 2, // Slightly faster touch scrolling on mobile
       infinite: false,
     });
 
@@ -100,24 +100,15 @@ export default function LenisProvider({ children }: LenisProviderProps) {
     delete (window as unknown as { lenis?: Lenis }).lenis;
   };
 
-  // Handle mobile/desktop transitions
+  // Handle mobile/desktop transitions and initialize Lenis for both
   useEffect(() => {
-    if (isMobile) {
-      // Destroy Lenis when going to mobile
-      destroyLenis();
-    } else {
-      // Initialize Lenis when going to desktop (with delay to ensure DOM is ready)
-      const timeoutId = setTimeout(() => {
-        initializeLenis();
-      }, 100);
+    // Always initialize Lenis (both mobile and desktop)
+    const timeoutId = setTimeout(() => {
+      initializeLenis();
+    }, 100);
 
-      return () => {
-        clearTimeout(timeoutId);
-      };
-    }
-
-    // Cleanup function
     return () => {
+      clearTimeout(timeoutId);
       destroyLenis();
     };
   }, [isMobile, initializeLenis]);
