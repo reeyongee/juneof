@@ -55,8 +55,8 @@ export const useViewportHeight = (): UseViewportHeightReturn => {
   const lastHeightRef = useRef<number>(0);
   const resizeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Threshold for mobile - address bars are typically 44-60px, so 100px is safe
-  const MOBILE_THRESHOLD = 100;
+  // Threshold for mobile - dual toolbars (top + bottom) can be 120-140px, so 150px is safe
+  const MOBILE_THRESHOLD = 150;
 
   // Debounce delay for desktop
   const DESKTOP_DEBOUNCE_DELAY = 150;
@@ -88,8 +88,8 @@ export const useViewportHeight = (): UseViewportHeightReturn => {
             reason: forceUpdate
               ? "forced"
               : isOrientationChange
-              ? "orientation"
-              : "substantial",
+                ? "orientation"
+                : "substantial",
             heightDiff,
             newDimensions: { width: currentWidth, height: currentHeight },
           });
