@@ -550,38 +550,27 @@ export default function LandingPageContent() {
       {/* --- SECTION 4 --- */}
       <div
         ref={section4Ref}
-        className={`section4 absolute block top-0 left-0 w-screen h-screen overflow-hidden bg-[#F8F4EC] group ${
-          // Only make it clickable on desktop or when mobile overlay is visible
-          !isMobile || isMobileOverlayVisible
-            ? "cursor-pointer"
-            : "cursor-default"
-        } ${
+        className={`section4 absolute block top-0 left-0 w-screen h-screen overflow-hidden bg-[#F8F4EC] group cursor-pointer ${
           isMobile && isMobileOverlayVisible ? "mobile-overlay-visible" : ""
         }`}
-        onClick={() => {
-          // Only allow click on desktop or when mobile overlay is visible
-          if (!isMobile || isMobileOverlayVisible) {
-            window.open(
-              "https://www.instagram.com/juneof__",
-              "_blank",
-              "noopener,noreferrer"
-            );
-          }
-        }}
+        onClick={() =>
+          window.open(
+            "https://www.instagram.com/juneof__",
+            "_blank",
+            "noopener,noreferrer"
+          )
+        }
         role="button"
         tabIndex={0}
         aria-label="Visit June Of on Instagram - Sustainable fashion editorial and behind-the-scenes content"
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
-            // Only allow keyboard activation on desktop or when mobile overlay is visible
-            if (!isMobile || isMobileOverlayVisible) {
-              window.open(
-                "https://www.instagram.com/juneof__",
-                "_blank",
-                "noopener,noreferrer"
-              );
-            }
+            window.open(
+              "https://www.instagram.com/juneof__",
+              "_blank",
+              "noopener,noreferrer"
+            );
           }
         }}
       >
