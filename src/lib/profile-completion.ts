@@ -288,7 +288,7 @@ export function validateAddressForm(address: {
   }
 
   if (!address.territoryCode?.trim()) {
-    errors.territoryCode = "Territory/State is required";
+    errors.territoryCode = "State is required";
   }
 
   if (!address.zip?.trim()) {
@@ -296,7 +296,7 @@ export function validateAddressForm(address: {
   }
 
   if (!address.zoneCode?.trim()) {
-    errors.zoneCode = "Zone/Province is required";
+    errors.zoneCode = "State is required";
   }
 
   return {

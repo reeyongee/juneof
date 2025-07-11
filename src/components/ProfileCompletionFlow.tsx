@@ -280,7 +280,7 @@ export function ProfileCompletionFlow({
       <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" />
 
       {/* Overlay Content */}
-      <div className="relative bg-[#F8F4EC] w-full max-w-md mx-4 max-h-[calc(100vh-8rem)] border border-gray-300 mt-16 flex flex-col">
+      <div className="relative bg-[#F8F4EC] w-full max-w-lg mx-4 max-h-[calc(100vh-6rem)] border border-gray-300 mt-12 flex flex-col">
         {/* Header */}
         <div className="p-6 border-b border-gray-300">
           <div className="flex items-center gap-3 mb-3">
