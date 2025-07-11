@@ -78,14 +78,8 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const router = useRouter();
-  const {
-    startAuthFlow,
-    completeAuthFlow,
-    startFlow,
-    completeFlowStep,
-    completeFlow,
-    isFlowActive,
-  } = useLoading();
+  const { startAuthFlow, completeAuthFlow, startFlow, completeFlowStep } =
+    useLoading();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true); // Key: Start true
   const [customerData, setCustomerData] = useState<CustomerProfileData | null>(
@@ -612,7 +606,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, [
     shopifyAuthConfig,
     _internalFetchAndSetCustomerData,
-    completeAuthFlow,
     startFlow,
     completeFlowStep,
   ]); // `logout` is included via _internalFetch

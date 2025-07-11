@@ -652,7 +652,14 @@ export const LoadingProvider: React.FC<LoadingProviderProps> = ({
         }
       };
     }
-  }, [isAuthFlowActive, forceCompleteAuthFlow, completeAuthFlow]);
+  }, [
+    isAuthFlowActive,
+    forceCompleteAuthFlow,
+    completeAuthFlow,
+    isGlobalLoading,
+    getActiveFlows,
+    clearAllFlows,
+  ]);
 
   // Detect abandoned auth flows when users navigate back or return to the page
   useEffect(() => {
@@ -766,7 +773,13 @@ export const LoadingProvider: React.FC<LoadingProviderProps> = ({
     }, 10000); // Check every 10 seconds
 
     return () => clearInterval(checkInterval);
-  }, [isGlobalLoading, forceCompleteFlow, emergencyReset]);
+  }, [
+    isGlobalLoading,
+    forceCompleteFlow,
+    emergencyReset,
+    clearAllFlows,
+    getActiveFlows,
+  ]);
 
   // Cleanup on unmount
   useEffect(() => {

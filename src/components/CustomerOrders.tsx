@@ -157,7 +157,6 @@ export default function CustomerOrders({
   const [orderStatuses, setOrderStatuses] = useState<
     Record<string, OrderStatus>
   >({});
-  const [statusLoading, setStatusLoading] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [orderToCancel, setOrderToCancel] = useState<OrderNode | null>(null);
   const [showExchangeDialog, setShowExchangeDialog] = useState(false);
@@ -169,7 +168,6 @@ export default function CustomerOrders({
   const [exchangeReason, setExchangeReason] = useState("SIZE_TOO_SMALL");
   const [exchangingItemId, setExchangingItemId] = useState<string | null>(null);
   const [orderExchanges, setOrderExchanges] = useState<OrderExchangeData[]>([]);
-  const [exchangesLoading, setExchangesLoading] = useState(false);
   const hasFetchedRef = useRef(false);
   const [ordersDataReady, setOrdersDataReady] = useState(false);
 
@@ -189,7 +187,6 @@ export default function CustomerOrders({
     console.log("🔍 About to call order status API with IDs:", orderIds);
 
     try {
-      setStatusLoading(true);
       const response = await fetch("/api/customer/order-status", {
         method: "POST",
         headers: {
@@ -212,8 +209,6 @@ export default function CustomerOrders({
       }
     } catch (error) {
       console.error("Error fetching order statuses:", error);
-    } finally {
-      setStatusLoading(false);
     }
   }, []);
 
@@ -224,7 +219,6 @@ export default function CustomerOrders({
     console.log("🔄 About to call order exchanges API with IDs:", orderIds);
 
     try {
-      setExchangesLoading(true);
       const response = await fetch("/api/customer/order-exchanges", {
         method: "POST",
         headers: {
@@ -248,8 +242,6 @@ export default function CustomerOrders({
       }
     } catch (error) {
       console.error("Error fetching order exchanges:", error);
-    } finally {
-      setExchangesLoading(false);
     }
   }, []);
 
