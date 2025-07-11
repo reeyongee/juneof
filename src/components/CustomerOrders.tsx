@@ -52,6 +52,11 @@ interface OrderNode {
   };
   fulfillmentStatus: string;
   financialStatus: string;
+  fulfillments: {
+    trackingInfo: Array<{
+      number: string;
+    }>;
+  }[];
   lineItems: {
     edges: Array<{
       node: {
@@ -249,6 +254,23 @@ export default function CustomerOrders({
     }
   }, []);
 
+  // Helper function to get tracking numbers from an order
+  const getTrackingNumbers = (order: OrderNode): string[] => {
+    const trackingNumbers: string[] = [];
+    if (order.fulfillments) {
+      order.fulfillments.forEach((fulfillment) => {
+        if (fulfillment.trackingInfo) {
+          fulfillment.trackingInfo.forEach((tracking) => {
+            if (tracking.number) {
+              trackingNumbers.push(tracking.number);
+            }
+          });
+        }
+      });
+    }
+    return trackingNumbers;
+  };
+
   // Internal function to fetch customer orders
   const fetchCustomerOrdersInternal = useCallback(
     async (client: CustomerAccountApiClient, tokenData: TokenStorage) => {
@@ -268,7 +290,7 @@ export default function CustomerOrders({
           client.updateAccessToken(refreshedTokens.accessToken);
         }
 
-        // Fetch customer orders with line items
+        // Fetch customer orders with line items and tracking info
         const ordersQuery = {
           query: `
             query GetCustomerOrders($first: Int!) {
@@ -285,6 +307,11 @@ export default function CustomerOrders({
                       }
                       fulfillmentStatus
                       financialStatus
+                      fulfillments(first: 50) {
+                        trackingInfo(first: 50) {
+                          number
+                        }
+                      }
                       lineItems(first: 10) {
                         edges {
                           node {
@@ -777,6 +804,24 @@ export default function CustomerOrders({
                       </span>
                     </div>
 
+                    {/* Tracking Numbers */}
+                    {getTrackingNumbers(order).length > 0 && (
+                      <div className="pt-4 border-t border-gray-200">
+                        <div className="space-y-2">
+                          {getTrackingNumbers(order).map(
+                            (trackingNumber, index) => (
+                              <div
+                                key={index}
+                                className="text-sm lowercase tracking-wider text-gray-700"
+                              >
+                                tracking number: {trackingNumber}
+                              </div>
+                            )
+                          )}
+                        </div>
+                      </div>
+                    )}
+
                     {/* Active Exchanges */}
                     {getOrderExchanges(order.id).length > 0 && (
                       <div className="pt-4 border-t border-gray-200">
@@ -1037,6 +1082,24 @@ export default function CustomerOrders({
                       </span>
                     </div>
 
+                    {/* Tracking Numbers */}
+                    {getTrackingNumbers(order).length > 0 && (
+                      <div className="pt-4 border-t border-gray-200">
+                        <div className="space-y-2">
+                          {getTrackingNumbers(order).map(
+                            (trackingNumber, index) => (
+                              <div
+                                key={index}
+                                className="text-sm lowercase tracking-wider text-gray-700"
+                              >
+                                tracking number: {trackingNumber}
+                              </div>
+                            )
+                          )}
+                        </div>
+                      </div>
+                    )}
+
                     {/* Active Exchanges */}
                     {getOrderExchanges(order.id).length > 0 && (
                       <div className="pt-4 border-t border-gray-200">
@@ -1250,6 +1313,24 @@ export default function CustomerOrders({
                           </div>
                         </div>
                       ))}
+
+                      {/* Tracking Numbers */}
+                      {getTrackingNumbers(order).length > 0 && (
+                        <div className="pt-4 border-t border-gray-200">
+                          <div className="space-y-2">
+                            {getTrackingNumbers(order).map(
+                              (trackingNumber, index) => (
+                                <div
+                                  key={index}
+                                  className="text-sm lowercase tracking-wider text-gray-700"
+                                >
+                                  tracking number: {trackingNumber}
+                                </div>
+                              )
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
