@@ -328,13 +328,16 @@ export default function CustomerOrders({
           setOrders(orderNodes);
           console.log("✅ Customer orders loaded successfully:", orderNodes);
 
-          // Fetch detailed order statuses from Admin API
-          const orderIds = orderNodes.map((order) => order.id);
-          console.log("🎯 Extracted order IDs for status check:", orderIds);
-          await fetchOrderStatuses(orderIds);
+          // Only fetch additional data if we have orders
+          if (orderNodes.length > 0) {
+            // Fetch detailed order statuses from Admin API
+            const orderIds = orderNodes.map((order) => order.id);
+            console.log("🎯 Extracted order IDs for status check:", orderIds);
+            await fetchOrderStatuses(orderIds);
 
-          // Fetch exchange data for orders
-          await fetchOrderExchanges(orderIds);
+            // Fetch exchange data for orders
+            await fetchOrderExchanges(orderIds);
+          }
         } else {
           console.warn("⚠️ No data received from GraphQL query");
           setOrders([]);
@@ -370,13 +373,20 @@ export default function CustomerOrders({
       console.error("❌ Error in loadTokensAndFetchOrders:", error);
       setError("Failed to load orders. Please try again.");
     }
-  }, [memoizedConfig, fetchCustomerOrdersInternal]);
+  }, [memoizedConfig.shopId, fetchCustomerOrdersInternal]);
 
   // Effect to load orders when component mounts or tokens change
   useEffect(() => {
     if (tokens) {
+      // Only fetch if we haven't fetched yet or if we have no orders
+      if (!hasFetchedRef.current && orders.length === 0) {
+        console.log("CustomerOrders: Fetching orders for the first time");
+        loadTokensAndFetchOrders();
+      }
+    } else {
+      // Reset when no tokens (user logged out)
       hasFetchedRef.current = false;
-      loadTokensAndFetchOrders();
+      setOrders([]);
     }
   }, [tokens, loadTokensAndFetchOrders]);
 
