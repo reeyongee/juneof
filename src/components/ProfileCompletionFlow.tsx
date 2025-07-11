@@ -145,35 +145,71 @@ export function ProfileCompletionFlow({
     }
   }, [isOpen, apiClient, loadCustomerProfile]);
 
-  const handleStepComplete = async () => {
+  const handleStepCompleteWithDirectCheck = async () => {
     // Mark that user has interacted with the form
     setUserHasInteracted(true);
 
-    // Refresh customer data and recalculate status
-    await loadCustomerProfile();
+    if (!apiClient) {
+      console.error("No apiClient available for step completion");
+      return;
+    }
 
-    // Refresh the auth context customer data as well
-    await fetchCustomerData();
+    try {
+      // Refresh customer data and recalculate status
+      const response = await fetchCustomerProfileForCompletion(apiClient);
+      const errors = handleGraphQLErrors(response);
 
-    // Refresh addresses to show newly added addresses
-    await fetchAddresses();
-
-    if (profileStatus?.isComplete) {
-      // Profile is now complete, trigger completion callback and close
-      console.log(
-        "ProfileCompletionFlow: Profile completed by user step completion"
-      );
-      onComplete?.();
-      onClose();
-    } else if (profileStatus) {
-      const nextStep = getNextCompletionStep(profileStatus);
-      if (nextStep === "complete") {
-        // This shouldn't happen if profileStatus.isComplete is false, but handle it
-        onComplete?.();
-        onClose();
-      } else {
-        setCurrentStep(nextStep);
+      if (errors.length > 0) {
+        console.error("Error fetching profile after step completion:", errors);
+        return;
       }
+
+      if (response.data?.customer) {
+        const customer = response.data.customer;
+
+        // Transform the API response to match our CustomerProfile interface
+        const profile: CustomerProfile = {
+          id: customer.id,
+          displayName: customer.displayName,
+          firstName: customer.firstName,
+          lastName: customer.lastName,
+          emailAddress: customer.emailAddress,
+          phoneNumber: customer.phoneNumber,
+          defaultAddress: customer.defaultAddress,
+          addresses: customer.addresses.nodes,
+        };
+
+        setCustomerProfile(profile);
+
+        const status = analyzeProfileCompletion(profile);
+        setProfileStatus(status);
+
+        // Refresh the auth context customer data as well
+        await fetchCustomerData();
+
+        // Refresh addresses to show newly added addresses
+        await fetchAddresses();
+
+        if (status.isComplete) {
+          // Profile is now complete, trigger completion callback and close
+          console.log(
+            "ProfileCompletionFlow: Profile completed by user step completion"
+          );
+          onComplete?.();
+          onClose();
+        } else {
+          const nextStep = getNextCompletionStep(status);
+          if (nextStep === "complete") {
+            // This shouldn't happen if status.isComplete is false, but handle it
+            onComplete?.();
+            onClose();
+          } else {
+            setCurrentStep(nextStep);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error in handleStepCompleteWithDirectCheck:", error);
     }
   };
 
@@ -219,7 +255,7 @@ export function ProfileCompletionFlow({
           <NameCompletionStep
             apiClient={apiClient}
             customerProfile={customerProfile}
-            onComplete={handleStepComplete}
+            onComplete={handleStepCompleteWithDirectCheck}
             missingFields={profileStatus?.missingFields}
           />
         );
@@ -228,7 +264,7 @@ export function ProfileCompletionFlow({
           <AddressCompletionStep
             apiClient={apiClient}
             customerProfile={customerProfile}
-            onComplete={handleStepComplete}
+            onComplete={handleStepCompleteWithDirectCheck}
           />
         );
       default:
