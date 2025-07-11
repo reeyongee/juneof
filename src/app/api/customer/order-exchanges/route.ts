@@ -66,14 +66,6 @@ interface DetailedReturn {
           };
         }>;
       };
-      reverseDeliveries: {
-        nodes: Array<{
-          id: string;
-          trackingInfo: {
-            number: string;
-          }[];
-        }>;
-      };
     }>;
   };
 }
@@ -350,14 +342,6 @@ export async function POST(request: NextRequest) {
                             }
                           }
                         }
-                        reverseDeliveries(first: 10) {
-                          nodes {
-                            id
-                            trackingInfo {
-                              number
-                            }
-                          }
-                        }
                       }
                     }
                   }
@@ -409,27 +393,11 @@ export async function POST(request: NextRequest) {
                   )
               );
 
-              // Extract tracking numbers for this return
-              const returnTrackingNumbers: string[] = [];
-              returnData.reverseFulfillmentOrders.nodes.forEach((rfo) => {
-                if (rfo.reverseDeliveries) {
-                  rfo.reverseDeliveries.nodes.forEach((delivery) => {
-                    if (delivery.trackingInfo) {
-                      delivery.trackingInfo.forEach((tracking) => {
-                        if (tracking.number) {
-                          returnTrackingNumbers.push(tracking.number);
-                        }
-                      });
-                    }
-                  });
-                }
-              });
-
               return {
                 returnId: returnData.id,
                 returnName: returnData.name,
                 status: returnData.status,
-                trackingNumbers: returnTrackingNumbers,
+                trackingNumbers: [], // Exchange tracking will be handled separately through regular fulfillments
                 returnedItems: returnData.returnLineItems.nodes.map((node) => {
                   const originalItem = node.fulfillmentLineItem?.lineItem;
                   return {
@@ -454,7 +422,7 @@ export async function POST(request: NextRequest) {
                     fulfilled: fulfilledExchangeLineItemIds.has(
                       node.lineItem.id
                     ),
-                    trackingNumbers: returnTrackingNumbers, // Add tracking numbers to each exchange item
+                    trackingNumbers: [], // Will be populated separately through regular fulfillment tracking
                   })
                 ),
               };

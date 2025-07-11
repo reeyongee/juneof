@@ -10,7 +10,6 @@ interface OrderStatus {
   displayFinancialStatus: string;
   isCancelled: boolean;
   trackingNumbers: string[];
-  exchangeTrackingNumbers?: Record<string, string[]>; // returnId -> tracking numbers
 }
 
 interface Node {
@@ -27,28 +26,6 @@ interface Node {
       number: string;
     }[];
   }[];
-  returns: {
-    edges: Array<{
-      node: {
-        id: string;
-        status: string;
-        reverseFulfillmentOrders: {
-          nodes: Array<{
-            id: string;
-            status: string;
-            reverseDeliveries: {
-              nodes: Array<{
-                id: string;
-                trackingInfo: {
-                  number: string;
-                }[];
-              }>;
-            };
-          }>;
-        };
-      };
-    }>;
-  };
 }
 
 interface NodesResponse {
@@ -94,7 +71,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Use a 'nodes' query for efficient fetching of multiple orders
-    const nodesQuery = `
+    const query = `
       query GetOrdersByIds($ids: [ID!]!) {
         nodes(ids: $ids) {
           ... on Order {
@@ -111,91 +88,23 @@ export async function POST(request: NextRequest) {
                 number
               }
             }
-            returns(first: 50) {
-              edges {
-                node {
-                  id
-                  status
-                  reverseFulfillmentOrders(first: 50) {
-                    nodes {
-                      id
-                      status
-                      reverseDeliveries(first: 50) {
-                        nodes {
-                          id
-                          trackingInfo(first: 50) {
-                            number
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
           }
         }
       }
     `;
 
-    const nodesResponse = await adminClient.request<NodesResponse>(nodesQuery, {
+    const nodesResponse = await adminClient.request<NodesResponse>(query, {
       ids: orderIds,
     });
 
     const orderStatuses = (nodesResponse.nodes || []).reduce(
-      (acc: Record<string, OrderStatus>, node) => {
-        // Important: Check ownership and ensure node is not null
+      (acc: Record<string, OrderStatus>, node: Node | null) => {
+        // Only include orders that belong to the authenticated customer
         if (node && node.customer?.id === customerId) {
-          // Extract tracking numbers from fulfillments
-          const trackingNumbers: string[] = [];
-          if (node.fulfillments) {
-            node.fulfillments.forEach((fulfillment) => {
-              if (fulfillment.trackingInfo) {
-                fulfillment.trackingInfo.forEach((tracking) => {
-                  if (tracking.number) {
-                    trackingNumbers.push(tracking.number);
-                  }
-                });
-              }
-            });
-          }
-
-          // Extract tracking numbers from returns
-          const exchangeTrackingNumbers: Record<string, string[]> = {};
-          if (node.returns) {
-            node.returns.edges.forEach((edge) => {
-              const returnNode = edge.node;
-              if (
-                returnNode.status === "OPEN" &&
-                returnNode.reverseFulfillmentOrders
-              ) {
-                returnNode.reverseFulfillmentOrders.nodes.forEach(
-                  (reverseFulfillmentOrder) => {
-                    if (
-                      reverseFulfillmentOrder.status === "OPEN" &&
-                      reverseFulfillmentOrder.reverseDeliveries
-                    ) {
-                      reverseFulfillmentOrder.reverseDeliveries.nodes.forEach(
-                        (reverseDelivery) => {
-                          if (reverseDelivery.trackingInfo) {
-                            reverseDelivery.trackingInfo.forEach((tracking) => {
-                              if (tracking.number) {
-                                exchangeTrackingNumbers[returnNode.id] =
-                                  exchangeTrackingNumbers[returnNode.id] || [];
-                                exchangeTrackingNumbers[returnNode.id].push(
-                                  tracking.number
-                                );
-                              }
-                            });
-                          }
-                        }
-                      );
-                    }
-                  }
-                );
-              }
-            });
-          }
+          const trackingNumbers = node.fulfillments
+            .flatMap((fulfillment) => fulfillment.trackingInfo)
+            .map((info) => info.number)
+            .filter(Boolean);
 
           acc[node.id] = {
             id: node.id,
@@ -205,7 +114,6 @@ export async function POST(request: NextRequest) {
             displayFinancialStatus: node.displayFinancialStatus,
             isCancelled: node.cancelledAt !== null,
             trackingNumbers,
-            exchangeTrackingNumbers,
           };
         }
         return acc;

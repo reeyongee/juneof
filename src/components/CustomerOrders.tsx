@@ -955,76 +955,16 @@ export default function CustomerOrders({
                                             </p>
                                           </div>
                                         </div>
-                                        {/* Exchange Item Tracking Numbers */}
-                                        {item.fulfilled === true &&
-                                          item.trackingNumbers &&
-                                          item.trackingNumbers.length > 0 && (
-                                            <div className="mt-2 ml-2">
-                                              {item.trackingNumbers.map(
-                                                (
-                                                  trackingNumber,
-                                                  trackingIndex
-                                                ) => (
-                                                  <div
-                                                    key={trackingIndex}
-                                                    className="space-y-2"
-                                                  >
-                                                    <div className="flex gap-2 items-center">
-                                                      <div
-                                                        className={cn(
-                                                          "flex h-10 w-full border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-                                                          "relative items-center flex-1"
-                                                        )}
-                                                      >
-                                                        <Label
-                                                          htmlFor={`tracking-number-exchange-current-${exchange.returnId}-${item.id}-${trackingIndex}`}
-                                                          className="text-muted-foreground mr-2 whitespace-nowrap cursor-default lowercase tracking-wider text-xs"
-                                                        >
-                                                          replacement tracking :
-                                                        </Label>
-                                                        <Input
-                                                          id={`tracking-number-exchange-current-${exchange.returnId}-${item.id}-${trackingIndex}`}
-                                                          type="text"
-                                                          value={trackingNumber}
-                                                          readOnly
-                                                          className="flex-1 border-none bg-transparent p-0 focus-visible:ring-0 focus-visible:ring-offset-0 lowercase tracking-wider text-xs"
-                                                        />
-                                                        <Button
-                                                          type="button"
-                                                          variant="ghost"
-                                                          size="icon"
-                                                          className="absolute right-0 flex items-center justify-center h-full w-10 text-muted-foreground hover:bg-transparent hover:text-foreground"
-                                                          onClick={() => {
-                                                            navigator.clipboard.writeText(
-                                                              trackingNumber
-                                                            );
-                                                            toast.success(
-                                                              "Tracking number copied!"
-                                                            );
-                                                          }}
-                                                          aria-label="Copy tracking number"
-                                                        >
-                                                          <Copy className="h-4 w-4" />
-                                                        </Button>
-                                                      </div>
-                                                      <Button
-                                                        onClick={() =>
-                                                          window.open(
-                                                            "http://juneof.shipway.com/track",
-                                                            "_blank"
-                                                          )
-                                                        }
-                                                        className="bg-black text-white hover:bg-gray-800 lowercase tracking-wider text-xs"
-                                                        size="sm"
-                                                      >
-                                                        track replacement
-                                                      </Button>
-                                                    </div>
-                                                  </div>
-                                                )
-                                              )}
-                                            </div>
-                                          )}
+                                        {/* Exchange Item Tracking Numbers - Temporarily disabled until API supports exchange tracking */}
+                                        {/* Note: Exchange tracking numbers are not currently available through Shopify's GraphQL API */}
+                                        {item.fulfilled === true && (
+                                          <div className="mt-2 ml-2">
+                                            <p className="text-xs text-gray-500 lowercase tracking-wider">
+                                              Exchange tracking will be
+                                              available once shipped
+                                            </p>
+                                          </div>
+                                        )}
                                         {item.fulfilled !== true &&
                                           exchange.status === "OPEN" && (
                                             <p className="text-xs text-orange-600 lowercase tracking-wider mt-1 ml-2">
@@ -1349,76 +1289,16 @@ export default function CustomerOrders({
                                             </p>
                                           </div>
                                         </div>
-                                        {/* Exchange Item Tracking Numbers */}
-                                        {item.fulfilled === true &&
-                                          item.trackingNumbers &&
-                                          item.trackingNumbers.length > 0 && (
-                                            <div className="mt-2 ml-2">
-                                              {item.trackingNumbers.map(
-                                                (
-                                                  trackingNumber,
-                                                  trackingIndex
-                                                ) => (
-                                                  <div
-                                                    key={trackingIndex}
-                                                    className="space-y-2"
-                                                  >
-                                                    <div className="flex gap-2 items-center">
-                                                      <div
-                                                        className={cn(
-                                                          "flex h-10 w-full border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-                                                          "relative items-center flex-1"
-                                                        )}
-                                                      >
-                                                        <Label
-                                                          htmlFor={`tracking-number-exchange-past-${exchange.returnId}-${item.id}-${trackingIndex}`}
-                                                          className="text-muted-foreground mr-2 whitespace-nowrap cursor-default lowercase tracking-wider text-xs"
-                                                        >
-                                                          replacement tracking :
-                                                        </Label>
-                                                        <Input
-                                                          id={`tracking-number-exchange-past-${exchange.returnId}-${item.id}-${trackingIndex}`}
-                                                          type="text"
-                                                          value={trackingNumber}
-                                                          readOnly
-                                                          className="flex-1 border-none bg-transparent p-0 focus-visible:ring-0 focus-visible:ring-offset-0 lowercase tracking-wider text-xs"
-                                                        />
-                                                        <Button
-                                                          type="button"
-                                                          variant="ghost"
-                                                          size="icon"
-                                                          className="absolute right-0 flex items-center justify-center h-full w-10 text-muted-foreground hover:bg-transparent hover:text-foreground"
-                                                          onClick={() => {
-                                                            navigator.clipboard.writeText(
-                                                              trackingNumber
-                                                            );
-                                                            toast.success(
-                                                              "Tracking number copied!"
-                                                            );
-                                                          }}
-                                                          aria-label="Copy tracking number"
-                                                        >
-                                                          <Copy className="h-4 w-4" />
-                                                        </Button>
-                                                      </div>
-                                                      <Button
-                                                        onClick={() =>
-                                                          window.open(
-                                                            "http://juneof.shipway.com/track",
-                                                            "_blank"
-                                                          )
-                                                        }
-                                                        className="bg-black text-white hover:bg-gray-800 lowercase tracking-wider text-xs"
-                                                        size="sm"
-                                                      >
-                                                        track replacement
-                                                      </Button>
-                                                    </div>
-                                                  </div>
-                                                )
-                                              )}
-                                            </div>
-                                          )}
+                                        {/* Exchange Item Tracking Numbers - Temporarily disabled until API supports exchange tracking */}
+                                        {/* Note: Exchange tracking numbers are not currently available through Shopify's GraphQL API */}
+                                        {item.fulfilled === true && (
+                                          <div className="mt-2 ml-2">
+                                            <p className="text-xs text-gray-500 lowercase tracking-wider">
+                                              Exchange tracking will be
+                                              available once shipped
+                                            </p>
+                                          </div>
+                                        )}
                                         {item.fulfilled !== true &&
                                           exchange.status === "OPEN" && (
                                             <p className="text-xs text-orange-600 lowercase tracking-wider mt-1 ml-2">
