@@ -259,9 +259,18 @@ export default function DashboardPage() {
       }
     };
 
-    checkAndShowCompletionFlow();
+    // Only run this check once when the component first loads and user is authenticated
+    // Don't run it again unless the completion flow was closed and needs to be re-checked
+    if (
+      isAuthenticated &&
+      !authIsLoading &&
+      !isCompletionFlowOpen &&
+      !isProfileFetching
+    ) {
+      checkAndShowCompletionFlow();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, authIsLoading, isCompletionFlowOpen, isProfileFetching]);
+  }, [isAuthenticated, authIsLoading, isCompletionFlowOpen]);
 
   // Show loading state while checking authentication or redirecting, or if global loading is active
   if (authIsLoading || isRedirecting || isGlobalLoading || isProfileFetching) {

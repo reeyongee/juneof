@@ -14,6 +14,7 @@ function PostLoginRedirectContent() {
   const { completeAuthFlow } = useLoading();
   const hasRedirectedRef = useRef(false);
   const isRedirectingRef = useRef(false);
+  const hasCalledEnsureFreshRef = useRef(false);
   const [waitStartTime, setWaitStartTime] = useState<number | null>(null);
 
   useEffect(() => {
@@ -48,6 +49,7 @@ function PostLoginRedirectContent() {
           hasCustomerData: !!customerData,
           hasRedirected: hasRedirectedRef.current,
           isRedirecting: isRedirectingRef.current,
+          hasCalledEnsureFresh: hasCalledEnsureFreshRef.current,
           waitTimeMs: waitTime,
         }
       );
@@ -123,11 +125,13 @@ function PostLoginRedirectContent() {
       !authLoading &&
       customerData &&
       !hasRedirectedRef.current &&
-      !isRedirectingRef.current
+      !isRedirectingRef.current &&
+      !hasCalledEnsureFreshRef.current
     ) {
       console.log("PostLoginRedirect: All conditions met, processing redirect");
       hasRedirectedRef.current = true;
       isRedirectingRef.current = true;
+      hasCalledEnsureFreshRef.current = true; // Prevent multiple calls
 
       // Parse checkout login context from localStorage
       const checkoutLoginContext = JSON.parse(

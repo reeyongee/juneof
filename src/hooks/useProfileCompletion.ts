@@ -16,6 +16,7 @@ import {
 let globalProfileStatus: ProfileCompletionStatus | null = null;
 let globalIsCompletionFlowOpen = false;
 let globalIsFetching = false;
+let globalLastFetchTime = 0;
 const profileStatusListeners: Set<() => void> = new Set();
 const completionFlowListeners: Set<() => void> = new Set();
 
@@ -32,6 +33,10 @@ const setGlobalCompletionFlowOpen = (isOpen: boolean) => {
 const setGlobalIsFetching = (isFetching: boolean) => {
   globalIsFetching = isFetching;
   profileStatusListeners.forEach((listener) => listener());
+};
+
+const setGlobalLastFetchTime = (time: number) => {
+  globalLastFetchTime = time;
 };
 
 export interface UseProfileCompletionReturn {
@@ -105,6 +110,7 @@ export function useProfileCompletion(): UseProfileCompletionReturn {
 
         const status = analyzeProfileCompletion(profile);
         setGlobalProfileStatus(status);
+        setGlobalLastFetchTime(Date.now());
         hasFetchedRef.current = true;
         return status;
       }
@@ -116,11 +122,43 @@ export function useProfileCompletion(): UseProfileCompletionReturn {
     return null;
   }, [apiClient]);
 
-  // Function to ensure we have fresh profile status
+  // Function to ensure we have fresh profile status with caching
   const ensureFreshProfileStatus = useCallback(async () => {
     if (!apiClient || !isAuthenticated || isLoading) return null;
 
-    // Always fetch fresh data for critical decisions
+    // Check if we already have fresh data (within last 30 seconds)
+    const now = Date.now();
+    const CACHE_DURATION = 30000; // 30 seconds
+    const timeSinceLastFetch = now - globalLastFetchTime;
+
+    // If we have recent data and we're not currently fetching, return cached status
+    if (
+      timeSinceLastFetch < CACHE_DURATION &&
+      globalProfileStatus &&
+      !globalIsFetching
+    ) {
+      console.log(
+        "useProfileCompletion: Using cached profile status (fresh within 30s)"
+      );
+      return globalProfileStatus;
+    }
+
+    // If we're already fetching, wait for that to complete rather than starting another fetch
+    if (globalIsFetching) {
+      console.log(
+        "useProfileCompletion: Profile fetch already in progress, waiting..."
+      );
+      // Wait up to 5 seconds for the current fetch to complete
+      let attempts = 0;
+      while (globalIsFetching && attempts < 50) {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        attempts++;
+      }
+      return globalProfileStatus;
+    }
+
+    // Fetch fresh data
+    console.log("useProfileCompletion: Fetching fresh profile status");
     const freshStatus = await fetchAndAnalyzeProfile();
     return freshStatus;
   }, [apiClient, isAuthenticated, isLoading, fetchAndAnalyzeProfile]);
@@ -132,6 +170,7 @@ export function useProfileCompletion(): UseProfileCompletionReturn {
     } else if (!isAuthenticated) {
       setGlobalProfileStatus(null);
       setGlobalIsFetching(false);
+      setGlobalLastFetchTime(0);
       hasFetchedRef.current = false;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -151,6 +190,7 @@ export function useProfileCompletion(): UseProfileCompletionReturn {
 
   const refreshProfileStatus = () => {
     hasFetchedRef.current = false;
+    setGlobalLastFetchTime(0); // Reset cache
     fetchAndAnalyzeProfile();
   };
 
