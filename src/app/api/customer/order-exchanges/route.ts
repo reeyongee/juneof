@@ -66,6 +66,14 @@ interface DetailedReturn {
           };
         }>;
       };
+      fulfillments: {
+        nodes: Array<{
+          id: string;
+          trackingInfo: {
+            number: string;
+          }[];
+        }>;
+      };
     }>;
   };
 }
@@ -117,6 +125,7 @@ interface OrderExchangeData {
     returnId: string;
     returnName: string;
     status: string;
+    trackingNumbers: string[];
     returnedItems: Array<{
       id: string;
       originalLineItemId: string;
@@ -138,6 +147,7 @@ interface OrderExchangeData {
         altText: string;
       } | null;
       fulfilled: boolean;
+      trackingNumbers: string[];
     }>;
   }>;
 }
@@ -340,6 +350,14 @@ export async function POST(request: NextRequest) {
                             }
                           }
                         }
+                        fulfillments(first: 10) {
+                          nodes {
+                            id
+                            trackingInfo {
+                              number
+                            }
+                          }
+                        }
                       }
                     }
                   }
@@ -391,10 +409,27 @@ export async function POST(request: NextRequest) {
                   )
               );
 
+              // Extract tracking numbers for this return
+              const returnTrackingNumbers: string[] = [];
+              returnData.reverseFulfillmentOrders.nodes.forEach((rfo) => {
+                if (rfo.fulfillments) {
+                  rfo.fulfillments.nodes.forEach((fulfillment) => {
+                    if (fulfillment.trackingInfo) {
+                      fulfillment.trackingInfo.forEach((tracking) => {
+                        if (tracking.number) {
+                          returnTrackingNumbers.push(tracking.number);
+                        }
+                      });
+                    }
+                  });
+                }
+              });
+
               return {
                 returnId: returnData.id,
                 returnName: returnData.name,
                 status: returnData.status,
+                trackingNumbers: returnTrackingNumbers,
                 returnedItems: returnData.returnLineItems.nodes.map((node) => {
                   const originalItem = node.fulfillmentLineItem?.lineItem;
                   return {
@@ -419,6 +454,7 @@ export async function POST(request: NextRequest) {
                     fulfilled: fulfilledExchangeLineItemIds.has(
                       node.lineItem.id
                     ),
+                    trackingNumbers: returnTrackingNumbers, // Add tracking numbers to each exchange item
                   })
                 ),
               };

@@ -6,10 +6,11 @@ interface OrderStatus {
   id: string;
   cancelledAt: string | null;
   cancelReason: string | null;
-  fulfillmentStatus: string;
-  financialStatus: string;
+  displayFulfillmentStatus: string;
+  displayFinancialStatus: string;
   isCancelled: boolean;
   trackingNumbers: string[];
+  exchangeTrackingNumbers?: Record<string, string[]>; // returnId -> tracking numbers
 }
 
 interface Node {
@@ -26,6 +27,28 @@ interface Node {
       number: string;
     }[];
   }[];
+  returns: {
+    edges: Array<{
+      node: {
+        id: string;
+        status: string;
+        reverseFulfillmentOrders: {
+          nodes: Array<{
+            id: string;
+            status: string;
+            fulfillments: {
+              nodes: Array<{
+                id: string;
+                trackingInfo: {
+                  number: string;
+                }[];
+              }>;
+            };
+          }>;
+        };
+      };
+    }>;
+  };
 }
 
 interface NodesResponse {
@@ -88,6 +111,28 @@ export async function POST(request: NextRequest) {
                 number
               }
             }
+            returns(first: 50) {
+              edges {
+                node {
+                  id
+                  status
+                  reverseFulfillmentOrders(first: 50) {
+                    nodes {
+                      id
+                      status
+                      fulfillments(first: 50) {
+                        nodes {
+                          id
+                          trackingInfo(first: 50) {
+                            number
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -115,14 +160,52 @@ export async function POST(request: NextRequest) {
             });
           }
 
+          // Extract tracking numbers from returns
+          const exchangeTrackingNumbers: Record<string, string[]> = {};
+          if (node.returns) {
+            node.returns.edges.forEach((edge) => {
+              const returnNode = edge.node;
+              if (
+                returnNode.status === "OPEN" &&
+                returnNode.reverseFulfillmentOrders
+              ) {
+                returnNode.reverseFulfillmentOrders.nodes.forEach(
+                  (reverseFulfillmentOrder) => {
+                    if (
+                      reverseFulfillmentOrder.status === "OPEN" &&
+                      reverseFulfillmentOrder.fulfillments
+                    ) {
+                      reverseFulfillmentOrder.fulfillments.nodes.forEach(
+                        (fulfillment) => {
+                          if (fulfillment.trackingInfo) {
+                            fulfillment.trackingInfo.forEach((tracking) => {
+                              if (tracking.number) {
+                                exchangeTrackingNumbers[returnNode.id] =
+                                  exchangeTrackingNumbers[returnNode.id] || [];
+                                exchangeTrackingNumbers[returnNode.id].push(
+                                  tracking.number
+                                );
+                              }
+                            });
+                          }
+                        }
+                      );
+                    }
+                  }
+                );
+              }
+            });
+          }
+
           acc[node.id] = {
             id: node.id,
             cancelledAt: node.cancelledAt,
             cancelReason: node.cancelReason,
-            fulfillmentStatus: node.displayFulfillmentStatus,
-            financialStatus: node.displayFinancialStatus,
+            displayFulfillmentStatus: node.displayFulfillmentStatus,
+            displayFinancialStatus: node.displayFinancialStatus,
             isCancelled: node.cancelledAt !== null,
             trackingNumbers,
+            exchangeTrackingNumbers,
           };
         }
         return acc;
