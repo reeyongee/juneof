@@ -12,6 +12,15 @@ import { useRouter } from "next/navigation";
 import AddressSelectionOverlay from "./AddressSelectionOverlay";
 import { ShoppingBagIcon, XMarkIcon } from "@heroicons/react/24/outline";
 
+// Global guard to prevent multiple CartOverlay instances
+let globalCartOverlayOpen = false;
+const cartOverlayListeners: Set<() => void> = new Set();
+
+const setGlobalCartOverlayOpen = (isOpen: boolean) => {
+  globalCartOverlayOpen = isOpen;
+  cartOverlayListeners.forEach((listener) => listener());
+};
+
 // Define props interface
 interface CartOverlayProps {
   isOpen: boolean;
@@ -33,6 +42,30 @@ export default function CartOverlay({ isOpen, onClose }: CartOverlayProps) {
   const tl = useRef<gsap.core.Timeline | null>(null);
   const [isMounted, setIsMounted] = useState(false);
   const [isAddressSelectionOpen, setIsAddressSelectionOpen] = useState(false);
+  const [globalCartOpen, setGlobalCartOpen] = useState(globalCartOverlayOpen);
+
+  // Subscribe to global cart overlay state changes
+  useEffect(() => {
+    const updateGlobalState = () => setGlobalCartOpen(globalCartOverlayOpen);
+    cartOverlayListeners.add(updateGlobalState);
+    return () => {
+      cartOverlayListeners.delete(updateGlobalState);
+    };
+  }, []);
+
+  // Manage global cart overlay state
+  useEffect(() => {
+    if (isOpen && !globalCartOverlayOpen) {
+      // This instance is trying to open and no other is open
+      setGlobalCartOverlayOpen(true);
+    } else if (!isOpen && globalCartOverlayOpen) {
+      // This instance is closing, release the global lock
+      setGlobalCartOverlayOpen(false);
+    }
+  }, [isOpen]);
+
+  // Determine if this instance should actually render
+  const shouldRender = isOpen && globalCartOpen;
 
   // Use cart from context
   const {
@@ -83,7 +116,7 @@ export default function CartOverlay({ isOpen, onClose }: CartOverlayProps) {
 
     tl.current?.kill();
 
-    if (isOpen && !isAnimatingOut) {
+    if (shouldRender && !isAnimatingOut) {
       gsap.set(overlayElement, { autoAlpha: 1 });
       gsap.set(contentElement, { x: "100%", opacity: 0 }); // Start off-screen right
       gsap.set(backdropElement, { opacity: 0 });
@@ -134,7 +167,7 @@ export default function CartOverlay({ isOpen, onClose }: CartOverlayProps) {
     return () => {
       tl.current?.kill();
     };
-  }, [isOpen, isAnimatingOut, onClose]);
+  }, [shouldRender, isAnimatingOut, onClose]);
 
   const handleQuantityChange = (itemId: string, change: number) => {
     updateItemQuantity(itemId, change);
@@ -181,7 +214,7 @@ export default function CartOverlay({ isOpen, onClose }: CartOverlayProps) {
     }
   };
 
-  if (!isMounted) {
+  if (!isMounted || !shouldRender) {
     return null;
   }
 
