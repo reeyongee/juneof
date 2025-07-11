@@ -442,7 +442,7 @@ export default function CustomerOrders({
       loadTokensAndFetchOrders();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tokens]); // FIXED: Removed loadTokensAndFetchOrders from dependencies to prevent infinite loop
+  }, [tokens, loading]); // FIXED: Added loading to prevent conflicts
 
   // Bulletproof cleanup effect
   useEffect(() => {
@@ -663,9 +663,13 @@ export default function CustomerOrders({
         setExchangeOptions(null);
         setSelectedVariant("");
 
-        // Refresh orders to show updated status
-        hasFetchedRef.current = false;
-        await loadTokensAndFetchOrders();
+        // FIXED: Instead of resetting hasFetchedRef and causing infinite loop,
+        // just refresh the specific data we need
+        const orderIds = orders.map((order) => order.id);
+        if (orderIds.length > 0) {
+          await fetchOrderStatuses(orderIds);
+          await fetchOrderExchanges(orderIds);
+        }
       } else {
         console.error("❌ Failed to create exchange:", data.error);
         setError(data.error || "Failed to create exchange");
@@ -714,9 +718,10 @@ export default function CustomerOrders({
         <Button
           onClick={() => {
             setError(null);
-            // BULLETPROOF: Don't reset hasFetchedRef to prevent infinite loop
-            // Just try to load again with existing protection
-            loadTokensAndFetchOrders();
+            // FIXED: Only retry if we haven't fetched yet
+            if (!hasFetchedRef.current) {
+              loadTokensAndFetchOrders();
+            }
           }}
           variant="outline"
           className="mt-4 lowercase tracking-wider"
