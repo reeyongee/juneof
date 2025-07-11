@@ -16,6 +16,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -31,7 +32,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2 } from "lucide-react";
+import { Loader2, Copy } from "lucide-react";
 
 import {
   ShopifyAuthConfig,
@@ -771,25 +772,35 @@ export default function CustomerOrders({
                         <div className="pt-4 border-t border-gray-200">
                           {orderStatuses[order.id].trackingNumbers.map(
                             (trackingNumber, index) => (
-                              <div
-                                key={index}
-                                className="flex justify-between items-center"
-                              >
+                              <div key={index} className="space-y-2">
                                 <p className="text-sm lowercase tracking-wider text-gray-600">
-                                  tracking number : {trackingNumber}
+                                  tracking number
                                 </p>
                                 <div className="flex gap-2">
-                                  <Button
-                                    onClick={() =>
-                                      navigator.clipboard.writeText(
-                                        trackingNumber
-                                      )
-                                    }
-                                    className="bg-gray-100 text-gray-700 hover:bg-gray-200 lowercase tracking-wider text-xs px-2 py-1 h-auto"
-                                    size="sm"
-                                  >
-                                    copy
-                                  </Button>
+                                  <div className="relative flex-1">
+                                    <Input
+                                      type="text"
+                                      value={trackingNumber}
+                                      readOnly
+                                      className="pr-10 lowercase tracking-wider text-xs"
+                                    />
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                                      onClick={() =>
+                                        navigator.clipboard.writeText(
+                                          trackingNumber
+                                        )
+                                      }
+                                    >
+                                      <Copy className="h-4 w-4" />
+                                      <span className="sr-only">
+                                        Copy tracking number
+                                      </span>
+                                    </Button>
+                                  </div>
                                   <Button
                                     onClick={() =>
                                       window.open(
@@ -1075,25 +1086,35 @@ export default function CustomerOrders({
                         <div className="pt-4 border-t border-gray-200">
                           {orderStatuses[order.id].trackingNumbers.map(
                             (trackingNumber, index) => (
-                              <div
-                                key={index}
-                                className="flex justify-between items-center"
-                              >
+                              <div key={index} className="space-y-2">
                                 <p className="text-sm lowercase tracking-wider text-gray-600">
-                                  tracking number : {trackingNumber}
+                                  tracking number
                                 </p>
                                 <div className="flex gap-2">
-                                  <Button
-                                    onClick={() =>
-                                      navigator.clipboard.writeText(
-                                        trackingNumber
-                                      )
-                                    }
-                                    className="bg-gray-100 text-gray-700 hover:bg-gray-200 lowercase tracking-wider text-xs px-2 py-1 h-auto"
-                                    size="sm"
-                                  >
-                                    copy
-                                  </Button>
+                                  <div className="relative flex-1">
+                                    <Input
+                                      type="text"
+                                      value={trackingNumber}
+                                      readOnly
+                                      className="pr-10 lowercase tracking-wider text-xs"
+                                    />
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                                      onClick={() =>
+                                        navigator.clipboard.writeText(
+                                          trackingNumber
+                                        )
+                                      }
+                                    >
+                                      <Copy className="h-4 w-4" />
+                                      <span className="sr-only">
+                                        Copy tracking number
+                                      </span>
+                                    </Button>
+                                  </div>
                                   <Button
                                     onClick={() =>
                                       window.open(
@@ -1346,25 +1367,35 @@ export default function CustomerOrders({
                           <div className="pt-4 border-t border-gray-200">
                             {orderStatuses[order.id].trackingNumbers.map(
                               (trackingNumber, index) => (
-                                <div
-                                  key={index}
-                                  className="flex justify-between items-center"
-                                >
+                                <div key={index} className="space-y-2">
                                   <p className="text-sm lowercase tracking-wider text-gray-600">
-                                    tracking number : {trackingNumber}
+                                    tracking number
                                   </p>
                                   <div className="flex gap-2">
-                                    <Button
-                                      onClick={() =>
-                                        navigator.clipboard.writeText(
-                                          trackingNumber
-                                        )
-                                      }
-                                      className="bg-gray-100 text-gray-700 hover:bg-gray-200 lowercase tracking-wider text-xs px-2 py-1 h-auto"
-                                      size="sm"
-                                    >
-                                      copy
-                                    </Button>
+                                    <div className="relative flex-1">
+                                      <Input
+                                        type="text"
+                                        value={trackingNumber}
+                                        readOnly
+                                        className="pr-10 lowercase tracking-wider text-xs"
+                                      />
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                                        onClick={() =>
+                                          navigator.clipboard.writeText(
+                                            trackingNumber
+                                          )
+                                        }
+                                      >
+                                        <Copy className="h-4 w-4" />
+                                        <span className="sr-only">
+                                          Copy tracking number
+                                        </span>
+                                      </Button>
+                                    </div>
                                     <Button
                                       onClick={() =>
                                         window.open(
