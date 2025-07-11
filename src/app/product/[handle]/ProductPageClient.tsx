@@ -94,6 +94,10 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
     product.metafield?.value === "true"
   );
 
+  // Guards to prevent multiple cart overlay opens
+  const hasOpenedCartFromUrl = useRef(false);
+  const hasOpenedCartFromCompletion = useRef(false);
+
   const { addItemToCart } = useCart();
   const { isAuthenticated, customerData } = useAuth();
   const { refreshProfileStatus } = useProfileCompletion();
@@ -208,11 +212,12 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
     const showProfileCompletion =
       searchParams.get("show_profile_completion") === "true";
 
-    if (checkoutLoginComplete && openCart) {
+    if (checkoutLoginComplete && openCart && !hasOpenedCartFromUrl.current) {
       // Flow A: Profile complete - show cart overlay
       console.log(
         "ProductPageClient: Checkout login complete, opening cart overlay"
       );
+      hasOpenedCartFromUrl.current = true;
       setIsCartOpen(true);
 
       // Clean up URL parameters
@@ -242,6 +247,21 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
       );
     }
   }, [searchParams]);
+
+  // Reset guards when component unmounts or when cart is manually closed
+  useEffect(() => {
+    return () => {
+      hasOpenedCartFromUrl.current = false;
+      hasOpenedCartFromCompletion.current = false;
+    };
+  }, []);
+
+  // Reset completion guard when cart is manually closed
+  useEffect(() => {
+    if (!isCartOpen) {
+      hasOpenedCartFromCompletion.current = false;
+    }
+  }, [isCartOpen]);
 
   // Track scroll position for mobile image gallery with looping
   useEffect(() => {
@@ -894,15 +914,18 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
         isOpen={isProfileCompletionOpen}
         onClose={() => setIsProfileCompletionOpen(false)}
         onComplete={() => {
-          refreshProfileStatus();
-          setIsProfileCompletionOpen(false);
-          // After profile completion, show cart overlay
-          setIsCartOpen(true);
-          toast.success("profile completed!", {
-            description:
-              "your profile has been successfully updated. you'll now get personalized recommendations and faster checkout.",
-            duration: 4000,
-          });
+          if (!hasOpenedCartFromCompletion.current) {
+            hasOpenedCartFromCompletion.current = true;
+            refreshProfileStatus();
+            setIsProfileCompletionOpen(false);
+            // After profile completion, show cart overlay
+            setIsCartOpen(true);
+            toast.success("profile completed!", {
+              description:
+                "your profile has been successfully updated. you'll now get personalized recommendations and faster checkout.",
+              duration: 4000,
+            });
+          }
         }}
       />
     </>
