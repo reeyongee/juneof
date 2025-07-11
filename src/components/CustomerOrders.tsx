@@ -778,18 +778,31 @@ export default function CustomerOrders({
                                 <p className="text-sm lowercase tracking-wider text-gray-600">
                                   tracking number : {trackingNumber}
                                 </p>
-                                <Button
-                                  onClick={() =>
-                                    window.open(
-                                      "http://juneof.shipway.com/track",
-                                      "_blank"
-                                    )
-                                  }
-                                  className="ml-4 bg-black text-white hover:bg-gray-800 lowercase tracking-wider text-xs px-3 py-1 h-auto"
-                                  size="sm"
-                                >
-                                  track order
-                                </Button>
+                                <div className="flex gap-2">
+                                  <Button
+                                    onClick={() =>
+                                      navigator.clipboard.writeText(
+                                        trackingNumber
+                                      )
+                                    }
+                                    className="bg-gray-100 text-gray-700 hover:bg-gray-200 lowercase tracking-wider text-xs px-2 py-1 h-auto"
+                                    size="sm"
+                                  >
+                                    copy
+                                  </Button>
+                                  <Button
+                                    onClick={() =>
+                                      window.open(
+                                        "http://juneof.shipway.com/track",
+                                        "_blank"
+                                      )
+                                    }
+                                    className="bg-black text-white hover:bg-gray-800 lowercase tracking-wider text-xs"
+                                    size="sm"
+                                  >
+                                    track order
+                                  </Button>
+                                </div>
                               </div>
                             )
                           )}
@@ -1069,18 +1082,31 @@ export default function CustomerOrders({
                                 <p className="text-sm lowercase tracking-wider text-gray-600">
                                   tracking number : {trackingNumber}
                                 </p>
-                                <Button
-                                  onClick={() =>
-                                    window.open(
-                                      "http://juneof.shipway.com/track",
-                                      "_blank"
-                                    )
-                                  }
-                                  className="ml-4 bg-black text-white hover:bg-gray-800 lowercase tracking-wider text-xs px-3 py-1 h-auto"
-                                  size="sm"
-                                >
-                                  track order
-                                </Button>
+                                <div className="flex gap-2">
+                                  <Button
+                                    onClick={() =>
+                                      navigator.clipboard.writeText(
+                                        trackingNumber
+                                      )
+                                    }
+                                    className="bg-gray-100 text-gray-700 hover:bg-gray-200 lowercase tracking-wider text-xs px-2 py-1 h-auto"
+                                    size="sm"
+                                  >
+                                    copy
+                                  </Button>
+                                  <Button
+                                    onClick={() =>
+                                      window.open(
+                                        "http://juneof.shipway.com/track",
+                                        "_blank"
+                                      )
+                                    }
+                                    className="bg-black text-white hover:bg-gray-800 lowercase tracking-wider text-xs"
+                                    size="sm"
+                                  >
+                                    track order
+                                  </Button>
+                                </div>
                               </div>
                             )
                           )}
@@ -1327,18 +1353,31 @@ export default function CustomerOrders({
                                   <p className="text-sm lowercase tracking-wider text-gray-600">
                                     tracking number : {trackingNumber}
                                   </p>
-                                  <Button
-                                    onClick={() =>
-                                      window.open(
-                                        "http://juneof.shipway.com/track",
-                                        "_blank"
-                                      )
-                                    }
-                                    className="ml-4 bg-black text-white hover:bg-gray-800 lowercase tracking-wider text-xs px-3 py-1 h-auto"
-                                    size="sm"
-                                  >
-                                    track order
-                                  </Button>
+                                  <div className="flex gap-2">
+                                    <Button
+                                      onClick={() =>
+                                        navigator.clipboard.writeText(
+                                          trackingNumber
+                                        )
+                                      }
+                                      className="bg-gray-100 text-gray-700 hover:bg-gray-200 lowercase tracking-wider text-xs px-2 py-1 h-auto"
+                                      size="sm"
+                                    >
+                                      copy
+                                    </Button>
+                                    <Button
+                                      onClick={() =>
+                                        window.open(
+                                          "http://juneof.shipway.com/track",
+                                          "_blank"
+                                        )
+                                      }
+                                      className="bg-black text-white hover:bg-gray-800 lowercase tracking-wider text-xs"
+                                      size="sm"
+                                    >
+                                      track order
+                                    </Button>
+                                  </div>
                                 </div>
                               )
                             )}
