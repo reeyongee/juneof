@@ -171,7 +171,7 @@ export default function CustomerOrders({
   const hasFetchedRef = useRef(false);
   const [ordersDataReady, setOrdersDataReady] = useState(false);
 
-  const { startFlow, completeFlowStep, isFlowActive } = useLoading();
+  const { startFlow, completeFlowStep } = useLoading();
 
   // Memoize config to prevent unnecessary re-renders
   const memoizedConfig = useMemo(
@@ -487,9 +487,12 @@ export default function CustomerOrders({
       if (response.ok && data.success) {
         console.log("✅ Order cancelled successfully");
 
-        // Refresh orders to show updated status
-        hasFetchedRef.current = false;
-        await loadTokensAndFetchOrders();
+        // BULLETPROOF: Instead of resetting hasFetchedRef, just refresh the specific order status
+        // This prevents the infinite loop while still updating the UI
+        const orderIds = orders.map((order) => order.id);
+        if (orderIds.length > 0) {
+          await fetchOrderStatuses(orderIds);
+        }
       } else {
         console.error("❌ Failed to cancel order:", data.error);
         setError(data.error || "Failed to cancel order");
@@ -692,8 +695,8 @@ export default function CustomerOrders({
 
   const cancelledOrders = orders.filter((order) => isCancelledOrder(order));
 
-  // Show loading state while data is loading or flow is active
-  if (loading || !ordersDataReady || isFlowActive("orders-data-loading")) {
+  // BULLETPROOF: Show loading state only when actively loading, not when flow is lingering
+  if (loading || !ordersDataReady) {
     return (
       <div className="flex justify-center items-center py-8">
         <Loader2 className="h-8 w-8 animate-spin text-gray-600" />
@@ -711,7 +714,8 @@ export default function CustomerOrders({
         <Button
           onClick={() => {
             setError(null);
-            hasFetchedRef.current = false;
+            // BULLETPROOF: Don't reset hasFetchedRef to prevent infinite loop
+            // Just try to load again with existing protection
             loadTokensAndFetchOrders();
           }}
           variant="outline"
