@@ -77,7 +77,7 @@ const formatPrice = (price: number, currencyCode?: string): string => {
 };
 
 export default function ProductPageClient({ product }: ProductPageClientProps) {
-  const [selectedSize, setSelectedSize] = useState<string>("");
+  const [selectedSize, setSelectedSize] = useState<string>("in between");
   const [isSizeChartOpen, setIsSizeChartOpen] = useState(false);
   const [isWashCareOpen, setIsWashCareOpen] = useState(false);
   const [isExpressInterestOpen, setIsExpressInterestOpen] = useState(false);
@@ -334,6 +334,15 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
 
   // Handle add to cart
   const handleAddToCart = () => {
+    // Validate that a size is selected
+    if (!selectedSize || selectedSize.trim() === "") {
+      toast.error("Please select a size", {
+        description: "You must select a size before adding to cart",
+        duration: 3000,
+      });
+      return;
+    }
+
     // Get the first available variant ID (you might want to make this more sophisticated)
     const variantId = product.variants.edges[0]?.node?.id;
 
@@ -636,7 +645,11 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
               onClick={
                 expressInterest ? handleExpressInterest : handleAddToCart
               }
-              disabled={isExpressInterestLoading}
+              disabled={
+                isExpressInterestLoading ||
+                (!expressInterest &&
+                  (!selectedSize || selectedSize.trim() === ""))
+              }
             >
               {expressInterest
                 ? isExpressInterestLoading
@@ -891,7 +904,11 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
               onClick={
                 expressInterest ? handleExpressInterest : handleAddToCart
               }
-              disabled={isExpressInterestLoading}
+              disabled={
+                isExpressInterestLoading ||
+                (!expressInterest &&
+                  (!selectedSize || selectedSize.trim() === ""))
+              }
             >
               {expressInterest
                 ? isExpressInterestLoading
