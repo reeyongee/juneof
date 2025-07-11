@@ -248,7 +248,13 @@ export default function CustomerOrders({
   // Internal function to fetch customer orders
   const fetchCustomerOrdersInternal = useCallback(
     async (client: CustomerAccountApiClient, tokenData: TokenStorage) => {
-      if (hasFetchedRef.current) return;
+      // Bulletproof guard - check if already fetched or currently fetching
+      if (hasFetchedRef.current || loading) {
+        console.log(
+          "CustomerOrders: Already fetched or currently fetching, skipping"
+        );
+        return;
+      }
 
       try {
         hasFetchedRef.current = true;
@@ -371,6 +377,9 @@ export default function CustomerOrders({
         // Finalize and mark as ready
         completeFlowStep("orders-data-loading", "finalize");
         setOrdersDataReady(true);
+        console.log(
+          "✅ CustomerOrders: All data loaded successfully, ordersDataReady = true"
+        );
       } catch (error) {
         console.error("❌ Error fetching customer orders:", error);
         setError(
@@ -381,11 +390,13 @@ export default function CustomerOrders({
         completeFlowStep("orders-data-loading", "fetch-statuses");
         completeFlowStep("orders-data-loading", "fetch-exchanges");
         completeFlowStep("orders-data-loading", "finalize");
+        setOrdersDataReady(true); // Set to true even on error to prevent infinite loading
       } finally {
         setLoading(false);
       }
     },
     [
+      loading, // Add loading to dependencies to prevent concurrent calls
       memoizedConfig,
       fetchOrderStatuses,
       fetchOrderExchanges,
@@ -396,11 +407,18 @@ export default function CustomerOrders({
 
   // Public function to load tokens and fetch orders
   const loadTokensAndFetchOrders = useCallback(async () => {
+    // Bulletproof guard - prevent concurrent calls
+    if (loading || hasFetchedRef.current) {
+      console.log("CustomerOrders: Already loading or fetched, skipping");
+      return;
+    }
+
     try {
       const tokenData = await getTokensUnified();
       if (!tokenData) {
         console.log("⚠️ No tokens available");
         setError("Please log in to view your orders");
+        setOrdersDataReady(true); // Set to true to prevent infinite loading
         return;
       }
 
@@ -412,16 +430,27 @@ export default function CustomerOrders({
     } catch (error) {
       console.error("❌ Error in loadTokensAndFetchOrders:", error);
       setError("Failed to load orders. Please try again.");
+      setOrdersDataReady(true); // Set to true to prevent infinite loading
     }
-  }, [memoizedConfig, fetchCustomerOrdersInternal]);
+  }, [loading, memoizedConfig, fetchCustomerOrdersInternal]); // Simplified dependencies
 
-  // Effect to load orders when component mounts or tokens change
+  // FIXED: Effect to load orders when component mounts or tokens change
   useEffect(() => {
-    if (tokens) {
-      hasFetchedRef.current = false;
+    // Only run if we have tokens and haven't fetched yet
+    if (tokens && !hasFetchedRef.current && !loading) {
+      console.log("CustomerOrders: Initial load triggered");
       loadTokensAndFetchOrders();
     }
-  }, [tokens, loadTokensAndFetchOrders]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tokens]); // FIXED: Removed loadTokensAndFetchOrders from dependencies to prevent infinite loop
+
+  // Bulletproof cleanup effect
+  useEffect(() => {
+    return () => {
+      // Reset fetch state when component unmounts
+      hasFetchedRef.current = false;
+    };
+  }, []);
 
   // Helper functions
   const formatPrice = (amount: string, currencyCode: string): string => {
