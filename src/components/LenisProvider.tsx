@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import { usePathname } from "next/navigation";
 import Lenis from "lenis";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -51,10 +52,15 @@ export default function LenisProvider({ children }: LenisProviderProps) {
   const lenisRef = useRef<Lenis | null>(null);
   const rafIdRef = useRef<number | null>(null);
   const isMobile = useIsMobile();
+  const pathname = usePathname();
+
+  // Check if current route is an admin route
+  const isAdminRoute = pathname.startsWith("/admin");
 
   // Function to initialize Lenis
   const initializeLenis = useCallback(() => {
     if (lenisRef.current) return; // Don't initialize if already exists
+    if (isAdminRoute) return; // Don't initialize Lenis on admin routes
 
     const lenis = new Lenis({
       duration: isMobile ? 0.8 : 1.5, // Faster duration for mobile
@@ -82,7 +88,7 @@ export default function LenisProvider({ children }: LenisProviderProps) {
       }
     }
     rafIdRef.current = requestAnimationFrame(raf);
-  }, [isMobile]);
+  }, [isMobile, isAdminRoute]);
 
   // Function to destroy Lenis
   const destroyLenis = () => {
@@ -102,16 +108,26 @@ export default function LenisProvider({ children }: LenisProviderProps) {
 
   // Handle mobile/desktop transitions and initialize Lenis for both
   useEffect(() => {
-    // Always initialize Lenis (both mobile and desktop)
-    const timeoutId = setTimeout(() => {
-      initializeLenis();
-    }, 100);
+    // Destroy existing Lenis instance when route changes
+    destroyLenis();
 
+    // Only initialize Lenis for non-admin routes
+    if (!isAdminRoute) {
+      const timeoutId = setTimeout(() => {
+        initializeLenis();
+      }, 100);
+
+      return () => {
+        clearTimeout(timeoutId);
+        destroyLenis();
+      };
+    }
+
+    // If on admin route, just ensure cleanup
     return () => {
-      clearTimeout(timeoutId);
       destroyLenis();
     };
-  }, [isMobile, initializeLenis]);
+  }, [isMobile, isAdminRoute, initializeLenis]);
 
   return <>{children}</>;
 }
