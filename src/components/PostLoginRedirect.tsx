@@ -133,15 +133,18 @@ function PostLoginRedirectContent() {
       isRedirectingRef.current = true;
       hasCalledEnsureFreshRef.current = true; // Prevent multiple calls
 
-      // Parse checkout login context from localStorage
+      // Parse checkout login context from sessionStorage (matches AuthContext storage)
       const checkoutLoginContext = JSON.parse(
-        localStorage.getItem("checkoutLoginContext") || "{}"
+        sessionStorage.getItem("checkout-login-context") || "{}"
       );
 
       if (checkoutLoginContext.isCheckoutLogin) {
         console.log(
           "PostLoginRedirect: Checkout login detected, redirecting to product page"
         );
+
+        // Clean up the checkout login context from sessionStorage since we're processing it
+        sessionStorage.removeItem("checkout-login-context");
 
         // Use fresh profile status for accurate redirect decision
         ensureFreshProfileStatus().then((freshStatus) => {
