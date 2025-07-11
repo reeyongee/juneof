@@ -11,6 +11,7 @@ import Image from "next/image";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 import { useProfileCompletion } from "@/hooks/useProfileCompletion";
+import { useLoading } from "@/context/LoadingContext";
 import { ShopifyProductDetails } from "@/lib/shopify";
 import { Badge } from "@/components/ui/badge";
 import { generateProductSchema } from "@/lib/seo";
@@ -96,6 +97,7 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
   const { addItemToCart } = useCart();
   const { isAuthenticated, customerData } = useAuth();
   const { refreshProfileStatus } = useProfileCompletion();
+  const { startFlow, completeFlowStep } = useLoading();
   const isMobile = useIsMobile();
   const imageGalleryRef = useRef<HTMLDivElement>(null);
 
@@ -197,7 +199,7 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
     }
   }, [searchParams]); // Include searchParams in dependency array
 
-  // Handle checkout login flows
+  // Handle checkout login flows with flow-based loading
   useEffect(() => {
     const checkoutLoginComplete =
       searchParams.get("checkout_login_complete") === "true";
@@ -208,39 +210,71 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
       searchParams.get("show_profile_completion") === "true";
 
     if (checkoutLoginComplete && openCart) {
-      // Flow A: Profile complete - show cart overlay
+      // Flow A: Profile complete - show cart overlay with flow
       console.log(
-        "ProductPageClient: Checkout login complete, opening cart overlay"
+        "ProductPageClient: Checkout login complete, starting cart flow"
       );
-      setIsCartOpen(true);
 
-      // Clean up URL parameters
-      const newUrl = new URL(window.location.href);
-      newUrl.searchParams.delete("checkout_login_complete");
-      newUrl.searchParams.delete("open_cart");
-      window.history.replaceState(
-        {},
-        document.title,
-        newUrl.pathname + newUrl.search
-      );
+      const cartFlowSteps = [
+        { id: "prepare-cart", name: "preparing cart", completed: false },
+        { id: "show-cart", name: "opening cart", completed: false },
+      ];
+
+      startFlow("checkout-cart-flow", cartFlowSteps, "opening cart...");
+
+      setTimeout(() => {
+        completeFlowStep("checkout-cart-flow", "prepare-cart");
+        setIsCartOpen(true);
+        completeFlowStep("checkout-cart-flow", "show-cart");
+
+        // Clean up URL parameters
+        const newUrl = new URL(window.location.href);
+        newUrl.searchParams.delete("checkout_login_complete");
+        newUrl.searchParams.delete("open_cart");
+        window.history.replaceState(
+          {},
+          document.title,
+          newUrl.pathname + newUrl.search
+        );
+      }, 500);
     } else if (checkoutLoginIncomplete && showProfileCompletion) {
       // Flow B: Profile incomplete - show profile completion flow
       console.log(
-        "ProductPageClient: Checkout login incomplete, showing profile completion"
+        "ProductPageClient: Checkout login incomplete, starting profile completion flow"
       );
-      setIsProfileCompletionOpen(true);
 
-      // Clean up URL parameters
-      const newUrl = new URL(window.location.href);
-      newUrl.searchParams.delete("checkout_login_incomplete");
-      newUrl.searchParams.delete("show_profile_completion");
-      window.history.replaceState(
-        {},
-        document.title,
-        newUrl.pathname + newUrl.search
+      const profileFlowSteps = [
+        { id: "check-profile", name: "checking profile", completed: false },
+        {
+          id: "show-completion",
+          name: "loading profile editor",
+          completed: false,
+        },
+      ];
+
+      startFlow(
+        "checkout-profile-flow",
+        profileFlowSteps,
+        "loading profile..."
       );
+
+      setTimeout(() => {
+        completeFlowStep("checkout-profile-flow", "check-profile");
+        setIsProfileCompletionOpen(true);
+        completeFlowStep("checkout-profile-flow", "show-completion");
+
+        // Clean up URL parameters
+        const newUrl = new URL(window.location.href);
+        newUrl.searchParams.delete("checkout_login_incomplete");
+        newUrl.searchParams.delete("show_profile_completion");
+        window.history.replaceState(
+          {},
+          document.title,
+          newUrl.pathname + newUrl.search
+        );
+      }, 500);
     }
-  }, [searchParams]);
+  }, [searchParams, startFlow, completeFlowStep]);
 
   // Track scroll position for mobile image gallery with looping
   useEffect(() => {

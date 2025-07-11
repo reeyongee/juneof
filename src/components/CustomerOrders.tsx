@@ -41,6 +41,7 @@ import {
   type TokenStorage,
   type GraphQLResponse,
 } from "@/lib/shopify-auth";
+import { useLoading } from "@/context/LoadingContext";
 
 interface OrderNode {
   id: string;
@@ -170,6 +171,9 @@ export default function CustomerOrders({
   const [orderExchanges, setOrderExchanges] = useState<OrderExchangeData[]>([]);
   const [exchangesLoading, setExchangesLoading] = useState(false);
   const hasFetchedRef = useRef(false);
+  const [ordersDataReady, setOrdersDataReady] = useState(false);
+
+  const { startFlow, completeFlowStep, isFlowActive } = useLoading();
 
   // Memoize config to prevent unnecessary re-renders
   const memoizedConfig = useMemo(
@@ -258,6 +262,26 @@ export default function CustomerOrders({
         hasFetchedRef.current = true;
         setLoading(true);
         setError(null);
+        setOrdersDataReady(false);
+
+        // Start comprehensive orders flow
+        const ordersFlowSteps = [
+          { id: "refresh-tokens", name: "refreshing tokens", completed: false },
+          { id: "fetch-orders", name: "loading orders", completed: false },
+          {
+            id: "fetch-statuses",
+            name: "loading order statuses",
+            completed: false,
+          },
+          {
+            id: "fetch-exchanges",
+            name: "loading exchange data",
+            completed: false,
+          },
+          { id: "finalize", name: "finalizing data", completed: false },
+        ];
+
+        startFlow("orders-data-loading", ordersFlowSteps, "loading orders...");
 
         // First, ensure tokens are fresh
         const refreshedTokens = await autoRefreshTokens(memoizedConfig);
@@ -267,6 +291,8 @@ export default function CustomerOrders({
         ) {
           client.updateAccessToken(refreshedTokens.accessToken);
         }
+
+        completeFlowStep("orders-data-loading", "refresh-tokens");
 
         // Fetch customer orders with line items
         const ordersQuery = {
@@ -328,27 +354,52 @@ export default function CustomerOrders({
           setOrders(orderNodes);
           console.log("✅ Customer orders loaded successfully:", orderNodes);
 
+          completeFlowStep("orders-data-loading", "fetch-orders");
+
           // Fetch detailed order statuses from Admin API
           const orderIds = orderNodes.map((order) => order.id);
           console.log("🎯 Extracted order IDs for status check:", orderIds);
           await fetchOrderStatuses(orderIds);
 
+          completeFlowStep("orders-data-loading", "fetch-statuses");
+
           // Fetch exchange data for orders
           await fetchOrderExchanges(orderIds);
+
+          completeFlowStep("orders-data-loading", "fetch-exchanges");
         } else {
           console.warn("⚠️ No data received from GraphQL query");
           setOrders([]);
+          // Complete remaining steps even with no data
+          completeFlowStep("orders-data-loading", "fetch-orders");
+          completeFlowStep("orders-data-loading", "fetch-statuses");
+          completeFlowStep("orders-data-loading", "fetch-exchanges");
         }
+
+        // Finalize and mark as ready
+        completeFlowStep("orders-data-loading", "finalize");
+        setOrdersDataReady(true);
       } catch (error) {
         console.error("❌ Error fetching customer orders:", error);
         setError(
           error instanceof Error ? error.message : "Failed to load orders"
         );
+        // Complete remaining steps on error
+        completeFlowStep("orders-data-loading", "fetch-orders");
+        completeFlowStep("orders-data-loading", "fetch-statuses");
+        completeFlowStep("orders-data-loading", "fetch-exchanges");
+        completeFlowStep("orders-data-loading", "finalize");
       } finally {
         setLoading(false);
       }
     },
-    [memoizedConfig, fetchOrderStatuses, fetchOrderExchanges]
+    [
+      memoizedConfig,
+      fetchOrderStatuses,
+      fetchOrderExchanges,
+      startFlow,
+      completeFlowStep,
+    ]
   );
 
   // Public function to load tokens and fetch orders
@@ -620,7 +671,8 @@ export default function CustomerOrders({
 
   const cancelledOrders = orders.filter((order) => isCancelledOrder(order));
 
-  if (loading && orders.length === 0) {
+  // Show loading state while data is loading or flow is active
+  if (loading || !ordersDataReady || isFlowActive("orders-data-loading")) {
     return (
       <div className="flex justify-center items-center py-8">
         <Loader2 className="h-8 w-8 animate-spin text-gray-600" />
@@ -662,19 +714,6 @@ export default function CustomerOrders({
 
   return (
     <div className="space-y-8">
-      {(statusLoading || exchangesLoading) && (
-        <div className="flex justify-center items-center py-2">
-          <Loader2 className="h-4 w-4 animate-spin text-gray-600" />
-          <span className="ml-2 text-sm text-gray-600 lowercase tracking-wider">
-            {statusLoading && exchangesLoading
-              ? "loading order data..."
-              : statusLoading
-                ? "checking order statuses..."
-                : "loading exchange data..."}
-          </span>
-        </div>
-      )}
-
       {/* Current Orders */}
       {currentOrders.length > 0 && (
         <div>

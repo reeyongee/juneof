@@ -78,7 +78,14 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const router = useRouter();
-  const { startAuthFlow, completeAuthFlow } = useLoading();
+  const {
+    startAuthFlow,
+    completeAuthFlow,
+    startFlow,
+    completeFlowStep,
+    completeFlow,
+    isFlowActive,
+  } = useLoading();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true); // Key: Start true
   const [customerData, setCustomerData] = useState<CustomerProfileData | null>(
@@ -369,6 +376,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     console.log(
       `AuthContext: initializeAuth - START. URL Search: "${currentRawSearchParams}", Signal: ${justCompletedAuthSignal}, Timestamp: ${authTimestamp}, Shopify Logout: ${shopifyLogoutSignal}`
     );
+
+    // Start flow-based loading for authentication initialization
+    const flowSteps = [
+      { id: "check-logout", name: "checking logout status", completed: false },
+      { id: "validate-tokens", name: "validating tokens", completed: false },
+      { id: "fetch-customer-data", name: "loading profile", completed: false },
+      {
+        id: "complete-auth",
+        name: "finalizing authentication",
+        completed: false,
+      },
+    ];
+
+    startFlow(
+      "auth-initialization",
+      flowSteps,
+      "initializing authentication..."
+    );
     setIsLoading(true); // Set loading to true at the beginning of this entire process
 
     // If user is returning from Shopify logout, clean up URL and ensure clean state
@@ -376,6 +401,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log(
         "AuthContext: initializeAuth - User returned from Shopify logout"
       );
+
+      completeFlowStep("auth-initialization", "check-logout");
 
       // Ensure all auth data is cleared
       clearAuthStorage();
@@ -405,13 +432,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         );
       }
 
+      // Complete all remaining steps since logout is complete
+      completeFlowStep("auth-initialization", "validate-tokens");
+      completeFlowStep("auth-initialization", "fetch-customer-data");
+      completeFlowStep("auth-initialization", "complete-auth");
+
       setIsLoading(false);
-      completeAuthFlow(); // Hide the loading spinner after logout cleanup
       console.log(
         "AuthContext: initializeAuth - Shopify logout cleanup complete"
       );
       return; // Exit early, user is logged out
     }
+
+    completeFlowStep("auth-initialization", "check-logout");
 
     // Check if we're on the callback handler page (where tokens are being set)
     const isCallbackHandler =
@@ -462,6 +495,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           "AuthContext: initializeAuth - Tokens FOUND.",
           storedTokens
         );
+        completeFlowStep("auth-initialization", "validate-tokens");
+
         setTokens(storedTokens); // Set tokens state
         const client = new CustomerAccountApiClient({
           shopId: shopifyAuthConfig.shopId,
@@ -471,6 +506,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Assume authenticated for now, _internalFetch will confirm or call logout
         setIsAuthenticated(true);
         await _internalFetchAndSetCustomerData(client, storedTokens);
+
+        completeFlowStep("auth-initialization", "fetch-customer-data");
 
         // IMPORTANT: After _internalFetchAndSetCustomerData, check if still authenticated
         // because _internalFetchAndSetCustomerData might call logout() if tokens are bad.
@@ -523,6 +560,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log(
         "AuthContext: initializeAuth - No valid tokens after all attempts. Setting unauthenticated."
       );
+      completeFlowStep("auth-initialization", "validate-tokens");
+      completeFlowStep("auth-initialization", "fetch-customer-data");
+
       setIsAuthenticated(false);
       setCustomerData(null);
       setTokens(null);
@@ -559,6 +599,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     }
 
+    // Complete the final authentication step
+    completeFlowStep("auth-initialization", "complete-auth");
+
     setIsLoading(false); // Set loading to false only AFTER all processing (including retries) is done
     console.log(
       "AuthContext: initializeAuth - END. Final State -> isLoading:",
@@ -566,7 +609,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       "isAuthenticated:",
       tokensFoundAndValid
     );
-  }, [shopifyAuthConfig, _internalFetchAndSetCustomerData, completeAuthFlow]); // `logout` is included via _internalFetch
+  }, [
+    shopifyAuthConfig,
+    _internalFetchAndSetCustomerData,
+    completeAuthFlow,
+    startFlow,
+    completeFlowStep,
+  ]); // `logout` is included via _internalFetch
 
   // This useEffect will run on initial mount and when initializeAuth changes
   useEffect(() => {
@@ -679,6 +728,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (checkoutContext?: CheckoutLoginContext) => {
     console.log("AuthContext: login - START", { checkoutContext });
 
+    // Start login flow
+    const loginFlowSteps = [
+      { id: "prepare-login", name: "preparing login", completed: false },
+      {
+        id: "validate-config",
+        name: "validating configuration",
+        completed: false,
+      },
+      { id: "initiate-auth", name: "connecting to shopify", completed: false },
+    ];
+
+    startFlow("login-flow", loginFlowSteps, "starting login...");
+
     // Store checkout context if provided
     if (checkoutContext) {
       setCheckoutLoginContext(checkoutContext);
@@ -698,6 +760,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       currentTokens ? "FOUND" : "NULL"
     );
 
+    completeFlowStep("login-flow", "prepare-login");
+
     if (
       !shopifyAuthConfig.shopId ||
       shopifyAuthConfig.shopId.startsWith("error-") ||
@@ -716,12 +780,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       alert(
         "Application Error: Shopify authentication is not configured correctly. Please contact support."
       );
+
+      // Complete remaining steps as failed
+      completeFlowStep("login-flow", "validate-config");
+      completeFlowStep("login-flow", "initiate-auth");
       return;
     }
+
+    completeFlowStep("login-flow", "validate-config");
     setIsLoading(true);
     setError(null);
 
-    // Start the persistent auth flow loading
+    // Start the persistent auth flow loading as well (for backward compatibility)
     startAuthFlow();
 
     try {
@@ -730,6 +800,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         shopifyAuthConfig
       );
       await initiateShopifyAuth(shopifyAuthConfig);
+      completeFlowStep("login-flow", "initiate-auth");
       // Browser will redirect; isLoading will remain true until the callback completes or an error occurs.
     } catch (err) {
       console.error("AuthContext: Error initiating login flow:", err);
@@ -737,6 +808,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         err instanceof Error ? err.message : "Failed to start login process."
       );
       setIsLoading(false);
+
+      // Complete remaining steps as failed
+      completeFlowStep("login-flow", "initiate-auth");
       completeAuthFlow(); // Complete auth flow on error
     }
   };
@@ -751,10 +825,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       "tokens:",
       !!tokens
     );
+
+    // Start customer data fetch flow
+    const fetchFlowSteps = [
+      {
+        id: "validate-auth",
+        name: "validating authentication",
+        completed: false,
+      },
+      {
+        id: "fetch-profile",
+        name: "loading customer profile",
+        completed: false,
+      },
+    ];
+
+    startFlow("customer-data-fetch", fetchFlowSteps, "loading profile...");
+
     if (!isAuthenticated || !apiClient || !tokens) {
       console.warn(
         "AuthContext: fetchCustomerData - Not ready or not authenticated. Attempting initializeAuth."
       );
+
+      // Don't complete the validate-auth step yet, try to reinitialize
       await initializeAuth(); // Re-check everything
       // After initializeAuth, if tokens were found, data would have been fetched.
       // If still not ready, the subsequent check will prevent API call.
@@ -764,19 +857,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.warn(
           "AuthContext: fetchCustomerData - Still not ready after re-init. Aborting fetch."
         );
+        completeFlowStep("customer-data-fetch", "validate-auth");
+        completeFlowStep("customer-data-fetch", "fetch-profile");
         return;
       }
     }
 
+    completeFlowStep("customer-data-fetch", "validate-auth");
     setIsLoading(true); // Set loading for this specific fetch operation
+
     try {
       await _internalFetchAndSetCustomerData(apiClient!, tokens!); // Use non-null assertion if confident from above check
+      completeFlowStep("customer-data-fetch", "fetch-profile");
     } catch (e) {
       // Error is logged and handled in _internalFetchAndSetCustomerData
       console.error(
         "AuthContext: fetchCustomerData - Error caught from _internalFetch:",
         e
       );
+      completeFlowStep("customer-data-fetch", "fetch-profile");
     } finally {
       setIsLoading(false);
       console.log("AuthContext: fetchCustomerData - END");
@@ -787,6 +886,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     tokens,
     initializeAuth,
     _internalFetchAndSetCustomerData,
+    startFlow,
+    completeFlowStep,
   ]);
 
   // Alias for backward compatibility

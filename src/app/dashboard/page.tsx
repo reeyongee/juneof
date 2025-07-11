@@ -31,6 +31,8 @@ export default function DashboardPage() {
   const [isRedirecting, setIsRedirecting] = useState(false);
   const hasFetchedCustomerDataRef = useRef(false);
   const hasFetchedAddressesRef = useRef(false);
+  const [dashboardFlowStarted, setDashboardFlowStarted] = useState(false);
+  const [dashboardReady, setDashboardReady] = useState(false);
 
   // Name editing state
   const [isEditingName, setIsEditingName] = useState(false);
@@ -58,7 +60,15 @@ export default function DashboardPage() {
     error: authError,
     fetchCustomerData,
   } = useAuth();
-  const { startLoading, stopLoading, isGlobalLoading } = useLoading();
+  const {
+    startLoading,
+    stopLoading,
+    isGlobalLoading,
+    startFlow,
+    completeFlowStep,
+    completeFlow,
+    isFlowActive,
+  } = useLoading();
   const {
     hideCompletionFlow,
     isCompletionFlowOpen,
@@ -150,25 +160,114 @@ export default function DashboardPage() {
     };
   }, []);
 
-  // Effect to handle post-authentication data fetching
+  // Comprehensive dashboard flow management
   useEffect(() => {
-    // If user lands here and is authenticated but data isn't loaded yet
-    // (e.g., after redirect from callback-handler), trigger a fetch.
+    if (!isAuthenticated || authIsLoading || authError) {
+      // Reset flow states if not authenticated or there's an error
+      setDashboardFlowStarted(false);
+      setDashboardReady(false);
+      return;
+    }
+
+    if (!dashboardFlowStarted) {
+      // Start the comprehensive dashboard flow
+      const dashboardFlowSteps = [
+        {
+          id: "authenticate",
+          name: "verifying authentication",
+          completed: false,
+        },
+        { id: "load-customer-data", name: "loading profile", completed: false },
+        { id: "load-addresses", name: "loading addresses", completed: false },
+        {
+          id: "check-profile-completion",
+          name: "checking profile status",
+          completed: false,
+        },
+        { id: "ready", name: "preparing dashboard", completed: false },
+      ];
+
+      startFlow(
+        "dashboard-initialization",
+        dashboardFlowSteps,
+        "loading dashboard..."
+      );
+      setDashboardFlowStarted(true);
+    }
+
+    // Step 1: Authentication (already done if we reach here)
+    if (dashboardFlowStarted && isAuthenticated) {
+      completeFlowStep("dashboard-initialization", "authenticate");
+    }
+
+    // Step 2: Load customer data
     if (
       isAuthenticated &&
       !customerData &&
-      !authIsLoading &&
-      !authError &&
       !hasFetchedCustomerDataRef.current
     ) {
       console.log("Dashboard: Authenticated, no customer data. Fetching...");
       hasFetchedCustomerDataRef.current = true;
       fetchCustomerData();
-    } else if (!isAuthenticated) {
-      hasFetchedCustomerDataRef.current = false;
+    } else if (isAuthenticated && customerData && dashboardFlowStarted) {
+      completeFlowStep("dashboard-initialization", "load-customer-data");
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, customerData, authIsLoading, authError]);
+
+    // Step 3: Load addresses
+    if (
+      isAuthenticated &&
+      customerData &&
+      addresses.length === 0 &&
+      !addressLoading &&
+      !hasFetchedAddressesRef.current
+    ) {
+      console.log("Dashboard: Fetching addresses...");
+      hasFetchedAddressesRef.current = true;
+      fetchAddresses();
+    } else if (
+      isAuthenticated &&
+      customerData &&
+      (addresses.length > 0 || !addressLoading) &&
+      dashboardFlowStarted
+    ) {
+      completeFlowStep("dashboard-initialization", "load-addresses");
+    }
+
+    // Step 4 & 5: Check profile completion and finalize
+    if (
+      isAuthenticated &&
+      customerData &&
+      (addresses.length > 0 || !addressLoading) &&
+      dashboardFlowStarted &&
+      !dashboardReady
+    ) {
+      // Profile completion status is available from useProfileCompletion hook
+      completeFlowStep("dashboard-initialization", "check-profile-completion");
+      completeFlowStep("dashboard-initialization", "ready");
+      setDashboardReady(true);
+    }
+
+    // Reset flow states if not authenticated
+    if (!isAuthenticated) {
+      hasFetchedCustomerDataRef.current = false;
+      hasFetchedAddressesRef.current = false;
+      setDashboardFlowStarted(false);
+      setDashboardReady(false);
+    }
+  }, [
+    isAuthenticated,
+    authIsLoading,
+    authError,
+    customerData,
+    addresses.length,
+    addressLoading,
+    dashboardFlowStarted,
+    dashboardReady,
+    startFlow,
+    completeFlowStep,
+    fetchCustomerData,
+    fetchAddresses,
+  ]);
 
   // Effect to fetch addresses when authenticated
   useEffect(() => {
@@ -226,9 +325,10 @@ export default function DashboardPage() {
     stopLoading,
   ]);
 
-  // Effect to show profile completion flow for incomplete profiles
+  // Effect to show profile completion flow for incomplete profiles (only after dashboard is ready)
   useEffect(() => {
     if (
+      dashboardReady &&
       isAuthenticated &&
       !authIsLoading &&
       !isProfileComplete &&
@@ -238,15 +338,27 @@ export default function DashboardPage() {
       showCompletionFlow();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, authIsLoading, isProfileComplete, isCompletionFlowOpen]);
+  }, [
+    dashboardReady,
+    isAuthenticated,
+    authIsLoading,
+    isProfileComplete,
+    isCompletionFlowOpen,
+    completeFlow,
+  ]);
 
-  // Show loading state while checking authentication or redirecting, or if global loading is active
-  if (authIsLoading || isRedirecting || isGlobalLoading) {
+  // Show loading state while checking authentication, dashboard flow running, redirecting, or if global loading is active
+  if (
+    authIsLoading ||
+    isRedirecting ||
+    isGlobalLoading ||
+    (isAuthenticated && !dashboardReady)
+  ) {
     console.log(
-      "DashboardPage: Rendering loading state (authIsLoading, redirecting, or global loading active)"
+      "DashboardPage: Rendering loading state (authIsLoading, dashboard flow running, redirecting, or global loading active)"
     );
     // Don't render anything if global loading is active - let LoadingProvider handle it
-    if (isGlobalLoading) {
+    if (isGlobalLoading || isFlowActive("dashboard-initialization")) {
       return null;
     }
     return (
