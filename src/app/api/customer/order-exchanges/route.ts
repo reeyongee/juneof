@@ -66,7 +66,7 @@ interface DetailedReturn {
           };
         }>;
       };
-      fulfillments: {
+      reverseDeliveries: {
         nodes: Array<{
           id: string;
           trackingInfo: {
@@ -350,7 +350,7 @@ export async function POST(request: NextRequest) {
                             }
                           }
                         }
-                        fulfillments(first: 10) {
+                        reverseDeliveries(first: 10) {
                           nodes {
                             id
                             trackingInfo {
@@ -412,10 +412,10 @@ export async function POST(request: NextRequest) {
               // Extract tracking numbers for this return
               const returnTrackingNumbers: string[] = [];
               returnData.reverseFulfillmentOrders.nodes.forEach((rfo) => {
-                if (rfo.fulfillments) {
-                  rfo.fulfillments.nodes.forEach((fulfillment) => {
-                    if (fulfillment.trackingInfo) {
-                      fulfillment.trackingInfo.forEach((tracking) => {
+                if (rfo.reverseDeliveries) {
+                  rfo.reverseDeliveries.nodes.forEach((delivery) => {
+                    if (delivery.trackingInfo) {
+                      delivery.trackingInfo.forEach((tracking) => {
                         if (tracking.number) {
                           returnTrackingNumbers.push(tracking.number);
                         }

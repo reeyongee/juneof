@@ -36,7 +36,7 @@ interface Node {
           nodes: Array<{
             id: string;
             status: string;
-            fulfillments: {
+            reverseDeliveries: {
               nodes: Array<{
                 id: string;
                 trackingInfo: {
@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
                     nodes {
                       id
                       status
-                      fulfillments(first: 50) {
+                      reverseDeliveries(first: 50) {
                         nodes {
                           id
                           trackingInfo(first: 50) {
@@ -173,12 +173,12 @@ export async function POST(request: NextRequest) {
                   (reverseFulfillmentOrder) => {
                     if (
                       reverseFulfillmentOrder.status === "OPEN" &&
-                      reverseFulfillmentOrder.fulfillments
+                      reverseFulfillmentOrder.reverseDeliveries
                     ) {
-                      reverseFulfillmentOrder.fulfillments.nodes.forEach(
-                        (fulfillment) => {
-                          if (fulfillment.trackingInfo) {
-                            fulfillment.trackingInfo.forEach((tracking) => {
+                      reverseFulfillmentOrder.reverseDeliveries.nodes.forEach(
+                        (reverseDelivery) => {
+                          if (reverseDelivery.trackingInfo) {
+                            reverseDelivery.trackingInfo.forEach((tracking) => {
                               if (tracking.number) {
                                 exchangeTrackingNumbers[returnNode.id] =
                                   exchangeTrackingNumbers[returnNode.id] || [];
