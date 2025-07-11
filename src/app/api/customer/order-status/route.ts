@@ -9,6 +9,7 @@ interface OrderStatus {
   fulfillmentStatus: string;
   financialStatus: string;
   isCancelled: boolean;
+  trackingNumbers: string[];
 }
 
 interface Node {
@@ -20,6 +21,11 @@ interface Node {
   customer?: {
     id: string;
   };
+  fulfillments: {
+    trackingInfo: {
+      number: string;
+    }[];
+  }[];
 }
 
 interface NodesResponse {
@@ -77,6 +83,11 @@ export async function POST(request: NextRequest) {
             customer {
               id
             }
+            fulfillments(first: 50) {
+              trackingInfo(first: 50) {
+                number
+              }
+            }
           }
         }
       }
@@ -90,6 +101,20 @@ export async function POST(request: NextRequest) {
       (acc: Record<string, OrderStatus>, node) => {
         // Important: Check ownership and ensure node is not null
         if (node && node.customer?.id === customerId) {
+          // Extract tracking numbers from fulfillments
+          const trackingNumbers: string[] = [];
+          if (node.fulfillments) {
+            node.fulfillments.forEach((fulfillment) => {
+              if (fulfillment.trackingInfo) {
+                fulfillment.trackingInfo.forEach((tracking) => {
+                  if (tracking.number) {
+                    trackingNumbers.push(tracking.number);
+                  }
+                });
+              }
+            });
+          }
+
           acc[node.id] = {
             id: node.id,
             cancelledAt: node.cancelledAt,
@@ -97,6 +122,7 @@ export async function POST(request: NextRequest) {
             fulfillmentStatus: node.displayFulfillmentStatus,
             financialStatus: node.displayFinancialStatus,
             isCancelled: node.cancelledAt !== null,
+            trackingNumbers,
           };
         }
         return acc;
