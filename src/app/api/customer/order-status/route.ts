@@ -10,6 +10,10 @@ interface OrderStatus {
   displayFinancialStatus: string;
   isCancelled: boolean;
   trackingNumbers: string[];
+  fulfillmentLineItems: Array<{
+    lineItemId: string;
+    trackingNumbers: string[];
+  }>;
 }
 
 interface Node {
@@ -21,11 +25,18 @@ interface Node {
   customer?: {
     id: string;
   };
-  fulfillments: {
+  fulfillments: Array<{
     trackingInfo: {
       number: string;
     }[];
-  }[];
+    fulfillmentLineItems: {
+      nodes: Array<{
+        lineItem: {
+          id: string;
+        };
+      }>;
+    };
+  }>;
 }
 
 interface NodesResponse {
@@ -87,6 +98,13 @@ export async function POST(request: NextRequest) {
               trackingInfo(first: 50) {
                 number
               }
+              fulfillmentLineItems(first: 50) {
+                nodes {
+                  lineItem {
+                    id
+                  }
+                }
+              }
             }
           }
         }
@@ -106,6 +124,28 @@ export async function POST(request: NextRequest) {
             .map((info) => info.number)
             .filter(Boolean);
 
+          // Create a map of line item IDs to their tracking numbers
+          const fulfillmentLineItems: Array<{
+            lineItemId: string;
+            trackingNumbers: string[];
+          }> = [];
+
+          node.fulfillments.forEach((fulfillment) => {
+            const fulfillmentTrackingNumbers = fulfillment.trackingInfo
+              .map((info) => info.number)
+              .filter(Boolean);
+
+            // Map each line item in this fulfillment to the tracking numbers
+            fulfillment.fulfillmentLineItems.nodes.forEach((lineItemNode) => {
+              if (lineItemNode.lineItem.id) {
+                fulfillmentLineItems.push({
+                  lineItemId: lineItemNode.lineItem.id,
+                  trackingNumbers: fulfillmentTrackingNumbers,
+                });
+              }
+            });
+          });
+
           acc[node.id] = {
             id: node.id,
             cancelledAt: node.cancelledAt,
@@ -114,6 +154,7 @@ export async function POST(request: NextRequest) {
             displayFinancialStatus: node.displayFinancialStatus,
             isCancelled: node.cancelledAt !== null,
             trackingNumbers,
+            fulfillmentLineItems,
           };
         }
         return acc;
