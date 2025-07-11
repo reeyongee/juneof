@@ -41,7 +41,6 @@ import {
   type TokenStorage,
   type GraphQLResponse,
 } from "@/lib/shopify-auth";
-import { useLoading } from "@/context/LoadingContext";
 
 interface OrderNode {
   id: string;
@@ -157,6 +156,7 @@ export default function CustomerOrders({
   const [orderStatuses, setOrderStatuses] = useState<
     Record<string, OrderStatus>
   >({});
+  const [statusLoading, setStatusLoading] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [orderToCancel, setOrderToCancel] = useState<OrderNode | null>(null);
   const [showExchangeDialog, setShowExchangeDialog] = useState(false);
@@ -168,10 +168,8 @@ export default function CustomerOrders({
   const [exchangeReason, setExchangeReason] = useState("SIZE_TOO_SMALL");
   const [exchangingItemId, setExchangingItemId] = useState<string | null>(null);
   const [orderExchanges, setOrderExchanges] = useState<OrderExchangeData[]>([]);
+  const [exchangesLoading, setExchangesLoading] = useState(false);
   const hasFetchedRef = useRef(false);
-  const [ordersDataReady, setOrdersDataReady] = useState(false);
-
-  const { startFlow, completeFlowStep } = useLoading();
 
   // Memoize config to prevent unnecessary re-renders
   const memoizedConfig = useMemo(
@@ -187,6 +185,7 @@ export default function CustomerOrders({
     console.log("🔍 About to call order status API with IDs:", orderIds);
 
     try {
+      setStatusLoading(true);
       const response = await fetch("/api/customer/order-status", {
         method: "POST",
         headers: {
@@ -209,6 +208,8 @@ export default function CustomerOrders({
       }
     } catch (error) {
       console.error("Error fetching order statuses:", error);
+    } finally {
+      setStatusLoading(false);
     }
   }, []);
 
@@ -219,6 +220,7 @@ export default function CustomerOrders({
     console.log("🔄 About to call order exchanges API with IDs:", orderIds);
 
     try {
+      setExchangesLoading(true);
       const response = await fetch("/api/customer/order-exchanges", {
         method: "POST",
         headers: {
@@ -242,44 +244,20 @@ export default function CustomerOrders({
       }
     } catch (error) {
       console.error("Error fetching order exchanges:", error);
+    } finally {
+      setExchangesLoading(false);
     }
   }, []);
 
   // Internal function to fetch customer orders
   const fetchCustomerOrdersInternal = useCallback(
     async (client: CustomerAccountApiClient, tokenData: TokenStorage) => {
-      // Bulletproof guard - check if already fetched or currently fetching
-      if (hasFetchedRef.current || loading) {
-        console.log(
-          "CustomerOrders: Already fetched or currently fetching, skipping"
-        );
-        return;
-      }
+      if (hasFetchedRef.current) return;
 
       try {
         hasFetchedRef.current = true;
         setLoading(true);
         setError(null);
-        setOrdersDataReady(false);
-
-        // Start comprehensive orders flow
-        const ordersFlowSteps = [
-          { id: "refresh-tokens", name: "refreshing tokens", completed: false },
-          { id: "fetch-orders", name: "loading orders", completed: false },
-          {
-            id: "fetch-statuses",
-            name: "loading order statuses",
-            completed: false,
-          },
-          {
-            id: "fetch-exchanges",
-            name: "loading exchange data",
-            completed: false,
-          },
-          { id: "finalize", name: "finalizing data", completed: false },
-        ];
-
-        startFlow("orders-data-loading", ordersFlowSteps, "loading orders...");
 
         // First, ensure tokens are fresh
         const refreshedTokens = await autoRefreshTokens(memoizedConfig);
@@ -289,8 +267,6 @@ export default function CustomerOrders({
         ) {
           client.updateAccessToken(refreshedTokens.accessToken);
         }
-
-        completeFlowStep("orders-data-loading", "refresh-tokens");
 
         // Fetch customer orders with line items
         const ordersQuery = {
@@ -352,73 +328,36 @@ export default function CustomerOrders({
           setOrders(orderNodes);
           console.log("✅ Customer orders loaded successfully:", orderNodes);
 
-          completeFlowStep("orders-data-loading", "fetch-orders");
-
           // Fetch detailed order statuses from Admin API
           const orderIds = orderNodes.map((order) => order.id);
           console.log("🎯 Extracted order IDs for status check:", orderIds);
           await fetchOrderStatuses(orderIds);
 
-          completeFlowStep("orders-data-loading", "fetch-statuses");
-
           // Fetch exchange data for orders
           await fetchOrderExchanges(orderIds);
-
-          completeFlowStep("orders-data-loading", "fetch-exchanges");
         } else {
           console.warn("⚠️ No data received from GraphQL query");
           setOrders([]);
-          // Complete remaining steps even with no data
-          completeFlowStep("orders-data-loading", "fetch-orders");
-          completeFlowStep("orders-data-loading", "fetch-statuses");
-          completeFlowStep("orders-data-loading", "fetch-exchanges");
         }
-
-        // Finalize and mark as ready
-        completeFlowStep("orders-data-loading", "finalize");
-        setOrdersDataReady(true);
-        console.log(
-          "✅ CustomerOrders: All data loaded successfully, ordersDataReady = true"
-        );
       } catch (error) {
         console.error("❌ Error fetching customer orders:", error);
         setError(
           error instanceof Error ? error.message : "Failed to load orders"
         );
-        // Complete remaining steps on error
-        completeFlowStep("orders-data-loading", "fetch-orders");
-        completeFlowStep("orders-data-loading", "fetch-statuses");
-        completeFlowStep("orders-data-loading", "fetch-exchanges");
-        completeFlowStep("orders-data-loading", "finalize");
-        setOrdersDataReady(true); // Set to true even on error to prevent infinite loading
       } finally {
         setLoading(false);
       }
     },
-    [
-      loading, // Add loading to dependencies to prevent concurrent calls
-      memoizedConfig,
-      fetchOrderStatuses,
-      fetchOrderExchanges,
-      startFlow,
-      completeFlowStep,
-    ]
+    [memoizedConfig, fetchOrderStatuses, fetchOrderExchanges]
   );
 
   // Public function to load tokens and fetch orders
   const loadTokensAndFetchOrders = useCallback(async () => {
-    // Bulletproof guard - prevent concurrent calls
-    if (loading || hasFetchedRef.current) {
-      console.log("CustomerOrders: Already loading or fetched, skipping");
-      return;
-    }
-
     try {
       const tokenData = await getTokensUnified();
       if (!tokenData) {
         console.log("⚠️ No tokens available");
         setError("Please log in to view your orders");
-        setOrdersDataReady(true); // Set to true to prevent infinite loading
         return;
       }
 
@@ -430,27 +369,16 @@ export default function CustomerOrders({
     } catch (error) {
       console.error("❌ Error in loadTokensAndFetchOrders:", error);
       setError("Failed to load orders. Please try again.");
-      setOrdersDataReady(true); // Set to true to prevent infinite loading
     }
-  }, [loading, memoizedConfig, fetchCustomerOrdersInternal]); // Simplified dependencies
+  }, [memoizedConfig, fetchCustomerOrdersInternal]);
 
-  // FIXED: Effect to load orders when component mounts or tokens change
+  // Effect to load orders when component mounts or tokens change
   useEffect(() => {
-    // Only run if we have tokens and haven't fetched yet
-    if (tokens && !hasFetchedRef.current && !loading) {
-      console.log("CustomerOrders: Initial load triggered");
+    if (tokens) {
+      hasFetchedRef.current = false;
       loadTokensAndFetchOrders();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tokens]); // FIXED: Removed loadTokensAndFetchOrders from dependencies to prevent infinite loop
-
-  // Bulletproof cleanup effect
-  useEffect(() => {
-    return () => {
-      // Reset fetch state when component unmounts
-      hasFetchedRef.current = false;
-    };
-  }, []);
+  }, [tokens, loadTokensAndFetchOrders]);
 
   // Helper functions
   const formatPrice = (amount: string, currencyCode: string): string => {
@@ -487,12 +415,9 @@ export default function CustomerOrders({
       if (response.ok && data.success) {
         console.log("✅ Order cancelled successfully");
 
-        // BULLETPROOF: Instead of resetting hasFetchedRef, just refresh the specific order status
-        // This prevents the infinite loop while still updating the UI
-        const orderIds = orders.map((order) => order.id);
-        if (orderIds.length > 0) {
-          await fetchOrderStatuses(orderIds);
-        }
+        // Refresh orders to show updated status
+        hasFetchedRef.current = false;
+        await loadTokensAndFetchOrders();
       } else {
         console.error("❌ Failed to cancel order:", data.error);
         setError(data.error || "Failed to cancel order");
@@ -695,8 +620,7 @@ export default function CustomerOrders({
 
   const cancelledOrders = orders.filter((order) => isCancelledOrder(order));
 
-  // BULLETPROOF: Show loading state only when actively loading, not when flow is lingering
-  if (loading || !ordersDataReady) {
+  if (loading && orders.length === 0) {
     return (
       <div className="flex justify-center items-center py-8">
         <Loader2 className="h-8 w-8 animate-spin text-gray-600" />
@@ -714,8 +638,7 @@ export default function CustomerOrders({
         <Button
           onClick={() => {
             setError(null);
-            // BULLETPROOF: Don't reset hasFetchedRef to prevent infinite loop
-            // Just try to load again with existing protection
+            hasFetchedRef.current = false;
             loadTokensAndFetchOrders();
           }}
           variant="outline"
@@ -739,6 +662,19 @@ export default function CustomerOrders({
 
   return (
     <div className="space-y-8">
+      {(statusLoading || exchangesLoading) && (
+        <div className="flex justify-center items-center py-2">
+          <Loader2 className="h-4 w-4 animate-spin text-gray-600" />
+          <span className="ml-2 text-sm text-gray-600 lowercase tracking-wider">
+            {statusLoading && exchangesLoading
+              ? "loading order data..."
+              : statusLoading
+                ? "checking order statuses..."
+                : "loading exchange data..."}
+          </span>
+        </div>
+      )}
+
       {/* Current Orders */}
       {currentOrders.length > 0 && (
         <div>

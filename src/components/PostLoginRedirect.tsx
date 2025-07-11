@@ -12,12 +12,10 @@ function PostLoginRedirectContent() {
   const searchParams = useSearchParams();
   const { isAuthenticated, isLoading: authLoading, customerData } = useAuth();
   const { isProfileComplete } = useProfileCompletion();
-  const { completeAuthFlow, startFlow, completeFlowStep, completeFlow } =
-    useLoading();
+  const { completeAuthFlow } = useLoading();
   const hasRedirectedRef = useRef(false);
   const isRedirectingRef = useRef(false);
   const [waitStartTime, setWaitStartTime] = useState<number | null>(null);
-  const [hasStartedFlow, setHasStartedFlow] = useState(false);
 
   useEffect(() => {
     // Only run redirect logic if:
@@ -39,39 +37,6 @@ function PostLoginRedirectContent() {
       // Start timing if not already started
       if (waitStartTime === null) {
         setWaitStartTime(Date.now());
-      }
-
-      // Start flow-based loading for post-login redirect
-      if (!hasStartedFlow) {
-        const redirectFlowSteps = [
-          {
-            id: "wait-auth",
-            name: "verifying authentication",
-            completed: false,
-          },
-          {
-            id: "load-profile",
-            name: "loading profile data",
-            completed: false,
-          },
-          {
-            id: "check-context",
-            name: "checking redirect context",
-            completed: false,
-          },
-          {
-            id: "determine-destination",
-            name: "determining destination",
-            completed: false,
-          },
-        ];
-
-        startFlow(
-          "post-login-redirect",
-          redirectFlowSteps,
-          "processing login..."
-        );
-        setHasStartedFlow(true);
       }
 
       const waitTime = waitStartTime ? Date.now() - waitStartTime : 0;
@@ -99,14 +64,6 @@ function PostLoginRedirectContent() {
           "PostLoginRedirect: 3-second fallback triggered - redirecting to dashboard optimistically"
         );
         hasRedirectedRef.current = true;
-
-        // Complete all flow steps for fallback
-        if (hasStartedFlow) {
-          completeFlowStep("post-login-redirect", "wait-auth");
-          completeFlowStep("post-login-redirect", "load-profile");
-          completeFlowStep("post-login-redirect", "check-context");
-          completeFlowStep("post-login-redirect", "determine-destination");
-        }
         completeAuthFlow();
         router.replace("/dashboard");
         return;
@@ -172,12 +129,6 @@ function PostLoginRedirectContent() {
       hasRedirectedRef.current = true;
       isRedirectingRef.current = true;
 
-      // Complete authentication and profile loading steps
-      if (hasStartedFlow) {
-        completeFlowStep("post-login-redirect", "wait-auth");
-        completeFlowStep("post-login-redirect", "load-profile");
-      }
-
       // Check if this is a checkout login
       let checkoutLoginContext: CheckoutLoginContext | null = null;
       if (typeof window !== "undefined") {
@@ -191,11 +142,6 @@ function PostLoginRedirectContent() {
             console.error("Error parsing checkout login context:", error);
           }
         }
-      }
-
-      // Complete context checking step
-      if (hasStartedFlow) {
-        completeFlowStep("post-login-redirect", "check-context");
       }
 
       if (
@@ -216,11 +162,6 @@ function PostLoginRedirectContent() {
 
         // Complete the auth flow and redirect to product page with appropriate context
         setTimeout(() => {
-          // Complete the final destination step
-          if (hasStartedFlow) {
-            completeFlowStep("post-login-redirect", "determine-destination");
-          }
-
           completeAuthFlow();
           const productUrl = `/product/${checkoutLoginContext.lastAddedProductHandle}`;
           const urlParams = new URLSearchParams();
@@ -253,11 +194,6 @@ function PostLoginRedirectContent() {
 
         // Complete the auth flow and redirect to dashboard
         setTimeout(() => {
-          // Complete the final destination step
-          if (hasStartedFlow) {
-            completeFlowStep("post-login-redirect", "determine-destination");
-          }
-
           completeAuthFlow();
           router.replace("/dashboard");
         }, 500);
@@ -272,10 +208,6 @@ function PostLoginRedirectContent() {
     router,
     completeAuthFlow,
     isProfileComplete,
-    startFlow,
-    completeFlowStep,
-    completeFlow,
-    hasStartedFlow,
   ]);
 
   // This component doesn't render anything - loading is handled by LoadingProvider

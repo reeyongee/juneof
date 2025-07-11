@@ -7,7 +7,6 @@ import React, {
   useEffect,
   useCallback,
   useMemo,
-  useRef,
 } from "react";
 import { useRouter } from "next/navigation";
 import { useLoading } from "@/context/LoadingContext";
@@ -79,8 +78,7 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const router = useRouter();
-  const { startAuthFlow, completeAuthFlow, startFlow, completeFlowStep } =
-    useLoading();
+  const { startAuthFlow, completeAuthFlow } = useLoading();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true); // Key: Start true
   const [customerData, setCustomerData] = useState<CustomerProfileData | null>(
@@ -169,48 +167,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       currentTokens?.idToken ? "with id_token" : "no id_token"
     );
 
-    // Store id_token for Shopify logout BEFORE clearing tokens
-    const idToken = currentTokens?.idToken;
-
-    // Clear local storage and cookies FIRST
-    clearAuthStorage();
-    clearStoredTokens();
-
-    // Clear cookies in production
-    if (process.env.NODE_ENV === "production") {
-      await clearTokenCookiesServer();
-    }
-
-    // Clear local state
-    setIsAuthenticated(false);
-    setCustomerData(null);
-    setTokens(null);
-    setApiClient(null);
-    setError(null);
-    setIsLoading(false);
-
-    // Complete auth flow immediately to prevent infinite loading
-    completeAuthFlow();
-
-    // BULLETPROOF: Clear all loading flows to prevent conflicts
-    if (typeof window !== "undefined") {
-      const windowObj = window as typeof window & {
-        clearAllLoadingFlows?: () => void;
-        emergencyLoadingReset?: () => void;
-      };
-      if (windowObj.clearAllLoadingFlows) {
-        windowObj.clearAllLoadingFlows();
-      }
-      if (windowObj.emergencyLoadingReset) {
-        windowObj.emergencyLoadingReset();
-      }
-    }
-
-    // If we have an id_token, redirect to Shopify's logout endpoint
-    if (idToken) {
+    // If we have an id_token, redirect to Shopify's logout endpoint first
+    // This will clear Shopify's session completely
+    if (currentTokens?.idToken) {
       console.log(
         "AuthContext: LOGOUT - Redirecting to Shopify logout endpoint"
       );
+
+      // Clear local storage and cookies BEFORE redirecting
+      clearAuthStorage();
+      clearStoredTokens();
+
+      // Clear cookies in production
+      if (process.env.NODE_ENV === "production") {
+        await clearTokenCookiesServer();
+      }
+
+      // Clear local state
+      setIsAuthenticated(false);
+      setCustomerData(null);
+      setTokens(null);
+      setApiClient(null);
+      setError(null);
+      setIsLoading(false);
 
       // Create Shopify logout URL
       const logoutUrl = new URL(
@@ -218,7 +197,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       );
 
       // Add required id_token_hint parameter
-      logoutUrl.searchParams.append("id_token_hint", idToken);
+      logoutUrl.searchParams.append("id_token_hint", currentTokens.idToken);
 
       // Add post_logout_redirect_uri to come back to our app
       const postLogoutRedirectUri = `${appBaseUrl}/?shopify_logout=true`;
@@ -232,13 +211,33 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         logoutUrl.toString()
       );
 
-      // Set fallback timeout in case Shopify logout gets stuck
+      // Set multiple fallback timeouts in case Shopify logout gets stuck
+      // 3-second optimistic fallback
       setTimeout(() => {
         console.warn(
-          "AuthContext: LOGOUT - 5-second fallback, redirecting to homepage"
+          "AuthContext: LOGOUT - 3-second fallback, redirecting to homepage optimistically"
         );
+        completeAuthFlow();
         window.location.href = "/";
-      }, 5000);
+      }, 3000);
+
+      // 7-second fallback (in case 3-second didn't work)
+      setTimeout(() => {
+        console.warn(
+          "AuthContext: LOGOUT - 7-second fallback, forcing redirect to homepage"
+        );
+        completeAuthFlow();
+        window.location.href = "/";
+      }, 7000);
+
+      // 10-second final fallback
+      setTimeout(() => {
+        console.warn(
+          "AuthContext: LOGOUT - 10-second final fallback, forcing redirect to homepage"
+        );
+        completeAuthFlow();
+        window.location.href = "/";
+      }, 10000);
 
       // Redirect to Shopify logout endpoint
       window.location.href = logoutUrl.toString();
@@ -247,6 +246,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log(
         "AuthContext: LOGOUT - No id_token found, performing local logout only"
       );
+
+      // Clear local storage and cookies
+      clearAuthStorage();
+      clearStoredTokens();
+
+      // Clear cookies in production
+      if (process.env.NODE_ENV === "production") {
+        await clearTokenCookiesServer();
+      }
+
+      // Clear local state
+      setIsAuthenticated(false);
+      setCustomerData(null);
+      setTokens(null);
+      setApiClient(null);
+      setError(null);
+      setIsLoading(false);
 
       // If no id_token, just redirect to homepage
       router.push("/");
@@ -340,236 +356,217 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     [shopifyAuthConfig, logout]
   );
 
-  // Add a ref to prevent concurrent initializeAuth calls
-  const initializeAuthRunningRef = useRef(false);
-
   const initializeAuth = useCallback(async () => {
-    // BULLETPROOF: Prevent concurrent calls
-    if (initializeAuthRunningRef.current) {
-      console.log("AuthContext: initializeAuth already running, skipping");
-      return;
-    }
+    // Always get the freshest URL params when this function is called
+    const currentRawSearchParams =
+      typeof window !== "undefined" ? window.location.search : "";
+    const localUrlParams = new URLSearchParams(currentRawSearchParams);
+    const justCompletedAuthSignal =
+      localUrlParams.get("auth_completed") === "true";
+    const authTimestamp = localUrlParams.get("t");
+    const shopifyLogoutSignal = localUrlParams.get("shopify_logout") === "true";
 
-    initializeAuthRunningRef.current = true;
+    console.log(
+      `AuthContext: initializeAuth - START. URL Search: "${currentRawSearchParams}", Signal: ${justCompletedAuthSignal}, Timestamp: ${authTimestamp}, Shopify Logout: ${shopifyLogoutSignal}`
+    );
+    setIsLoading(true); // Set loading to true at the beginning of this entire process
 
-    try {
-      // Always get the freshest URL params when this function is called
-      const currentRawSearchParams =
-        typeof window !== "undefined" ? window.location.search : "";
-      const localUrlParams = new URLSearchParams(currentRawSearchParams);
-      const justCompletedAuthSignal =
-        localUrlParams.get("auth_completed") === "true";
-      const authTimestamp = localUrlParams.get("t");
-      const shopifyLogoutSignal =
-        localUrlParams.get("shopify_logout") === "true";
-
+    // If user is returning from Shopify logout, clean up URL and ensure clean state
+    if (shopifyLogoutSignal) {
       console.log(
-        `AuthContext: initializeAuth - START. URL Search: "${currentRawSearchParams}", Signal: ${justCompletedAuthSignal}, Timestamp: ${authTimestamp}, Shopify Logout: ${shopifyLogoutSignal}`
+        "AuthContext: initializeAuth - User returned from Shopify logout"
       );
 
-      // Start flow-based loading for authentication initialization
-      const flowSteps = [
-        {
-          id: "check-logout",
-          name: "checking logout status",
-          completed: false,
-        },
-        { id: "validate-tokens", name: "validating tokens", completed: false },
-        {
-          id: "fetch-customer-data",
-          name: "loading profile",
-          completed: false,
-        },
-        {
-          id: "complete-auth",
-          name: "finalizing authentication",
-          completed: false,
-        },
-      ];
-
-      startFlow(
-        "auth-initialization",
-        flowSteps,
-        "initializing authentication..."
-      );
-      setIsLoading(true);
-
-      // If user is returning from Shopify logout, clean up URL and ensure clean state
-      if (shopifyLogoutSignal) {
-        console.log(
-          "AuthContext: initializeAuth - User returned from Shopify logout"
-        );
-
-        completeFlowStep("auth-initialization", "check-logout");
-
-        // Ensure all auth data is cleared
-        clearAuthStorage();
-        clearStoredTokens();
-        if (process.env.NODE_ENV === "production") {
-          await clearTokenCookiesServer();
-        }
-
-        // Set clean unauthenticated state
-        setIsAuthenticated(false);
-        setCustomerData(null);
-        setTokens(null);
-        setApiClient(null);
-        setError(null);
-
-        // Clean up URL parameter
-        if (typeof window !== "undefined") {
-          const currentUrl = new URL(window.location.href);
-          currentUrl.searchParams.delete("shopify_logout");
-          window.history.replaceState(
-            {},
-            document.title,
-            currentUrl.pathname + currentUrl.search
-          );
-          console.log(
-            "AuthContext: initializeAuth - Cleaned up shopify_logout URL param"
-          );
-        }
-
-        // Complete all remaining steps since logout is complete
-        completeFlowStep("auth-initialization", "validate-tokens");
-        completeFlowStep("auth-initialization", "fetch-customer-data");
-        completeFlowStep("auth-initialization", "complete-auth");
-
-        setIsLoading(false);
-        console.log(
-          "AuthContext: initializeAuth - Shopify logout cleanup complete"
-        );
-        return; // Exit early, user is logged out
+      // Ensure all auth data is cleared
+      clearAuthStorage();
+      clearStoredTokens();
+      if (process.env.NODE_ENV === "production") {
+        await clearTokenCookiesServer();
       }
 
-      completeFlowStep("auth-initialization", "check-logout");
+      // Set clean unauthenticated state
+      setIsAuthenticated(false);
+      setCustomerData(null);
+      setTokens(null);
+      setApiClient(null);
+      setError(null);
 
-      // Check if we're on the callback handler page (where tokens are being set)
-      const isCallbackHandler =
-        typeof window !== "undefined" &&
-        window.location.pathname === "/auth/callback-handler";
-      const shouldDoAggressiveRetries =
-        justCompletedAuthSignal || isCallbackHandler;
-
-      let attempts = 0;
-      const maxAttempts = shouldDoAggressiveRetries ? 5 : 1;
-      let tokensFoundAndValid = false;
-
-      while (attempts < maxAttempts && !tokensFoundAndValid) {
-        attempts++;
-        console.log(
-          `AuthContext: initializeAuth - Attempt ${attempts}/${maxAttempts}`
-        );
-
-        const storedTokens = await getTokensUnified();
-
-        if (storedTokens) {
-          console.log(
-            "AuthContext: initializeAuth - Tokens FOUND.",
-            storedTokens
-          );
-          completeFlowStep("auth-initialization", "validate-tokens");
-
-          setTokens(storedTokens); // Set tokens state
-          const client = new CustomerAccountApiClient({
-            shopId: shopifyAuthConfig.shopId,
-            accessToken: storedTokens.accessToken,
-          });
-          setApiClient(client);
-          // Assume authenticated for now, _internalFetch will confirm or call logout
-          setIsAuthenticated(true);
-          await _internalFetchAndSetCustomerData(client, storedTokens);
-
-          completeFlowStep("auth-initialization", "fetch-customer-data");
-
-          // IMPORTANT: After _internalFetchAndSetCustomerData, check if still authenticated
-          // because _internalFetchAndSetCustomerData might call logout() if tokens are bad.
-          const tokensAfterFetch = await getTokensUnified();
-          if (tokensAfterFetch) {
-            // If tokens still exist, assume fetch was fine or error didn't invalidate tokens
-            tokensFoundAndValid = true; // Mark as successful
-          } else {
-            // Tokens were cleared, likely by logout() in _internalFetch
-            console.log(
-              "AuthContext: initializeAuth - Tokens were cleared during/after data fetch. Assuming logout."
-            );
-            setIsAuthenticated(false); // Ensure this is set to false
-            tokensFoundAndValid = false; // Mark as unsuccessful
-          }
-          break; // Exit loop whether successful or token became invalid
-        }
-
-        // If no tokens found, wait and retry if we're doing aggressive retries
-        if (attempts < maxAttempts && !tokensFoundAndValid) {
-          console.log(
-            `AuthContext: initializeAuth - Tokens not found yet. Waiting before retry ${attempts + 1}/${maxAttempts}`
-          );
-          await new Promise((resolve) => setTimeout(resolve, 100));
-        }
-      }
-
-      // If no tokens found after all attempts, set unauthenticated state
-      if (!tokensFoundAndValid) {
-        console.log(
-          "AuthContext: initializeAuth - No tokens found. Setting unauthenticated state."
-        );
-        setIsAuthenticated(false);
-        setCustomerData(null);
-        setTokens(null);
-        setApiClient(null);
-        setError(null);
-        completeFlowStep("auth-initialization", "validate-tokens");
-        completeFlowStep("auth-initialization", "fetch-customer-data");
-      }
-
-      // Clean up the URL parameters only if the signal was processed and we are on the client
-      if (justCompletedAuthSignal && typeof window !== "undefined") {
+      // Clean up URL parameter
+      if (typeof window !== "undefined") {
         const currentUrl = new URL(window.location.href);
-        let paramsRemoved = false;
-        if (currentUrl.searchParams.has("auth_completed")) {
-          currentUrl.searchParams.delete("auth_completed");
-          paramsRemoved = true;
-        }
-        if (currentUrl.searchParams.has("t")) {
-          currentUrl.searchParams.delete("t");
-          paramsRemoved = true;
-        }
-        // Also clean up shopify_logout if it exists (shouldn't normally be here with auth_completed, but just in case)
-        if (currentUrl.searchParams.has("shopify_logout")) {
-          currentUrl.searchParams.delete("shopify_logout");
-          paramsRemoved = true;
-        }
-        if (paramsRemoved) {
-          window.history.replaceState(
-            {},
-            document.title,
-            currentUrl.pathname + currentUrl.search
-          );
-          console.log(
-            "AuthContext: initializeAuth - Cleaned up auth_completed, timestamp, and shopify_logout URL params."
-          );
-        }
+        currentUrl.searchParams.delete("shopify_logout");
+        window.history.replaceState(
+          {},
+          document.title,
+          currentUrl.pathname + currentUrl.search
+        );
+        console.log(
+          "AuthContext: initializeAuth - Cleaned up shopify_logout URL param"
+        );
       }
 
-      // Complete the final authentication step
-      completeFlowStep("auth-initialization", "complete-auth");
-
-      setIsLoading(false); // Set loading to false only AFTER all processing (including retries) is done
+      setIsLoading(false);
+      completeAuthFlow(); // Hide the loading spinner after logout cleanup
       console.log(
-        "AuthContext: initializeAuth - END. Final State -> isLoading:",
-        false,
-        "isAuthenticated:",
-        tokensFoundAndValid
+        "AuthContext: initializeAuth - Shopify logout cleanup complete"
       );
-    } finally {
-      initializeAuthRunningRef.current = false;
+      return; // Exit early, user is logged out
     }
-  }, [
-    shopifyAuthConfig,
-    _internalFetchAndSetCustomerData,
-    startFlow,
-    completeFlowStep,
-  ]);
+
+    // Check if we're on the callback handler page (where tokens are being set)
+    const isCallbackHandler =
+      typeof window !== "undefined" &&
+      window.location.pathname === "/auth/callback-handler";
+    const shouldDoAggressiveRetries =
+      justCompletedAuthSignal || isCallbackHandler;
+
+    let attempts = 0;
+    const maxAttempts = shouldDoAggressiveRetries ? 40 : 1; // More attempts when we know auth just completed or during callback
+    let currentRetryDelay = 25; // Start with very short delay for cookie race condition
+    let tokensFoundAndValid = false;
+
+    // Extended wait time for auth completion to handle cookie race conditions
+    const maxTotalWaitTime = shouldDoAggressiveRetries ? 12000 : 5000;
+    const startTime = Date.now();
+
+    while (attempts < maxAttempts && !tokensFoundAndValid) {
+      console.log(
+        `AuthContext: initializeAuth - Attempt ${attempts + 1}/${maxAttempts}`
+      );
+
+      // Add small initial delay on first few attempts to handle immediate cookie race condition
+      if (shouldDoAggressiveRetries && attempts < 5) {
+        const initialDelay =
+          attempts === 0
+            ? 0
+            : attempts === 1
+              ? 25
+              : attempts === 2
+                ? 50
+                : attempts === 3
+                  ? 100
+                  : 200;
+        await new Promise((resolve) => setTimeout(resolve, initialDelay));
+      }
+
+      const storedTokens = await getTokensUnified();
+      console.log(
+        `AuthContext: initializeAuth - Attempt ${
+          attempts + 1
+        } - getTokensUnified():`,
+        storedTokens ? "FOUND" : "NULL"
+      );
+
+      if (storedTokens) {
+        console.log(
+          "AuthContext: initializeAuth - Tokens FOUND.",
+          storedTokens
+        );
+        setTokens(storedTokens); // Set tokens state
+        const client = new CustomerAccountApiClient({
+          shopId: shopifyAuthConfig.shopId,
+          accessToken: storedTokens.accessToken,
+        });
+        setApiClient(client);
+        // Assume authenticated for now, _internalFetch will confirm or call logout
+        setIsAuthenticated(true);
+        await _internalFetchAndSetCustomerData(client, storedTokens);
+
+        // IMPORTANT: After _internalFetchAndSetCustomerData, check if still authenticated
+        // because _internalFetchAndSetCustomerData might call logout() if tokens are bad.
+        const tokensAfterFetch = await getTokensUnified();
+        if (tokensAfterFetch) {
+          // If tokens still exist, assume fetch was fine or error didn't invalidate tokens
+          tokensFoundAndValid = true; // Mark as successful
+        } else {
+          // Tokens were cleared, likely by logout() in _internalFetch
+          console.log(
+            "AuthContext: initializeAuth - Tokens were cleared during/after data fetch. Assuming logout."
+          );
+          setIsAuthenticated(false); // Ensure this is set to false
+          tokensFoundAndValid = false; // Mark as unsuccessful
+        }
+        break; // Exit loop whether successful or token became invalid
+      } else if (shouldDoAggressiveRetries && attempts < maxAttempts - 1) {
+        // Check if we've exceeded maximum total wait time
+        const elapsedTime = Date.now() - startTime;
+        if (elapsedTime >= maxTotalWaitTime) {
+          console.warn(
+            `AuthContext: initializeAuth - Maximum wait time (${maxTotalWaitTime}ms) exceeded. Stopping retries.`
+          );
+          break;
+        }
+
+        console.warn(
+          `AuthContext: initializeAuth - No tokens (Attempt ${attempts + 1}), ${
+            isCallbackHandler ? "callback-handler" : "auth-signal"
+          }=true. Retrying in ${currentRetryDelay}ms... (Total elapsed: ${elapsedTime}ms)`
+        );
+        await new Promise((resolve) => setTimeout(resolve, currentRetryDelay));
+
+        // Progressive backoff: start very fast, then gradually increase
+        if (attempts < 10) {
+          currentRetryDelay = Math.min(currentRetryDelay + 25, 150); // Very quick retries first (25ms->50ms->75ms->100ms->125ms->150ms)
+        } else if (attempts < 20) {
+          currentRetryDelay = Math.min(currentRetryDelay + 50, 300); // Medium retries
+        } else {
+          currentRetryDelay = Math.min(currentRetryDelay + 100, 500); // Slower retries later
+        }
+      } else {
+        // No tokens, and either no signal or max attempts reached for signaled auth
+        break; // Exit loop
+      }
+      attempts++;
+    }
+
+    if (!tokensFoundAndValid) {
+      console.log(
+        "AuthContext: initializeAuth - No valid tokens after all attempts. Setting unauthenticated."
+      );
+      setIsAuthenticated(false);
+      setCustomerData(null);
+      setTokens(null);
+      setApiClient(null);
+      setError(null);
+    }
+
+    // Clean up the URL parameters only if the signal was processed and we are on the client
+    if (justCompletedAuthSignal && typeof window !== "undefined") {
+      const currentUrl = new URL(window.location.href);
+      let paramsRemoved = false;
+      if (currentUrl.searchParams.has("auth_completed")) {
+        currentUrl.searchParams.delete("auth_completed");
+        paramsRemoved = true;
+      }
+      if (currentUrl.searchParams.has("t")) {
+        currentUrl.searchParams.delete("t");
+        paramsRemoved = true;
+      }
+      // Also clean up shopify_logout if it exists (shouldn't normally be here with auth_completed, but just in case)
+      if (currentUrl.searchParams.has("shopify_logout")) {
+        currentUrl.searchParams.delete("shopify_logout");
+        paramsRemoved = true;
+      }
+      if (paramsRemoved) {
+        window.history.replaceState(
+          {},
+          document.title,
+          currentUrl.pathname + currentUrl.search
+        );
+        console.log(
+          "AuthContext: initializeAuth - Cleaned up auth_completed, timestamp, and shopify_logout URL params."
+        );
+      }
+    }
+
+    setIsLoading(false); // Set loading to false only AFTER all processing (including retries) is done
+    console.log(
+      "AuthContext: initializeAuth - END. Final State -> isLoading:",
+      false,
+      "isAuthenticated:",
+      tokensFoundAndValid
+    );
+  }, [shopifyAuthConfig, _internalFetchAndSetCustomerData, completeAuthFlow]); // `logout` is included via _internalFetch
 
   // This useEffect will run on initial mount and when initializeAuth changes
   useEffect(() => {
@@ -614,8 +611,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log(
         "AuthContext: Custom auth-complete event received. Re-running initializeAuth."
       );
-      // BULLETPROOF: Only run once since we now have better guards
+      // Run multiple times to ensure we catch the tokens
       initializeAuth();
+      setTimeout(() => initializeAuth(), 50);
+      setTimeout(() => initializeAuth(), 200);
     };
 
     // Listen for auth flow completion/abandonment events from LoadingContext
@@ -659,8 +658,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log(
         "AuthContext: Initial mount detected auth_completed=true, ensuring initializeAuth runs"
       );
-      // BULLETPROOF: Only run once since we now have better guards
+      // Run immediately and also with small delays to ensure it catches the tokens
       initializeAuth();
+      setTimeout(() => initializeAuth(), 50);
+      setTimeout(() => initializeAuth(), 200);
+      setTimeout(() => initializeAuth(), 500);
     }
 
     return () => {
@@ -676,19 +678,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (checkoutContext?: CheckoutLoginContext) => {
     console.log("AuthContext: login - START", { checkoutContext });
-
-    // Start login flow
-    const loginFlowSteps = [
-      { id: "prepare-login", name: "preparing login", completed: false },
-      {
-        id: "validate-config",
-        name: "validating configuration",
-        completed: false,
-      },
-      { id: "initiate-auth", name: "connecting to shopify", completed: false },
-    ];
-
-    startFlow("login-flow", loginFlowSteps, "starting login...");
 
     // Store checkout context if provided
     if (checkoutContext) {
@@ -709,8 +698,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       currentTokens ? "FOUND" : "NULL"
     );
 
-    completeFlowStep("login-flow", "prepare-login");
-
     if (
       !shopifyAuthConfig.shopId ||
       shopifyAuthConfig.shopId.startsWith("error-") ||
@@ -729,18 +716,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       alert(
         "Application Error: Shopify authentication is not configured correctly. Please contact support."
       );
-
-      // Complete remaining steps as failed
-      completeFlowStep("login-flow", "validate-config");
-      completeFlowStep("login-flow", "initiate-auth");
       return;
     }
-
-    completeFlowStep("login-flow", "validate-config");
     setIsLoading(true);
     setError(null);
 
-    // Start the persistent auth flow loading as well (for backward compatibility)
+    // Start the persistent auth flow loading
     startAuthFlow();
 
     try {
@@ -749,7 +730,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         shopifyAuthConfig
       );
       await initiateShopifyAuth(shopifyAuthConfig);
-      completeFlowStep("login-flow", "initiate-auth");
       // Browser will redirect; isLoading will remain true until the callback completes or an error occurs.
     } catch (err) {
       console.error("AuthContext: Error initiating login flow:", err);
@@ -757,9 +737,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         err instanceof Error ? err.message : "Failed to start login process."
       );
       setIsLoading(false);
-
-      // Complete remaining steps as failed
-      completeFlowStep("login-flow", "initiate-auth");
       completeAuthFlow(); // Complete auth flow on error
     }
   };
@@ -774,29 +751,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       "tokens:",
       !!tokens
     );
-
-    // Start customer data fetch flow
-    const fetchFlowSteps = [
-      {
-        id: "validate-auth",
-        name: "validating authentication",
-        completed: false,
-      },
-      {
-        id: "fetch-profile",
-        name: "loading customer profile",
-        completed: false,
-      },
-    ];
-
-    startFlow("customer-data-fetch", fetchFlowSteps, "loading profile...");
-
     if (!isAuthenticated || !apiClient || !tokens) {
       console.warn(
         "AuthContext: fetchCustomerData - Not ready or not authenticated. Attempting initializeAuth."
       );
-
-      // Don't complete the validate-auth step yet, try to reinitialize
       await initializeAuth(); // Re-check everything
       // After initializeAuth, if tokens were found, data would have been fetched.
       // If still not ready, the subsequent check will prevent API call.
@@ -806,25 +764,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.warn(
           "AuthContext: fetchCustomerData - Still not ready after re-init. Aborting fetch."
         );
-        completeFlowStep("customer-data-fetch", "validate-auth");
-        completeFlowStep("customer-data-fetch", "fetch-profile");
         return;
       }
     }
 
-    completeFlowStep("customer-data-fetch", "validate-auth");
     setIsLoading(true); // Set loading for this specific fetch operation
-
     try {
       await _internalFetchAndSetCustomerData(apiClient!, tokens!); // Use non-null assertion if confident from above check
-      completeFlowStep("customer-data-fetch", "fetch-profile");
     } catch (e) {
       // Error is logged and handled in _internalFetchAndSetCustomerData
       console.error(
         "AuthContext: fetchCustomerData - Error caught from _internalFetch:",
         e
       );
-      completeFlowStep("customer-data-fetch", "fetch-profile");
     } finally {
       setIsLoading(false);
       console.log("AuthContext: fetchCustomerData - END");
@@ -835,8 +787,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     tokens,
     initializeAuth,
     _internalFetchAndSetCustomerData,
-    startFlow,
-    completeFlowStep,
   ]);
 
   // Alias for backward compatibility
