@@ -159,20 +159,21 @@ export default function DashboardPage() {
     };
   }, []);
 
-  // FIXED: Simplified dashboard flow management - single comprehensive effect
+  // Comprehensive dashboard flow management - BULLETPROOF VERSION
   useEffect(() => {
-    // Early return if not authenticated or already ready
-    if (!isAuthenticated || authIsLoading || authError || dashboardReady) {
+    // Bulletproof guard - if not authenticated, reset everything
+    if (!isAuthenticated || authIsLoading || authError) {
+      console.log("Dashboard: Not authenticated or loading, resetting state");
+      setDashboardFlowStarted(false);
+      setDashboardReady(false);
+      hasFetchedCustomerDataRef.current = false;
+      hasFetchedAddressesRef.current = false;
       return;
     }
 
-    // If not authenticated, reset all states
-    if (!isAuthenticated) {
-      console.log("Dashboard: Not authenticated, resetting all states");
-      hasFetchedCustomerDataRef.current = false;
-      hasFetchedAddressesRef.current = false;
-      setDashboardFlowStarted(false);
-      setDashboardReady(false);
+    // Early return if dashboard is already ready
+    if (dashboardReady) {
+      console.log("Dashboard: Already ready, skipping flow");
       return;
     }
 
@@ -205,25 +206,51 @@ export default function DashboardPage() {
       // Complete authentication step immediately since we're already authenticated
       completeFlowStep("dashboard-initialization", "authenticate");
     }
+  }, [
+    isAuthenticated,
+    authIsLoading,
+    authError,
+    dashboardReady,
+    dashboardFlowStarted,
+    startFlow,
+    completeFlowStep,
+  ]);
 
-    // Handle customer data fetching
-    if (
-      dashboardFlowStarted &&
-      !customerData &&
-      !hasFetchedCustomerDataRef.current
-    ) {
+  // Separate effect for customer data fetching - BULLETPROOF VERSION
+  useEffect(() => {
+    if (!isAuthenticated || !dashboardFlowStarted || authIsLoading) {
+      return;
+    }
+
+    if (!customerData && !hasFetchedCustomerDataRef.current) {
       console.log("Dashboard: Fetching customer data");
       hasFetchedCustomerDataRef.current = true;
       fetchCustomerData();
-    } else if (dashboardFlowStarted && customerData) {
+    } else if (customerData && dashboardFlowStarted) {
       console.log("Dashboard: Customer data loaded, completing step");
       completeFlowStep("dashboard-initialization", "load-customer-data");
     }
+  }, [
+    isAuthenticated,
+    dashboardFlowStarted,
+    customerData,
+    authIsLoading,
+    fetchCustomerData,
+    completeFlowStep,
+  ]);
 
-    // Handle address fetching
+  // Separate effect for address fetching - BULLETPROOF VERSION
+  useEffect(() => {
     if (
-      dashboardFlowStarted &&
-      customerData &&
+      !isAuthenticated ||
+      !dashboardFlowStarted ||
+      !customerData ||
+      authIsLoading
+    ) {
+      return;
+    }
+
+    if (
       addresses.length === 0 &&
       !addressLoading &&
       !hasFetchedAddressesRef.current
@@ -232,18 +259,31 @@ export default function DashboardPage() {
       hasFetchedAddressesRef.current = true;
       fetchAddresses();
     } else if (
-      dashboardFlowStarted &&
-      (addresses.length > 0 || !addressLoading)
+      (addresses.length > 0 || !addressLoading) &&
+      dashboardFlowStarted
     ) {
       console.log("Dashboard: Addresses loaded, completing step");
       completeFlowStep("dashboard-initialization", "load-addresses");
     }
+  }, [
+    isAuthenticated,
+    dashboardFlowStarted,
+    customerData,
+    addresses.length,
+    addressLoading,
+    authIsLoading,
+    fetchAddresses,
+    completeFlowStep,
+  ]);
 
-    // Mark dashboard as ready when all prerequisites are met
+  // Final step - mark dashboard as ready - BULLETPROOF VERSION
+  useEffect(() => {
     if (
-      dashboardFlowStarted &&
+      isAuthenticated &&
+      !authIsLoading &&
       customerData &&
       (addresses.length > 0 || !addressLoading) &&
+      dashboardFlowStarted &&
       !dashboardReady
     ) {
       console.log("Dashboard: All prerequisites met, marking as ready");
@@ -254,25 +294,32 @@ export default function DashboardPage() {
   }, [
     isAuthenticated,
     authIsLoading,
-    authError,
-    dashboardReady,
-    dashboardFlowStarted,
     customerData,
     addresses.length,
     addressLoading,
-    startFlow,
+    dashboardFlowStarted,
+    dashboardReady,
     completeFlowStep,
-    fetchCustomerData,
-    fetchAddresses,
   ]);
 
-  // FIXED: Emergency timeout to prevent infinite loading - simplified
+  // Cleanup effect when authentication changes - BULLETPROOF VERSION
+  useEffect(() => {
+    if (!isAuthenticated) {
+      console.log("Dashboard: Not authenticated, resetting all states");
+      hasFetchedCustomerDataRef.current = false;
+      hasFetchedAddressesRef.current = false;
+      setDashboardFlowStarted(false);
+      setDashboardReady(false);
+    }
+  }, [isAuthenticated]);
+
+  // BULLETPROOF: Emergency timeout to prevent infinite loading
   useEffect(() => {
     if (!dashboardFlowStarted || dashboardReady) {
       return;
     }
 
-    console.log("Dashboard: Setting up emergency timeout (10 seconds)");
+    console.log("Dashboard: Setting up emergency timeout (15 seconds)");
     const emergencyTimeout = setTimeout(() => {
       if (!dashboardReady) {
         console.warn(
@@ -288,49 +335,69 @@ export default function DashboardPage() {
           completeFlowStep("dashboard-initialization", "ready");
         }
       }
-    }, 10000); // Reduced from 15 seconds to 10 seconds
+    }, 15000); // 15 second timeout
 
     return () => clearTimeout(emergencyTimeout);
   }, [dashboardFlowStarted, dashboardReady, isFlowActive, completeFlowStep]);
 
-  // FIXED: Clear conflicting orders flow on dashboard ready - simplified
+  // BULLETPROOF: Clear conflicting orders flow on dashboard ready
   useEffect(() => {
     if (dashboardReady && typeof window !== "undefined") {
       // Clear any stuck orders flow that might be conflicting
       const clearStuckFlows = () => {
         if (isFlowActive("orders-data-loading")) {
           console.log("Dashboard: Clearing potentially stuck orders flow");
-          const windowObj = window as typeof window & {
-            clearAllLoadingFlows?: () => void;
-          };
-          if (windowObj.clearAllLoadingFlows) {
-            windowObj.clearAllLoadingFlows();
+          // Access the emergency functions if available
+          if (typeof window !== "undefined") {
+            const windowObj = window as typeof window & {
+              clearAllLoadingFlows?: () => void;
+            };
+            if (windowObj.clearAllLoadingFlows) {
+              windowObj.clearAllLoadingFlows();
+            }
           }
         }
       };
 
       // Small delay to ensure dashboard is fully ready before clearing conflicts
-      const clearFlowTimeout = setTimeout(clearStuckFlows, 500);
+      const clearFlowTimeout = setTimeout(clearStuckFlows, 1000);
       return () => clearTimeout(clearFlowTimeout);
     }
   }, [dashboardReady, isFlowActive]);
 
-  // FIXED: Simplified post-login redirect check
+  // Effect to fetch addresses when authenticated
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (
+      isAuthenticated &&
+      addresses.length === 0 &&
+      !addressLoading &&
+      !hasFetchedAddressesRef.current
+    ) {
+      console.log("Dashboard: Fetching addresses...");
+      hasFetchedAddressesRef.current = true;
+      fetchAddresses();
+    } else if (!isAuthenticated) {
+      hasFetchedAddressesRef.current = false;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, addresses.length, addressLoading]);
 
+  // Effect to handle post-login redirect check
+  useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const isPostLoginRedirect = urlParams.get("auth_completed") === "true";
 
     if (isPostLoginRedirect && isAuthenticated && !authIsLoading) {
+      // If this is a post-login redirect, always show loading to prevent content flash
       console.log(
         "Dashboard: Post-login redirect detected, starting loading state"
       );
       setIsRedirecting(true);
 
       if (isProfileComplete) {
+        // Complete profile should not be here, redirect to homepage
         console.log(
-          "Dashboard: Complete profile detected, redirecting to homepage"
+          "Dashboard: Complete profile detected with auth_completed, redirecting to homepage"
         );
         startLoading("dashboard-redirect-complete", 500);
         setTimeout(() => {
@@ -338,6 +405,7 @@ export default function DashboardPage() {
           window.location.href = "/";
         }, 500);
       } else {
+        // Incomplete profile - brief loading then show dashboard
         startLoading("dashboard-redirect-incomplete", 300);
         setTimeout(() => {
           stopLoading("dashboard-redirect-incomplete");
@@ -353,7 +421,7 @@ export default function DashboardPage() {
     stopLoading,
   ]);
 
-  // FIXED: Simplified profile completion flow
+  // Effect to show profile completion flow for incomplete profiles (only after dashboard is ready)
   useEffect(() => {
     if (
       dashboardReady &&

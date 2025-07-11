@@ -249,10 +249,8 @@ export default function CustomerOrders({
   const fetchCustomerOrdersInternal = useCallback(
     async (client: CustomerAccountApiClient, tokenData: TokenStorage) => {
       // Bulletproof guard - check if already fetched or currently fetching
-      if (hasFetchedRef.current || loading) {
-        console.log(
-          "CustomerOrders: Already fetched or currently fetching, skipping"
-        );
+      if (hasFetchedRef.current) {
+        console.log("CustomerOrders: Already fetched, skipping");
         return;
       }
 
@@ -396,7 +394,6 @@ export default function CustomerOrders({
       }
     },
     [
-      loading, // Add loading to dependencies to prevent concurrent calls
       memoizedConfig,
       fetchOrderStatuses,
       fetchOrderExchanges,
@@ -408,8 +405,8 @@ export default function CustomerOrders({
   // Public function to load tokens and fetch orders
   const loadTokensAndFetchOrders = useCallback(async () => {
     // Bulletproof guard - prevent concurrent calls
-    if (loading || hasFetchedRef.current) {
-      console.log("CustomerOrders: Already loading or fetched, skipping");
+    if (hasFetchedRef.current) {
+      console.log("CustomerOrders: Already fetched, skipping");
       return;
     }
 
@@ -432,17 +429,16 @@ export default function CustomerOrders({
       setError("Failed to load orders. Please try again.");
       setOrdersDataReady(true); // Set to true to prevent infinite loading
     }
-  }, [loading, memoizedConfig, fetchCustomerOrdersInternal]); // Simplified dependencies
+  }, [memoizedConfig, fetchCustomerOrdersInternal]);
 
   // FIXED: Effect to load orders when component mounts or tokens change
   useEffect(() => {
     // Only run if we have tokens and haven't fetched yet
-    if (tokens && !hasFetchedRef.current && !loading) {
+    if (tokens && !hasFetchedRef.current) {
       console.log("CustomerOrders: Initial load triggered");
       loadTokensAndFetchOrders();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tokens, loading]); // FIXED: Added loading to prevent conflicts
+  }, [tokens, loadTokensAndFetchOrders]);
 
   // Bulletproof cleanup effect
   useEffect(() => {
@@ -663,13 +659,9 @@ export default function CustomerOrders({
         setExchangeOptions(null);
         setSelectedVariant("");
 
-        // FIXED: Instead of resetting hasFetchedRef and causing infinite loop,
-        // just refresh the specific data we need
-        const orderIds = orders.map((order) => order.id);
-        if (orderIds.length > 0) {
-          await fetchOrderStatuses(orderIds);
-          await fetchOrderExchanges(orderIds);
-        }
+        // Refresh orders to show updated status
+        hasFetchedRef.current = false;
+        await loadTokensAndFetchOrders();
       } else {
         console.error("❌ Failed to create exchange:", data.error);
         setError(data.error || "Failed to create exchange");
@@ -718,10 +710,9 @@ export default function CustomerOrders({
         <Button
           onClick={() => {
             setError(null);
-            // FIXED: Only retry if we haven't fetched yet
-            if (!hasFetchedRef.current) {
-              loadTokensAndFetchOrders();
-            }
+            // BULLETPROOF: Don't reset hasFetchedRef to prevent infinite loop
+            // Just try to load again with existing protection
+            loadTokensAndFetchOrders();
           }}
           variant="outline"
           className="mt-4 lowercase tracking-wider"

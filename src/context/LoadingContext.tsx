@@ -185,7 +185,7 @@ export const LoadingProvider: React.FC<LoadingProviderProps> = ({
     }
   }, []);
 
-  // FIXED: Add back the missing forceCompleteFlow function
+  // Enhanced flow-based loading methods
   const forceCompleteFlow = useCallback(
     (flowId: string) => {
       console.log(`LoadingContext: Force completing flow "${flowId}"`);
@@ -225,17 +225,8 @@ export const LoadingProvider: React.FC<LoadingProviderProps> = ({
     [isAuthFlowActive]
   );
 
-  // Enhanced flow-based loading methods
   const startFlow = useCallback(
     (flowId: string, steps: FlowStep[], message?: string) => {
-      // FIXED: Prevent duplicate flows
-      if (flowsRef.current.has(flowId)) {
-        console.warn(
-          `LoadingContext: Flow "${flowId}" already exists, skipping`
-        );
-        return;
-      }
-
       console.log(
         `LoadingContext: Starting flow "${flowId}" with ${steps.length} steps`
       );
@@ -246,7 +237,7 @@ export const LoadingProvider: React.FC<LoadingProviderProps> = ({
         steps: steps.map((step) => ({ ...step, completed: false })),
         currentStep: 0,
         message: message || `processing ${flowId}...`,
-        timeout: 15000, // Reduced from 20 seconds to 15 seconds
+        timeout: 20000, // 20 second default timeout
         startTime: Date.now(),
       };
 
@@ -298,14 +289,16 @@ export const LoadingProvider: React.FC<LoadingProviderProps> = ({
         );
       }
 
-      // FIXED: More aggressive cleanup - stop global loading immediately if no other flows
+      // Stop global loading if no other active loaders, flows, or auth flow
       if (
         activeLoadersRef.current.size === 0 &&
         flowsRef.current.size === 0 &&
         !isAuthFlowActive
       ) {
-        setIsGlobalLoading(false);
-        setLoadingMessage("");
+        setTimeout(() => {
+          setIsGlobalLoading(false);
+          setLoadingMessage("");
+        }, 300);
       }
     },
     [isAuthFlowActive]
@@ -404,10 +397,12 @@ export const LoadingProvider: React.FC<LoadingProviderProps> = ({
       });
     }
 
-    // FIXED: Immediate cleanup
-    setIsGlobalLoading(false);
-    setLoadingMessage("");
-  }, []);
+    // Stop global loading if no other active loaders or auth flow
+    if (activeLoadersRef.current.size === 0 && !isAuthFlowActive) {
+      setIsGlobalLoading(false);
+      setLoadingMessage("");
+    }
+  }, [isAuthFlowActive]);
 
   const emergencyReset = useCallback(() => {
     console.warn("LoadingContext: Emergency reset triggered");
@@ -736,7 +731,7 @@ export const LoadingProvider: React.FC<LoadingProviderProps> = ({
     };
   }, [isAuthFlowActive, completeAuthFlow]);
 
-  // FIXED: Enhanced stuck flow detection
+  // Monitor for stuck flows and provide additional safety mechanisms
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -744,11 +739,10 @@ export const LoadingProvider: React.FC<LoadingProviderProps> = ({
       const currentTime = Date.now();
       const stuckFlows: string[] = [];
 
-      // Check for flows that have been running for more than 20 seconds
+      // Check for flows that have been running for more than 30 seconds
       flowsRef.current.forEach((flowState, flowId) => {
         const runtime = currentTime - flowState.startTime;
-        if (runtime > 20000) {
-          // Reduced from 30 seconds to 20 seconds
+        if (runtime > 30000) {
           stuckFlows.push(flowId);
           console.warn(
             `LoadingContext: Flow "${flowId}" has been running for ${Math.round(runtime / 1000)}s, marking as stuck`
@@ -765,23 +759,27 @@ export const LoadingProvider: React.FC<LoadingProviderProps> = ({
         stuckFlows.forEach((flowId) => forceCompleteFlow(flowId));
       }
 
-      // FIXED: More aggressive global loading cleanup
+      // If global loading has been active for more than 45 seconds, emergency reset
       if (
         isGlobalLoading &&
         activeLoadersRef.current.size === 0 &&
-        flowsRef.current.size === 0 &&
-        !isAuthFlowActive
+        flowsRef.current.size === 0
       ) {
         console.error(
           "LoadingContext: Global loading is stuck with no active flows or loaders, performing emergency reset"
         );
-        setIsGlobalLoading(false);
-        setLoadingMessage("");
+        emergencyReset();
       }
-    }, 5000); // Check every 5 seconds instead of 10
+    }, 10000); // Check every 10 seconds
 
     return () => clearInterval(checkInterval);
-  }, [isGlobalLoading, forceCompleteFlow, isAuthFlowActive]);
+  }, [
+    isGlobalLoading,
+    forceCompleteFlow,
+    emergencyReset,
+    clearAllFlows,
+    getActiveFlows,
+  ]);
 
   // Cleanup on unmount
   useEffect(() => {

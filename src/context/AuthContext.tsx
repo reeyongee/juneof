@@ -571,113 +571,109 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     completeFlowStep,
   ]);
 
-  // Public function to allow components to trigger a data refresh
-  const fetchCustomerData = useCallback(async () => {
+  // This useEffect will run on initial mount and when initializeAuth changes
+  useEffect(() => {
     console.log(
-      "AuthContext: fetchCustomerData - START. isAuthenticated:",
-      isAuthenticated,
-      "apiClient:",
-      !!apiClient,
-      "tokens:",
-      !!tokens
+      "AuthContext: useEffect - Component mounted or initializeAuth changed. Calling initializeAuth. Current path:",
+      typeof window !== "undefined" ? window.location.pathname : "SSR"
     );
+    initializeAuth();
+  }, [initializeAuth]);
 
-    // FIXED: Prevent redundant calls if already loading or not authenticated
-    if (isLoading || !isAuthenticated || !apiClient || !tokens) {
-      console.log("AuthContext: fetchCustomerData - Not ready, skipping");
-      return;
-    }
-
-    // Start customer data fetch flow
-    const fetchFlowSteps = [
-      {
-        id: "validate-auth",
-        name: "validating authentication",
-        completed: false,
-      },
-      {
-        id: "fetch-profile",
-        name: "loading customer profile",
-        completed: false,
-      },
-    ];
-
-    startFlow("customer-data-fetch", fetchFlowSteps, "loading profile...");
-    completeFlowStep("customer-data-fetch", "validate-auth");
-    setIsLoading(true);
-
-    try {
-      await _internalFetchAndSetCustomerData(apiClient, tokens);
-      completeFlowStep("customer-data-fetch", "fetch-profile");
-    } catch (e) {
-      // Error is logged and handled in _internalFetchAndSetCustomerData
-      console.error(
-        "AuthContext: fetchCustomerData - Error caught from _internalFetch:",
-        e
-      );
-      completeFlowStep("customer-data-fetch", "fetch-profile");
-    } finally {
-      setIsLoading(false);
-      console.log("AuthContext: fetchCustomerData - END");
-    }
-  }, [
-    isAuthenticated,
-    apiClient,
-    tokens,
-    isLoading,
-    _internalFetchAndSetCustomerData,
-    startFlow,
-    completeFlowStep,
-  ]);
-
-  // FIXED: Simplified event handling
+  // Additional useEffect to handle URL changes and storage events for auth completion
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const handleAuthComplete = () => {
-      console.log("AuthContext: Auth complete event received");
-      // Small delay to ensure all tokens are stored
-      setTimeout(() => initializeAuth(), 100);
+    const handlePopState = () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const hasAuthCompleted = urlParams.get("auth_completed") === "true";
+      if (hasAuthCompleted) {
+        console.log(
+          "AuthContext: URL changed with auth_completed=true, re-running initializeAuth"
+        );
+        initializeAuth();
+      }
     };
 
+    // Storage event listener to detect when tokens are stored from callback handler
     const handleStorageChange = (event: StorageEvent) => {
       // Check if Shopify auth tokens were added/updated
-      if (event.key === "shopify-tokens" && !isAuthenticated) {
+      if (event.key === "shopify-tokens") {
         console.log(
-          "AuthContext: Tokens detected in storage, initializing auth"
+          `AuthContext: Storage event detected - ${event.key} was ${
+            event.oldValue ? "updated" : "added"
+          }. Re-running initializeAuth.`
         );
+        // Small delay to ensure all tokens are stored
         setTimeout(() => initializeAuth(), 100);
       }
     };
 
+    // Custom event listener for direct auth completion signals
+    const handleAuthComplete = () => {
+      console.log(
+        "AuthContext: Custom auth-complete event received. Re-running initializeAuth."
+      );
+      // BULLETPROOF: Only run once since we now have better guards
+      initializeAuth();
+    };
+
+    // Listen for auth flow completion/abandonment events from LoadingContext
     const handleAuthFlowCompleted = (event: CustomEvent) => {
-      console.log("AuthContext: Auth flow completed event received");
-      // Only handle if the flow was abandoned
+      console.log(
+        "AuthContext: Auth flow completed/abandoned event received:",
+        event.detail.reason
+      );
+
+      // If auth flow was abandoned, reset the loading state
       if (event.detail.reason === "abandoned") {
-        console.log("AuthContext: Auth flow was abandoned, clearing states");
-        // Clear any stuck loading states
+        console.log(
+          "AuthContext: Resetting loading state due to abandoned auth flow"
+        );
         setIsLoading(false);
+        setError(null);
+        // Don't call completeAuthFlow() here to avoid circular dependency
+        // The LoadingContext already handled the completion
       }
     };
 
-    window.addEventListener("shopify-auth-complete", handleAuthComplete);
+    // Listen for browser navigation events
+    window.addEventListener("popstate", handlePopState);
+
+    // Listen for storage changes (tokens being stored)
     window.addEventListener("storage", handleStorageChange);
+
+    // Listen for custom auth completion events
+    window.addEventListener("shopify-auth-complete", handleAuthComplete);
+
+    // Listen for auth flow completion/abandonment events
     window.addEventListener(
       "auth-flow-completed",
       handleAuthFlowCompleted as EventListener
     );
 
+    // Also check immediately if we're on a page with auth_completed
+    const urlParams = new URLSearchParams(window.location.search);
+    const hasAuthCompleted = urlParams.get("auth_completed") === "true";
+    if (hasAuthCompleted) {
+      console.log(
+        "AuthContext: Initial mount detected auth_completed=true, ensuring initializeAuth runs"
+      );
+      // BULLETPROOF: Only run once since we now have better guards
+      initializeAuth();
+    }
+
     return () => {
-      window.removeEventListener("shopify-auth-complete", handleAuthComplete);
+      window.removeEventListener("popstate", handlePopState);
       window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("shopify-auth-complete", handleAuthComplete);
       window.removeEventListener(
         "auth-flow-completed",
         handleAuthFlowCompleted as EventListener
       );
     };
-  }, [isAuthenticated, initializeAuth]);
+  }, [initializeAuth]);
 
-  // FIXED: Simplified login function
   const login = async (checkoutContext?: CheckoutLoginContext) => {
     console.log("AuthContext: login - START", { checkoutContext });
 
@@ -706,6 +702,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     }
 
+    // Check current state before login
+    const currentTokens = await getTokensUnified();
+    console.log(
+      "AuthContext: login - Current tokens before login:",
+      currentTokens ? "FOUND" : "NULL"
+    );
+
     completeFlowStep("login-flow", "prepare-login");
 
     if (
@@ -723,7 +726,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         clientId: shopifyAuthConfig.clientId ? "✓" : "✗",
         appBaseUrl: appBaseUrl ? "✓" : "✗",
       });
+      alert(
+        "Application Error: Shopify authentication is not configured correctly. Please contact support."
+      );
 
+      // Complete remaining steps as failed
       completeFlowStep("login-flow", "validate-config");
       completeFlowStep("login-flow", "initiate-auth");
       return;
@@ -733,7 +740,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setIsLoading(true);
     setError(null);
 
-    // Start the persistent auth flow loading as well
+    // Start the persistent auth flow loading as well (for backward compatibility)
     startAuthFlow();
 
     try {
@@ -756,6 +763,81 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       completeAuthFlow(); // Complete auth flow on error
     }
   };
+
+  // Public function to allow components to trigger a data refresh
+  const fetchCustomerData = useCallback(async () => {
+    console.log(
+      "AuthContext: fetchCustomerData - START. isAuthenticated:",
+      isAuthenticated,
+      "apiClient:",
+      !!apiClient,
+      "tokens:",
+      !!tokens
+    );
+
+    // Start customer data fetch flow
+    const fetchFlowSteps = [
+      {
+        id: "validate-auth",
+        name: "validating authentication",
+        completed: false,
+      },
+      {
+        id: "fetch-profile",
+        name: "loading customer profile",
+        completed: false,
+      },
+    ];
+
+    startFlow("customer-data-fetch", fetchFlowSteps, "loading profile...");
+
+    if (!isAuthenticated || !apiClient || !tokens) {
+      console.warn(
+        "AuthContext: fetchCustomerData - Not ready or not authenticated. Attempting initializeAuth."
+      );
+
+      // Don't complete the validate-auth step yet, try to reinitialize
+      await initializeAuth(); // Re-check everything
+      // After initializeAuth, if tokens were found, data would have been fetched.
+      // If still not ready, the subsequent check will prevent API call.
+      // Need to re-check state after initializeAuth finishes.
+      if (!apiClient || !tokens) {
+        // Check again after initializeAuth
+        console.warn(
+          "AuthContext: fetchCustomerData - Still not ready after re-init. Aborting fetch."
+        );
+        completeFlowStep("customer-data-fetch", "validate-auth");
+        completeFlowStep("customer-data-fetch", "fetch-profile");
+        return;
+      }
+    }
+
+    completeFlowStep("customer-data-fetch", "validate-auth");
+    setIsLoading(true); // Set loading for this specific fetch operation
+
+    try {
+      await _internalFetchAndSetCustomerData(apiClient!, tokens!); // Use non-null assertion if confident from above check
+      completeFlowStep("customer-data-fetch", "fetch-profile");
+    } catch (e) {
+      // Error is logged and handled in _internalFetchAndSetCustomerData
+      console.error(
+        "AuthContext: fetchCustomerData - Error caught from _internalFetch:",
+        e
+      );
+      completeFlowStep("customer-data-fetch", "fetch-profile");
+    } finally {
+      setIsLoading(false);
+      console.log("AuthContext: fetchCustomerData - END");
+    }
+  }, [
+    isAuthenticated,
+    apiClient,
+    tokens,
+    initializeAuth,
+    _internalFetchAndSetCustomerData,
+    startFlow,
+    completeFlowStep,
+  ]);
 
   // Alias for backward compatibility
   const refreshCustomerData = fetchCustomerData;
@@ -782,18 +864,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       error: error,
     });
   }, [isAuthenticated, isLoading, tokens, error]);
-
-  // FIXED: Simplified useEffect for initialization
-  useEffect(() => {
-    // Only initialize if not already loading and not initialized
-    if (!isLoading || !isAuthenticated) {
-      console.log(
-        "AuthContext: useEffect - Initializing auth. Current path:",
-        typeof window !== "undefined" ? window.location.pathname : "SSR"
-      );
-      initializeAuth();
-    }
-  }, []); // FIXED: Empty dependency array to prevent re-initialization
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
