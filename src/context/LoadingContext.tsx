@@ -81,6 +81,58 @@ export const LoadingProvider: React.FC<LoadingProviderProps> = ({
   const flowsRef = useRef<Map<string, FlowState>>(new Map());
   const flowTimersRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
 
+  const forceCompleteAuthFlow = useCallback(() => {
+    setIsAuthFlowActive(false);
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem("auth-flow-active");
+    }
+
+    // Dispatch event to notify other components that auth flow was force-completed/abandoned
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("auth-flow-completed", {
+          detail: { reason: "abandoned" },
+        })
+      );
+    }
+  }, []);
+
+  const clearAllFlows = useCallback(() => {
+    console.log("LoadingContext: Clearing all active flows");
+
+    // Clear all flow timers
+    flowTimersRef.current.forEach((timer) => clearTimeout(timer));
+    flowTimersRef.current.clear();
+
+    // Clear all flows
+    const activeFlowIds = Array.from(flowsRef.current.keys());
+    flowsRef.current.clear();
+
+    // Clear persisted flow states
+    if (typeof window !== "undefined") {
+      activeFlowIds.forEach((flowId) => {
+        sessionStorage.removeItem(`flow-${flowId}`);
+      });
+    }
+
+    // Dispatch events for each cleared flow
+    if (typeof window !== "undefined") {
+      activeFlowIds.forEach((flowId) => {
+        window.dispatchEvent(
+          new CustomEvent("flow-completed", {
+            detail: { flowId, reason: "cleared" },
+          })
+        );
+      });
+    }
+
+    // Stop global loading if no other active loaders or auth flow
+    if (activeLoadersRef.current.size === 0 && !isAuthFlowActive) {
+      setIsGlobalLoading(false);
+      setLoadingMessage("");
+    }
+  }, [isAuthFlowActive]);
+
   const emergencyReset = useCallback(() => {
     console.warn("LoadingContext: Emergency reset triggered");
 
@@ -217,22 +269,6 @@ export const LoadingProvider: React.FC<LoadingProviderProps> = ({
         setIsGlobalLoading(false);
         setLoadingMessage("");
       }, 300);
-    }
-  }, []);
-
-  const forceCompleteAuthFlow = useCallback(() => {
-    setIsAuthFlowActive(false);
-    if (typeof window !== "undefined") {
-      sessionStorage.removeItem("auth-flow-active");
-    }
-
-    // Dispatch event to notify other components that auth flow was force-completed/abandoned
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(
-        new CustomEvent("auth-flow-completed", {
-          detail: { reason: "abandoned" },
-        })
-      );
     }
   }, []);
 
@@ -424,42 +460,6 @@ export const LoadingProvider: React.FC<LoadingProviderProps> = ({
   }, [loadingMessage]);
 
   // Enhanced fallback mechanisms
-  const clearAllFlows = useCallback(() => {
-    console.log("LoadingContext: Clearing all active flows");
-
-    // Clear all flow timers
-    flowTimersRef.current.forEach((timer) => clearTimeout(timer));
-    flowTimersRef.current.clear();
-
-    // Clear all flows
-    const activeFlowIds = Array.from(flowsRef.current.keys());
-    flowsRef.current.clear();
-
-    // Clear persisted flow states
-    if (typeof window !== "undefined") {
-      activeFlowIds.forEach((flowId) => {
-        sessionStorage.removeItem(`flow-${flowId}`);
-      });
-    }
-
-    // Dispatch events for each cleared flow
-    if (typeof window !== "undefined") {
-      activeFlowIds.forEach((flowId) => {
-        window.dispatchEvent(
-          new CustomEvent("flow-completed", {
-            detail: { flowId, reason: "cleared" },
-          })
-        );
-      });
-    }
-
-    // Stop global loading if no other active loaders or auth flow
-    if (activeLoadersRef.current.size === 0 && !isAuthFlowActive) {
-      setIsGlobalLoading(false);
-      setLoadingMessage("");
-    }
-  }, [isAuthFlowActive]);
-
   const getActiveFlows = useCallback(() => {
     return Array.from(flowsRef.current.keys());
   }, []);
