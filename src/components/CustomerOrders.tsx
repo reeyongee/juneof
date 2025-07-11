@@ -678,21 +678,24 @@ export default function CustomerOrders({
     );
   }
 
+  // Show loading state if exchange data is still being fetched
+  if (statusLoading || exchangesLoading) {
+    return (
+      <div className="flex justify-center items-center py-8">
+        <Loader2 className="h-8 w-8 animate-spin text-gray-600" />
+        <span className="ml-2 text-gray-600 lowercase tracking-wider">
+          {statusLoading && exchangesLoading
+            ? "loading order data..."
+            : statusLoading
+              ? "checking order statuses..."
+              : "loading exchange data..."}
+        </span>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
-      {(statusLoading || exchangesLoading) && (
-        <div className="flex justify-center items-center py-2">
-          <Loader2 className="h-4 w-4 animate-spin text-gray-600" />
-          <span className="ml-2 text-sm text-gray-600 lowercase tracking-wider">
-            {statusLoading && exchangesLoading
-              ? "loading order data..."
-              : statusLoading
-                ? "checking order statuses..."
-                : "loading exchange data..."}
-          </span>
-        </div>
-      )}
-
       {/* Current Orders */}
       {currentOrders.length > 0 && (
         <div>
