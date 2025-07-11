@@ -33,6 +33,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Loader2, Copy } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 import {
   ShopifyAuthConfig,
@@ -773,32 +776,42 @@ export default function CustomerOrders({
                           {orderStatuses[order.id].trackingNumbers.map(
                             (trackingNumber, index) => (
                               <div key={index} className="space-y-2">
-                                <p className="text-sm lowercase tracking-wider text-gray-600">
-                                  tracking number
-                                </p>
                                 <div className="flex gap-2">
-                                  <div className="relative flex-1">
+                                  <div
+                                    className={cn(
+                                      "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+                                      "relative items-center flex-1"
+                                    )}
+                                  >
+                                    <Label
+                                      htmlFor={`tracking-number-current-${index}`}
+                                      className="text-muted-foreground mr-2 whitespace-nowrap cursor-default lowercase tracking-wider text-xs"
+                                    >
+                                      tracking number :
+                                    </Label>
                                     <Input
+                                      id={`tracking-number-current-${index}`}
                                       type="text"
                                       value={trackingNumber}
                                       readOnly
-                                      className="pr-10 lowercase tracking-wider text-xs"
+                                      className="flex-1 border-none bg-transparent p-0 focus-visible:ring-0 focus-visible:ring-offset-0 lowercase tracking-wider text-xs"
                                     />
                                     <Button
                                       type="button"
                                       variant="ghost"
-                                      size="sm"
-                                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                                      onClick={() =>
+                                      size="icon"
+                                      className="absolute right-0 flex items-center justify-center h-full w-10 text-muted-foreground hover:bg-transparent hover:text-foreground"
+                                      onClick={() => {
                                         navigator.clipboard.writeText(
                                           trackingNumber
-                                        )
-                                      }
+                                        );
+                                        toast.success(
+                                          "Tracking number copied!"
+                                        );
+                                      }}
+                                      aria-label="Copy tracking number"
                                     >
                                       <Copy className="h-4 w-4" />
-                                      <span className="sr-only">
-                                        Copy tracking number
-                                      </span>
                                     </Button>
                                   </div>
                                   <Button
@@ -1087,32 +1100,42 @@ export default function CustomerOrders({
                           {orderStatuses[order.id].trackingNumbers.map(
                             (trackingNumber, index) => (
                               <div key={index} className="space-y-2">
-                                <p className="text-sm lowercase tracking-wider text-gray-600">
-                                  tracking number
-                                </p>
                                 <div className="flex gap-2">
-                                  <div className="relative flex-1">
+                                  <div
+                                    className={cn(
+                                      "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+                                      "relative items-center flex-1"
+                                    )}
+                                  >
+                                    <Label
+                                      htmlFor={`tracking-number-past-${index}`}
+                                      className="text-muted-foreground mr-2 whitespace-nowrap cursor-default lowercase tracking-wider text-xs"
+                                    >
+                                      tracking number :
+                                    </Label>
                                     <Input
+                                      id={`tracking-number-past-${index}`}
                                       type="text"
                                       value={trackingNumber}
                                       readOnly
-                                      className="pr-10 lowercase tracking-wider text-xs"
+                                      className="flex-1 border-none bg-transparent p-0 focus-visible:ring-0 focus-visible:ring-offset-0 lowercase tracking-wider text-xs"
                                     />
                                     <Button
                                       type="button"
                                       variant="ghost"
-                                      size="sm"
-                                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                                      onClick={() =>
+                                      size="icon"
+                                      className="absolute right-0 flex items-center justify-center h-full w-10 text-muted-foreground hover:bg-transparent hover:text-foreground"
+                                      onClick={() => {
                                         navigator.clipboard.writeText(
                                           trackingNumber
-                                        )
-                                      }
+                                        );
+                                        toast.success(
+                                          "Tracking number copied!"
+                                        );
+                                      }}
+                                      aria-label="Copy tracking number"
                                     >
                                       <Copy className="h-4 w-4" />
-                                      <span className="sr-only">
-                                        Copy tracking number
-                                      </span>
                                     </Button>
                                   </div>
                                   <Button
@@ -1368,32 +1391,42 @@ export default function CustomerOrders({
                             {orderStatuses[order.id].trackingNumbers.map(
                               (trackingNumber, index) => (
                                 <div key={index} className="space-y-2">
-                                  <p className="text-sm lowercase tracking-wider text-gray-600">
-                                    tracking number
-                                  </p>
                                   <div className="flex gap-2">
-                                    <div className="relative flex-1">
+                                    <div
+                                      className={cn(
+                                        "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+                                        "relative items-center flex-1"
+                                      )}
+                                    >
+                                      <Label
+                                        htmlFor={`tracking-number-cancelled-${index}`}
+                                        className="text-muted-foreground mr-2 whitespace-nowrap cursor-default lowercase tracking-wider text-xs"
+                                      >
+                                        tracking number :
+                                      </Label>
                                       <Input
+                                        id={`tracking-number-cancelled-${index}`}
                                         type="text"
                                         value={trackingNumber}
                                         readOnly
-                                        className="pr-10 lowercase tracking-wider text-xs"
+                                        className="flex-1 border-none bg-transparent p-0 focus-visible:ring-0 focus-visible:ring-offset-0 lowercase tracking-wider text-xs"
                                       />
                                       <Button
                                         type="button"
                                         variant="ghost"
-                                        size="sm"
-                                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                                        onClick={() =>
+                                        size="icon"
+                                        className="absolute right-0 flex items-center justify-center h-full w-10 text-muted-foreground hover:bg-transparent hover:text-foreground"
+                                        onClick={() => {
                                           navigator.clipboard.writeText(
                                             trackingNumber
-                                          )
-                                        }
+                                          );
+                                          toast.success(
+                                            "Tracking number copied!"
+                                          );
+                                        }}
+                                        aria-label="Copy tracking number"
                                       >
                                         <Copy className="h-4 w-4" />
-                                        <span className="sr-only">
-                                          Copy tracking number
-                                        </span>
                                       </Button>
                                     </div>
                                     <Button
