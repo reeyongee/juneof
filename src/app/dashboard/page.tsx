@@ -63,7 +63,6 @@ export default function DashboardPage() {
   const {
     startLoading,
     stopLoading,
-    isGlobalLoading,
     startFlow,
     completeFlowStep,
     isFlowActive,
@@ -443,19 +442,8 @@ export default function DashboardPage() {
   ]);
 
   // Show loading state while checking authentication, dashboard flow running, redirecting, or if global loading is active
-  if (
-    authIsLoading ||
-    isRedirecting ||
-    isGlobalLoading ||
-    (isAuthenticated && !dashboardReady)
-  ) {
-    console.log(
-      "DashboardPage: Rendering loading state (authIsLoading, dashboard flow running, redirecting, or global loading active)"
-    );
-    // Don't render anything if global loading is active - let LoadingProvider handle it
-    if (isGlobalLoading || isFlowActive("dashboard-initialization")) {
-      return null;
-    }
+  if (authIsLoading || isRedirecting || (isAuthenticated && !dashboardReady)) {
+    console.log("DashboardPage: Rendering local loading state");
     return (
       <div className="min-h-screen bg-[#F8F4EC] flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>

@@ -171,7 +171,7 @@ export default function CustomerOrders({
   const hasFetchedRef = useRef(false);
   const [ordersDataReady, setOrdersDataReady] = useState(false);
 
-  const { startFlow, completeFlowStep } = useLoading();
+  const { startFlow, completeFlowStep, forceCompleteFlow } = useLoading();
 
   // Memoize config to prevent unnecessary re-renders
   const memoizedConfig = useMemo(
@@ -249,8 +249,20 @@ export default function CustomerOrders({
   const fetchCustomerOrdersInternal = useCallback(
     async (client: CustomerAccountApiClient, tokenData: TokenStorage) => {
       // Bulletproof guard - check if already fetched or currently fetching
-      if (hasFetchedRef.current) {
-        console.log("CustomerOrders: Already fetched, skipping");
+      if (hasFetchedRef.current || loading) {
+        console.log(
+          "CustomerOrders: Already fetched or currently fetching, skipping"
+        );
+        return;
+      }
+      // New: Check sessionStorage flag
+      if (
+        typeof window !== "undefined" &&
+        sessionStorage.getItem("ordersFetched") === "true"
+      ) {
+        console.log(
+          "CustomerOrders: Orders already fetched this session, skipping"
+        );
         return;
       }
 
@@ -278,6 +290,14 @@ export default function CustomerOrders({
         ];
 
         startFlow("orders-data-loading", ordersFlowSteps, "loading orders...");
+
+        // New: Set timeout for entire fetch
+        const fetchTimeout = setTimeout(() => {
+          console.warn("CustomerOrders: Fetch timeout, force completing flow");
+          forceCompleteFlow("orders-data-loading");
+          setOrdersDataReady(true);
+          setError("Loading timed out");
+        }, 15000); // 15s timeout
 
         // First, ensure tokens are fresh
         const refreshedTokens = await autoRefreshTokens(memoizedConfig);
@@ -378,6 +398,14 @@ export default function CustomerOrders({
         console.log(
           "✅ CustomerOrders: All data loaded successfully, ordersDataReady = true"
         );
+
+        // New: Set sessionStorage flag
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem("ordersFetched", "true");
+        }
+
+        // Clear timeout on success
+        clearTimeout(fetchTimeout);
       } catch (error) {
         console.error("❌ Error fetching customer orders:", error);
         setError(
@@ -388,25 +416,29 @@ export default function CustomerOrders({
         completeFlowStep("orders-data-loading", "fetch-statuses");
         completeFlowStep("orders-data-loading", "fetch-exchanges");
         completeFlowStep("orders-data-loading", "finalize");
+        // New: Force complete flow on error
+        forceCompleteFlow("orders-data-loading");
         setOrdersDataReady(true); // Set to true even on error to prevent infinite loading
       } finally {
         setLoading(false);
       }
     },
     [
+      loading, // Add loading to dependencies to prevent concurrent calls
       memoizedConfig,
       fetchOrderStatuses,
       fetchOrderExchanges,
       startFlow,
       completeFlowStep,
+      forceCompleteFlow, // Assuming forceCompleteFlow is from useLoading()
     ]
   );
 
   // Public function to load tokens and fetch orders
   const loadTokensAndFetchOrders = useCallback(async () => {
     // Bulletproof guard - prevent concurrent calls
-    if (hasFetchedRef.current) {
-      console.log("CustomerOrders: Already fetched, skipping");
+    if (loading || hasFetchedRef.current) {
+      console.log("CustomerOrders: Already loading or fetched, skipping");
       return;
     }
 
@@ -429,16 +461,17 @@ export default function CustomerOrders({
       setError("Failed to load orders. Please try again.");
       setOrdersDataReady(true); // Set to true to prevent infinite loading
     }
-  }, [memoizedConfig, fetchCustomerOrdersInternal]);
+  }, [loading, memoizedConfig, fetchCustomerOrdersInternal]); // Simplified dependencies
 
   // FIXED: Effect to load orders when component mounts or tokens change
   useEffect(() => {
     // Only run if we have tokens and haven't fetched yet
-    if (tokens && !hasFetchedRef.current) {
+    if (tokens && !hasFetchedRef.current && !loading) {
       console.log("CustomerOrders: Initial load triggered");
       loadTokensAndFetchOrders();
     }
-  }, [tokens, loadTokensAndFetchOrders]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tokens]); // FIXED: Removed loadTokensAndFetchOrders from dependencies to prevent infinite loop
 
   // Bulletproof cleanup effect
   useEffect(() => {
