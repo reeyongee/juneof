@@ -10,6 +10,7 @@ import React, {
 } from "react";
 import { useRouter } from "next/navigation";
 import { useLoading } from "@/context/LoadingContext";
+import type { CheckoutLoginContext } from "@/context/CartContext";
 
 import {
   getTokensUnified,
@@ -54,10 +55,11 @@ interface AuthContextType {
   tokens: TokenStorage | null;
   apiClient: CustomerAccountApiClient | null;
   error: string | null;
-  login: () => Promise<void>;
+  login: (checkoutContext?: CheckoutLoginContext) => Promise<void>;
   logout: () => Promise<void>;
   fetchCustomerData: () => Promise<void>; // Allows manual refresh/fetch
   refreshCustomerData: () => Promise<void>; // Alias for backward compatibility
+  checkoutLoginContext: CheckoutLoginContext | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -87,6 +89,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [apiClient, setApiClient] = useState<CustomerAccountApiClient | null>(
     null
   );
+  const [checkoutLoginContext, setCheckoutLoginContext] =
+    useState<CheckoutLoginContext | null>(null);
 
   const shopifyAuthConfig: ShopifyAuthConfig = useMemo(() => {
     // On Vercel, NEXTAUTH_URL might not be available on client side since it's not NEXT_PUBLIC_
@@ -436,12 +440,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           attempts === 0
             ? 0
             : attempts === 1
-            ? 25
-            : attempts === 2
-            ? 50
-            : attempts === 3
-            ? 100
-            : 200;
+              ? 25
+              : attempts === 2
+                ? 50
+                : attempts === 3
+                  ? 100
+                  : 200;
         await new Promise((resolve) => setTimeout(resolve, initialDelay));
       }
 
@@ -643,8 +647,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
   }, [initializeAuth]);
 
-  const login = async () => {
-    console.log("AuthContext: login - START");
+  const login = async (checkoutContext?: CheckoutLoginContext) => {
+    console.log("AuthContext: login - START", { checkoutContext });
+
+    // Store checkout context if provided
+    if (checkoutContext) {
+      setCheckoutLoginContext(checkoutContext);
+      // Store in sessionStorage for retrieval after login
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem(
+          "checkout-login-context",
+          JSON.stringify(checkoutContext)
+        );
+      }
+    }
 
     // Check current state before login
     const currentTokens = await getTokensUnified();
@@ -758,6 +774,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     logout,
     fetchCustomerData,
     refreshCustomerData,
+    checkoutLoginContext,
   };
 
   useEffect(() => {

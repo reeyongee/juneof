@@ -25,6 +25,12 @@ export interface CartItem {
   productHandle?: string; // Shopify product handle
 }
 
+export interface CheckoutLoginContext {
+  isCheckoutLogin: boolean;
+  lastAddedProductHandle?: string;
+  shouldOpenCartAfterLogin?: boolean;
+}
+
 interface CartContextType {
   cartItems: CartItem[];
   addItemToCart: (item: Omit<CartItem, "id" | "quantity">) => void;
@@ -32,6 +38,9 @@ interface CartContextType {
   updateItemQuantity: (itemId: string, change: number) => void;
   clearCart: () => void;
   proceedToCheckout: (email?: string) => Promise<void>;
+  checkoutLoginContext: CheckoutLoginContext;
+  setCheckoutLoginContext: (context: CheckoutLoginContext) => void;
+  clearCheckoutLoginContext: () => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -52,6 +61,12 @@ const GUEST_CART_STORAGE_KEY = "juneof-guest-cart";
 
 export const CartProvider = ({ children }: CartProviderProps) => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [checkoutLoginContext, setCheckoutLoginContextState] =
+    useState<CheckoutLoginContext>({
+      isCheckoutLogin: false,
+      lastAddedProductHandle: undefined,
+      shouldOpenCartAfterLogin: false,
+    });
   const { isAuthenticated, customerData, tokens } = useAuth();
   const { selectedAddressId, addresses } = useAddress();
   const previousAuthState = useRef<boolean | null>(null);
@@ -141,6 +156,14 @@ export const CartProvider = ({ children }: CartProviderProps) => {
   }, [cartItems, isAuthenticated]);
 
   const addItemToCart = (newItemData: Omit<CartItem, "id" | "quantity">) => {
+    // Track the last added product handle for checkout login context
+    if (newItemData.productHandle) {
+      setCheckoutLoginContextState((prev) => ({
+        ...prev,
+        lastAddedProductHandle: newItemData.productHandle,
+      }));
+    }
+
     // Determine target quantity based on the state *before* this specific add action.
     // We read from `cartItems` here (the state variable) NOT `prevItems` from the updater.
     const existingItemInCurrentState = cartItems.find(
@@ -271,6 +294,18 @@ export const CartProvider = ({ children }: CartProviderProps) => {
     }, 150);
   };
 
+  const setCheckoutLoginContext = (context: CheckoutLoginContext) => {
+    setCheckoutLoginContextState(context);
+  };
+
+  const clearCheckoutLoginContext = () => {
+    setCheckoutLoginContextState({
+      isCheckoutLogin: false,
+      lastAddedProductHandle: undefined,
+      shouldOpenCartAfterLogin: false,
+    });
+  };
+
   const proceedToCheckout = async () => {
     try {
       // Use customer email if available
@@ -339,6 +374,9 @@ export const CartProvider = ({ children }: CartProviderProps) => {
         updateItemQuantity,
         clearCart,
         proceedToCheckout,
+        checkoutLoginContext,
+        setCheckoutLoginContext,
+        clearCheckoutLoginContext,
       }}
     >
       {children}

@@ -3,13 +3,15 @@
 import { useEffect, useRef, Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-
+import { useProfileCompletion } from "@/hooks/useProfileCompletion";
 import { useLoading } from "@/context/LoadingContext";
+import type { CheckoutLoginContext } from "@/context/CartContext";
 
 function PostLoginRedirectContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isAuthenticated, isLoading: authLoading, customerData } = useAuth();
+  const { isProfileComplete } = useProfileCompletion();
   const { completeAuthFlow } = useLoading();
   const hasRedirectedRef = useRef(false);
   const isRedirectingRef = useRef(false);
@@ -127,24 +129,75 @@ function PostLoginRedirectContent() {
       hasRedirectedRef.current = true;
       isRedirectingRef.current = true;
 
-      // Always redirect to dashboard after successful login
-      console.log(
-        "PostLoginRedirect: All conditions met, redirecting to dashboard",
-        {
-          isAuthenticated,
-          authLoading,
-          hasCustomerData: !!customerData,
-          customerName:
-            customerData.customer.displayName ||
-            customerData.customer.firstName,
+      // Check if this is a checkout login
+      let checkoutLoginContext: CheckoutLoginContext | null = null;
+      if (typeof window !== "undefined") {
+        const savedContext = sessionStorage.getItem("checkout-login-context");
+        if (savedContext) {
+          try {
+            checkoutLoginContext = JSON.parse(savedContext);
+            // Clean up the stored context
+            sessionStorage.removeItem("checkout-login-context");
+          } catch (error) {
+            console.error("Error parsing checkout login context:", error);
+          }
         }
-      );
+      }
 
-      // Complete the auth flow instead of using regular loading
-      setTimeout(() => {
-        completeAuthFlow();
-        router.replace("/dashboard");
-      }, 500);
+      if (
+        checkoutLoginContext?.isCheckoutLogin &&
+        checkoutLoginContext.lastAddedProductHandle
+      ) {
+        // This is a checkout login - redirect to product page
+        console.log(
+          "PostLoginRedirect: Checkout login detected, redirecting to product page",
+          {
+            isAuthenticated,
+            authLoading,
+            hasCustomerData: !!customerData,
+            productHandle: checkoutLoginContext.lastAddedProductHandle,
+            isProfileComplete,
+          }
+        );
+
+        // Complete the auth flow and redirect to product page with appropriate context
+        setTimeout(() => {
+          completeAuthFlow();
+          const productUrl = `/product/${checkoutLoginContext.lastAddedProductHandle}`;
+          const urlParams = new URLSearchParams();
+
+          if (isProfileComplete) {
+            // Flow A: Profile complete - show cart overlay
+            urlParams.append("checkout_login_complete", "true");
+            urlParams.append("open_cart", "true");
+          } else {
+            // Flow B: Profile incomplete - show profile completion flow
+            urlParams.append("checkout_login_incomplete", "true");
+            urlParams.append("show_profile_completion", "true");
+          }
+
+          router.replace(`${productUrl}?${urlParams.toString()}`);
+        }, 500);
+      } else {
+        // Regular login - redirect to dashboard
+        console.log(
+          "PostLoginRedirect: Regular login, redirecting to dashboard",
+          {
+            isAuthenticated,
+            authLoading,
+            hasCustomerData: !!customerData,
+            customerName:
+              customerData.customer.displayName ||
+              customerData.customer.firstName,
+          }
+        );
+
+        // Complete the auth flow and redirect to dashboard
+        setTimeout(() => {
+          completeAuthFlow();
+          router.replace("/dashboard");
+        }, 500);
+      }
     }
   }, [
     searchParams,
@@ -154,6 +207,7 @@ function PostLoginRedirectContent() {
     waitStartTime,
     router,
     completeAuthFlow,
+    isProfileComplete,
   ]);
 
   // This component doesn't render anything - loading is handled by LoadingProvider

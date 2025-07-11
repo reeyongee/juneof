@@ -5,9 +5,12 @@ import { useSearchParams } from "next/navigation";
 import SizeChart from "../../components/SizeChart";
 import WashCareOverlay from "../../components/WashCareOverlay";
 import ExpressInterestOverlay from "../../components/ExpressInterestOverlay";
+import CartOverlay from "../../components/CartOverlay";
+import { ProfileCompletionFlow } from "@/components/ProfileCompletionFlow";
 import Image from "next/image";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
+import { useProfileCompletion } from "@/hooks/useProfileCompletion";
 import { ShopifyProductDetails } from "@/lib/shopify";
 import { Badge } from "@/components/ui/badge";
 import { generateProductSchema } from "@/lib/seo";
@@ -82,6 +85,8 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
   const [isExpressInterestLoading, setIsExpressInterestLoading] =
     useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isProfileCompletionOpen, setIsProfileCompletionOpen] = useState(false);
 
   // Add state for dynamic express interest checking
   const [currentExpressInterest, setCurrentExpressInterest] = useState(
@@ -90,6 +95,7 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
 
   const { addItemToCart } = useCart();
   const { isAuthenticated, customerData } = useAuth();
+  const { refreshProfileStatus } = useProfileCompletion();
   const isMobile = useIsMobile();
   const imageGalleryRef = useRef<HTMLDivElement>(null);
 
@@ -190,6 +196,51 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
       setSelectedSize(sizeFromUrl);
     }
   }, [searchParams]); // Include searchParams in dependency array
+
+  // Handle checkout login flows
+  useEffect(() => {
+    const checkoutLoginComplete =
+      searchParams.get("checkout_login_complete") === "true";
+    const checkoutLoginIncomplete =
+      searchParams.get("checkout_login_incomplete") === "true";
+    const openCart = searchParams.get("open_cart") === "true";
+    const showProfileCompletion =
+      searchParams.get("show_profile_completion") === "true";
+
+    if (checkoutLoginComplete && openCart) {
+      // Flow A: Profile complete - show cart overlay
+      console.log(
+        "ProductPageClient: Checkout login complete, opening cart overlay"
+      );
+      setIsCartOpen(true);
+
+      // Clean up URL parameters
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete("checkout_login_complete");
+      newUrl.searchParams.delete("open_cart");
+      window.history.replaceState(
+        {},
+        document.title,
+        newUrl.pathname + newUrl.search
+      );
+    } else if (checkoutLoginIncomplete && showProfileCompletion) {
+      // Flow B: Profile incomplete - show profile completion flow
+      console.log(
+        "ProductPageClient: Checkout login incomplete, showing profile completion"
+      );
+      setIsProfileCompletionOpen(true);
+
+      // Clean up URL parameters
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete("checkout_login_incomplete");
+      newUrl.searchParams.delete("show_profile_completion");
+      window.history.replaceState(
+        {},
+        document.title,
+        newUrl.pathname + newUrl.search
+      );
+    }
+  }, [searchParams]);
 
   // Track scroll position for mobile image gallery with looping
   useEffect(() => {
@@ -602,6 +653,17 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
           productName={product.title}
           productId={product.id}
         />
+        <CartOverlay isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
+        <ProfileCompletionFlow
+          isOpen={isProfileCompletionOpen}
+          onClose={() => setIsProfileCompletionOpen(false)}
+          onComplete={() => {
+            refreshProfileStatus();
+            setIsProfileCompletionOpen(false);
+            // After profile completion, show cart overlay
+            setIsCartOpen(true);
+          }}
+        />
       </>
     );
   }
@@ -824,6 +886,17 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
         onClose={() => setIsExpressInterestOpen(false)}
         productName={product.title}
         productId={product.id}
+      />
+      <CartOverlay isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
+      <ProfileCompletionFlow
+        isOpen={isProfileCompletionOpen}
+        onClose={() => setIsProfileCompletionOpen(false)}
+        onComplete={() => {
+          refreshProfileStatus();
+          setIsProfileCompletionOpen(false);
+          // After profile completion, show cart overlay
+          setIsCartOpen(true);
+        }}
       />
     </>
   );

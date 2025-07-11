@@ -41,6 +41,7 @@ export default function CartOverlay({ isOpen, onClose }: CartOverlayProps) {
     removeItemFromCart,
     clearCart,
     proceedToCheckout,
+    checkoutLoginContext,
   } = useCart();
 
   // Use address from context
@@ -147,7 +148,13 @@ export default function CartOverlay({ isOpen, onClose }: CartOverlayProps) {
   const handleCheckout = async () => {
     // Check if user is authenticated
     if (!isAuthenticated) {
-      login();
+      // Set checkout login context before initiating login
+      const checkoutContext = {
+        isCheckoutLogin: true,
+        lastAddedProductHandle: checkoutLoginContext.lastAddedProductHandle,
+        shouldOpenCartAfterLogin: true,
+      };
+      login(checkoutContext);
       return;
     }
 
@@ -343,10 +350,10 @@ export default function CartOverlay({ isOpen, onClose }: CartOverlayProps) {
               {isCheckingOut
                 ? "Processing..."
                 : !isAuthenticated
-                ? "sign in to checkout"
-                : !isProfileComplete
-                ? "complete profile to checkout"
-                : "checkout"}
+                  ? "sign in to checkout"
+                  : !isProfileComplete
+                    ? "complete profile to checkout"
+                    : "checkout"}
             </button>
           </div>
         )}
