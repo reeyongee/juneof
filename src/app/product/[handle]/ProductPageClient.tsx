@@ -15,6 +15,7 @@ import { ShopifyProductDetails } from "@/lib/shopify";
 import { Badge } from "@/components/ui/badge";
 import { generateProductSchema } from "@/lib/seo";
 import * as pixel from "@/lib/meta-pixel"; // Import the pixel helper
+import { toast } from "sonner";
 
 // Mobile detection hook
 const useIsMobile = () => {
@@ -662,6 +663,7 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
             setIsProfileCompletionOpen(false);
             // After profile completion, show cart overlay
             setIsCartOpen(true);
+            toast.success("Profile updated successfully!");
           }}
         />
       </>
@@ -896,6 +898,11 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
           setIsProfileCompletionOpen(false);
           // After profile completion, show cart overlay
           setIsCartOpen(true);
+          toast.success("profile completed!", {
+            description:
+              "your profile has been successfully updated. you'll now get personalized recommendations and faster checkout.",
+            duration: 4000,
+          });
         }}
       />
     </>
