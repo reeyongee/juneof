@@ -15,6 +15,7 @@ import {
 // Global state for profile completion to ensure consistency across components
 let globalProfileStatus: ProfileCompletionStatus | null = null;
 let globalIsCompletionFlowOpen = false;
+let globalIsFetching = false;
 const profileStatusListeners: Set<() => void> = new Set();
 const completionFlowListeners: Set<() => void> = new Set();
 
@@ -28,7 +29,12 @@ const setGlobalCompletionFlowOpen = (isOpen: boolean) => {
   completionFlowListeners.forEach((listener) => listener());
 };
 
-interface UseProfileCompletionReturn {
+const setGlobalIsFetching = (isFetching: boolean) => {
+  globalIsFetching = isFetching;
+  profileStatusListeners.forEach((listener) => listener());
+};
+
+export interface UseProfileCompletionReturn {
   profileStatus: ProfileCompletionStatus | null;
   shouldShowCompletion: boolean;
   showCompletionFlow: () => void;
@@ -36,6 +42,8 @@ interface UseProfileCompletionReturn {
   isCompletionFlowOpen: boolean;
   refreshProfileStatus: () => void;
   isProfileComplete: boolean;
+  ensureFreshProfileStatus: () => Promise<ProfileCompletionStatus | null>;
+  isFetching: boolean;
 }
 
 export function useProfileCompletion(): UseProfileCompletionReturn {
@@ -45,11 +53,15 @@ export function useProfileCompletion(): UseProfileCompletionReturn {
   const [isCompletionFlowOpen, setIsCompletionFlowOpen] = useState(
     globalIsCompletionFlowOpen
   );
+  const [isFetching, setIsFetching] = useState(globalIsFetching);
   const hasFetchedRef = useRef(false);
 
   // Subscribe to global state changes
   useEffect(() => {
-    const updateProfileStatus = () => setProfileStatus(globalProfileStatus);
+    const updateProfileStatus = () => {
+      setProfileStatus(globalProfileStatus);
+      setIsFetching(globalIsFetching);
+    };
     const updateCompletionFlow = () =>
       setIsCompletionFlowOpen(globalIsCompletionFlowOpen);
 
@@ -64,15 +76,16 @@ export function useProfileCompletion(): UseProfileCompletionReturn {
 
   // Function to fetch complete profile data for analysis
   const fetchAndAnalyzeProfile = useCallback(async () => {
-    if (!apiClient) return;
+    if (!apiClient) return null;
 
     try {
+      setGlobalIsFetching(true);
       const response = await fetchCustomerProfileForCompletion(apiClient);
       const errors = handleGraphQLErrors(response);
 
       if (errors.length > 0) {
         console.error("Error fetching profile for completion:", errors);
-        return;
+        return null;
       }
 
       if (response.data?.customer) {
@@ -93,11 +106,24 @@ export function useProfileCompletion(): UseProfileCompletionReturn {
         const status = analyzeProfileCompletion(profile);
         setGlobalProfileStatus(status);
         hasFetchedRef.current = true;
+        return status;
       }
     } catch (error) {
       console.error("Error analyzing profile completion:", error);
+    } finally {
+      setGlobalIsFetching(false);
     }
+    return null;
   }, [apiClient]);
+
+  // Function to ensure we have fresh profile status
+  const ensureFreshProfileStatus = useCallback(async () => {
+    if (!apiClient || !isAuthenticated || isLoading) return null;
+
+    // Always fetch fresh data for critical decisions
+    const freshStatus = await fetchAndAnalyzeProfile();
+    return freshStatus;
+  }, [apiClient, isAuthenticated, isLoading, fetchAndAnalyzeProfile]);
 
   // Analyze profile completion status when auth state changes
   useEffect(() => {
@@ -105,35 +131,11 @@ export function useProfileCompletion(): UseProfileCompletionReturn {
       fetchAndAnalyzeProfile();
     } else if (!isAuthenticated) {
       setGlobalProfileStatus(null);
+      setGlobalIsFetching(false);
       hasFetchedRef.current = false;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, isLoading, apiClient]);
-
-  // Auto-show completion flow for incomplete profiles (only once per session)
-  // Disabled auto-show since we now handle this manually in dashboard and post-login redirect
-  // useEffect(() => {
-  //   if (
-  //     isAuthenticated &&
-  //     !isLoading &&
-  //     profileStatus &&
-  //     !profileStatus.isComplete &&
-  //     !hasBeenPrompted &&
-  //     !isCompletionFlowOpen
-  //   ) {
-  //     // Only auto-show if completion is significantly low (less than 50%)
-  //     if (profileStatus.completionPercentage < 50) {
-  //       setIsCompletionFlowOpen(true);
-  //       setHasBeenPrompted(true);
-  //     }
-  //   }
-  // }, [
-  //   isAuthenticated,
-  //   isLoading,
-  //   profileStatus,
-  //   hasBeenPrompted,
-  //   isCompletionFlowOpen,
-  // ]);
 
   const shouldShowCompletion = Boolean(
     isAuthenticated && !isLoading && profileStatus && !profileStatus.isComplete
@@ -162,5 +164,7 @@ export function useProfileCompletion(): UseProfileCompletionReturn {
     isCompletionFlowOpen,
     refreshProfileStatus,
     isProfileComplete,
+    ensureFreshProfileStatus,
+    isFetching,
   };
 }

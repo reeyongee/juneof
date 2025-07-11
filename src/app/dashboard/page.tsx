@@ -64,7 +64,8 @@ export default function DashboardPage() {
     isCompletionFlowOpen,
     refreshProfileStatus,
     showCompletionFlow,
-    isProfileComplete,
+    ensureFreshProfileStatus,
+    isFetching: isProfileFetching,
   } = useProfileCompletion();
 
   // Log the initial state from AuthContext IMMEDIATELY
@@ -199,51 +200,73 @@ export default function DashboardPage() {
       );
       setIsRedirecting(true);
 
-      if (isProfileComplete) {
-        // Complete profile should not be here, redirect to homepage
-        console.log(
-          "Dashboard: Complete profile detected with auth_completed, redirecting to homepage"
-        );
-        startLoading("dashboard-redirect-complete", 500);
-        setTimeout(() => {
-          stopLoading("dashboard-redirect-complete");
-          window.location.href = "/";
-        }, 500);
-      } else {
-        // Incomplete profile - brief loading then show dashboard
-        startLoading("dashboard-redirect-incomplete", 300);
-        setTimeout(() => {
-          stopLoading("dashboard-redirect-incomplete");
-          setIsRedirecting(false);
-        }, 300);
-      }
+      // Use fresh profile status to make the redirect decision
+      ensureFreshProfileStatus().then((freshStatus) => {
+        if (freshStatus?.isComplete) {
+          // Complete profile should not be here, redirect to homepage
+          console.log(
+            "Dashboard: Complete profile detected with auth_completed, redirecting to homepage"
+          );
+          startLoading("dashboard-redirect-complete", 500);
+          setTimeout(() => {
+            stopLoading("dashboard-redirect-complete");
+            window.location.href = "/";
+          }, 500);
+        } else {
+          // Incomplete profile - brief loading then show dashboard
+          startLoading("dashboard-redirect-incomplete", 300);
+          setTimeout(() => {
+            stopLoading("dashboard-redirect-incomplete");
+            setIsRedirecting(false);
+          }, 300);
+        }
+      });
     }
   }, [
     isAuthenticated,
     authIsLoading,
-    isProfileComplete,
+    ensureFreshProfileStatus,
     startLoading,
     stopLoading,
   ]);
 
   // Effect to show profile completion flow for incomplete profiles
   useEffect(() => {
-    if (
-      isAuthenticated &&
-      !authIsLoading &&
-      !isProfileComplete &&
-      !isCompletionFlowOpen
-    ) {
-      console.log("Dashboard: Profile incomplete, showing completion flow...");
-      showCompletionFlow();
-    }
+    const checkAndShowCompletionFlow = async () => {
+      if (
+        isAuthenticated &&
+        !authIsLoading &&
+        !isCompletionFlowOpen &&
+        !isProfileFetching
+      ) {
+        console.log(
+          "Dashboard: Checking profile completion status with fresh data..."
+        );
+
+        // Get fresh profile status to make accurate decision
+        const freshStatus = await ensureFreshProfileStatus();
+
+        if (freshStatus && !freshStatus.isComplete) {
+          console.log(
+            "Dashboard: Profile incomplete, showing completion flow..."
+          );
+          showCompletionFlow();
+        } else if (freshStatus?.isComplete) {
+          console.log(
+            "Dashboard: Profile is complete, no need to show completion flow"
+          );
+        }
+      }
+    };
+
+    checkAndShowCompletionFlow();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, authIsLoading, isProfileComplete, isCompletionFlowOpen]);
+  }, [isAuthenticated, authIsLoading, isCompletionFlowOpen, isProfileFetching]);
 
   // Show loading state while checking authentication or redirecting, or if global loading is active
-  if (authIsLoading || isRedirecting || isGlobalLoading) {
+  if (authIsLoading || isRedirecting || isGlobalLoading || isProfileFetching) {
     console.log(
-      "DashboardPage: Rendering loading state (authIsLoading, redirecting, or global loading active)"
+      "DashboardPage: Rendering loading state (authIsLoading, redirecting, global loading, or profile fetching active)"
     );
     // Don't render anything if global loading is active - let LoadingProvider handle it
     if (isGlobalLoading) {

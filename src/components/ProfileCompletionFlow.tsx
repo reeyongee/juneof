@@ -30,16 +30,17 @@ export function ProfileCompletionFlow({
   onClose,
   onComplete,
 }: ProfileCompletionFlowProps) {
-  const { apiClient, fetchCustomerData } = useAuth();
-  const { fetchAddresses } = useAddress();
-  const [currentStep, setCurrentStep] = useState<"name" | "address">("name");
-  const [profileStatus, setProfileStatus] =
-    useState<ProfileCompletionStatus | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [customerProfile, setCustomerProfile] =
     useState<CustomerProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [profileStatus, setProfileStatus] =
+    useState<ProfileCompletionStatus | null>(null);
+  const [currentStep, setCurrentStep] = useState<"name" | "address">("name");
+  const [userHasInteracted, setUserHasInteracted] = useState(false);
   const isLoadingRef = useRef(false);
+  const { apiClient, fetchCustomerData } = useAuth();
+  const { fetchAddresses } = useAddress();
 
   const loadCustomerProfile = useCallback(async () => {
     if (!apiClient || isLoadingRef.current) return;
@@ -77,14 +78,26 @@ export function ProfileCompletionFlow({
         setProfileStatus(status);
 
         if (status.isComplete) {
-          // Profile is complete, trigger completion callback and close
-          onComplete?.();
+          // Only trigger completion if user has interacted with the form
+          // This prevents the completion callback from being called on system checks
+          if (userHasInteracted) {
+            console.log(
+              "ProfileCompletionFlow: Profile completed by user interaction"
+            );
+            onComplete?.();
+          } else {
+            console.log(
+              "ProfileCompletionFlow: Profile already complete, closing without completion callback"
+            );
+          }
           onClose();
         } else {
           const nextStep = getNextCompletionStep(status);
           if (nextStep === "complete") {
             // This shouldn't happen if status.isComplete is false, but handle it
-            onComplete?.();
+            if (userHasInteracted) {
+              onComplete?.();
+            }
             onClose();
           } else {
             setCurrentStep(nextStep);
@@ -99,7 +112,7 @@ export function ProfileCompletionFlow({
       isLoadingRef.current = false;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [apiClient]);
+  }, [apiClient, userHasInteracted, onComplete, onClose]);
 
   // Prevent ESC key from closing the dialog
   useEffect(() => {
@@ -118,6 +131,13 @@ export function ProfileCompletionFlow({
     }
   }, [isOpen]);
 
+  // Reset user interaction state when dialog opens
+  useEffect(() => {
+    if (isOpen) {
+      setUserHasInteracted(false);
+    }
+  }, [isOpen]);
+
   // Fetch and analyze customer profile when dialog opens
   useEffect(() => {
     if (isOpen && apiClient && !isLoadingRef.current) {
@@ -126,6 +146,9 @@ export function ProfileCompletionFlow({
   }, [isOpen, apiClient, loadCustomerProfile]);
 
   const handleStepComplete = async () => {
+    // Mark that user has interacted with the form
+    setUserHasInteracted(true);
+
     // Refresh customer data and recalculate status
     await loadCustomerProfile();
 
@@ -137,6 +160,9 @@ export function ProfileCompletionFlow({
 
     if (profileStatus?.isComplete) {
       // Profile is now complete, trigger completion callback and close
+      console.log(
+        "ProfileCompletionFlow: Profile completed by user step completion"
+      );
       onComplete?.();
       onClose();
     } else if (profileStatus) {

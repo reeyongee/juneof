@@ -5,13 +5,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useProfileCompletion } from "@/hooks/useProfileCompletion";
 import { useLoading } from "@/context/LoadingContext";
-import type { CheckoutLoginContext } from "@/context/CartContext";
 
 function PostLoginRedirectContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isAuthenticated, isLoading: authLoading, customerData } = useAuth();
-  const { isProfileComplete } = useProfileCompletion();
+  const { ensureFreshProfileStatus } = useProfileCompletion();
   const { completeAuthFlow } = useLoading();
   const hasRedirectedRef = useRef(false);
   const isRedirectingRef = useRef(false);
@@ -126,58 +125,41 @@ function PostLoginRedirectContent() {
       !hasRedirectedRef.current &&
       !isRedirectingRef.current
     ) {
+      console.log("PostLoginRedirect: All conditions met, processing redirect");
       hasRedirectedRef.current = true;
       isRedirectingRef.current = true;
 
-      // Check if this is a checkout login
-      let checkoutLoginContext: CheckoutLoginContext | null = null;
-      if (typeof window !== "undefined") {
-        const savedContext = sessionStorage.getItem("checkout-login-context");
-        if (savedContext) {
-          try {
-            checkoutLoginContext = JSON.parse(savedContext);
-            // Clean up the stored context
-            sessionStorage.removeItem("checkout-login-context");
-          } catch (error) {
-            console.error("Error parsing checkout login context:", error);
-          }
-        }
-      }
+      // Parse checkout login context from localStorage
+      const checkoutLoginContext = JSON.parse(
+        localStorage.getItem("checkoutLoginContext") || "{}"
+      );
 
-      if (
-        checkoutLoginContext?.isCheckoutLogin &&
-        checkoutLoginContext.lastAddedProductHandle
-      ) {
-        // This is a checkout login - redirect to product page
+      if (checkoutLoginContext.isCheckoutLogin) {
         console.log(
-          "PostLoginRedirect: Checkout login detected, redirecting to product page",
-          {
-            isAuthenticated,
-            authLoading,
-            hasCustomerData: !!customerData,
-            productHandle: checkoutLoginContext.lastAddedProductHandle,
-            isProfileComplete,
-          }
+          "PostLoginRedirect: Checkout login detected, redirecting to product page"
         );
 
-        // Complete the auth flow and redirect to product page with appropriate context
-        setTimeout(() => {
-          completeAuthFlow();
-          const productUrl = `/product/${checkoutLoginContext.lastAddedProductHandle}`;
-          const urlParams = new URLSearchParams();
+        // Use fresh profile status for accurate redirect decision
+        ensureFreshProfileStatus().then((freshStatus) => {
+          // Complete the auth flow and redirect to product page with appropriate context
+          setTimeout(() => {
+            completeAuthFlow();
+            const productUrl = `/product/${checkoutLoginContext.lastAddedProductHandle}`;
+            const urlParams = new URLSearchParams();
 
-          if (isProfileComplete) {
-            // Flow A: Profile complete - show cart overlay
-            urlParams.append("checkout_login_complete", "true");
-            urlParams.append("open_cart", "true");
-          } else {
-            // Flow B: Profile incomplete - show profile completion flow
-            urlParams.append("checkout_login_incomplete", "true");
-            urlParams.append("show_profile_completion", "true");
-          }
+            if (freshStatus?.isComplete) {
+              // Flow A: Profile complete - show cart overlay
+              urlParams.append("checkout_login_complete", "true");
+              urlParams.append("open_cart", "true");
+            } else {
+              // Flow B: Profile incomplete - show profile completion flow
+              urlParams.append("checkout_login_incomplete", "true");
+              urlParams.append("show_profile_completion", "true");
+            }
 
-          router.replace(`${productUrl}?${urlParams.toString()}`);
-        }, 500);
+            router.replace(`${productUrl}?${urlParams.toString()}`);
+          }, 500);
+        });
       } else {
         // Regular login - redirect to dashboard
         console.log(
@@ -207,7 +189,7 @@ function PostLoginRedirectContent() {
     waitStartTime,
     router,
     completeAuthFlow,
-    isProfileComplete,
+    ensureFreshProfileStatus,
   ]);
 
   // This component doesn't render anything - loading is handled by LoadingProvider
