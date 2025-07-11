@@ -617,6 +617,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setTimeout(() => initializeAuth(), 200);
     };
 
+    // Listen for auth flow completion/abandonment events from LoadingContext
+    const handleAuthFlowCompleted = (event: CustomEvent) => {
+      console.log(
+        "AuthContext: Auth flow completed/abandoned event received:",
+        event.detail.reason
+      );
+
+      // If auth flow was abandoned, reset the loading state
+      if (event.detail.reason === "abandoned") {
+        console.log(
+          "AuthContext: Resetting loading state due to abandoned auth flow"
+        );
+        setIsLoading(false);
+        setError(null);
+        // Don't call completeAuthFlow() here to avoid circular dependency
+        // The LoadingContext already handled the completion
+      }
+    };
+
     // Listen for browser navigation events
     window.addEventListener("popstate", handlePopState);
 
@@ -625,6 +644,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     // Listen for custom auth completion events
     window.addEventListener("shopify-auth-complete", handleAuthComplete);
+
+    // Listen for auth flow completion/abandonment events
+    window.addEventListener(
+      "auth-flow-completed",
+      handleAuthFlowCompleted as EventListener
+    );
 
     // Also check immediately if we're on a page with auth_completed
     const urlParams = new URLSearchParams(window.location.search);
@@ -644,6 +669,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       window.removeEventListener("popstate", handlePopState);
       window.removeEventListener("storage", handleStorageChange);
       window.removeEventListener("shopify-auth-complete", handleAuthComplete);
+      window.removeEventListener(
+        "auth-flow-completed",
+        handleAuthFlowCompleted as EventListener
+      );
     };
   }, [initializeAuth]);
 

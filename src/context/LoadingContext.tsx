@@ -115,6 +115,15 @@ export const LoadingProvider: React.FC<LoadingProviderProps> = ({
       sessionStorage.removeItem("auth-flow-active");
     }
 
+    // Dispatch event to notify other components (like AuthContext) that auth flow is completed/abandoned
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("auth-flow-completed", {
+          detail: { reason: "completed" },
+        })
+      );
+    }
+
     // Only stop global loading if no other active loaders
     if (activeLoadersRef.current.size === 0) {
       // Add a small delay for smooth transition
@@ -129,6 +138,15 @@ export const LoadingProvider: React.FC<LoadingProviderProps> = ({
     setIsAuthFlowActive(false);
     if (typeof window !== "undefined") {
       sessionStorage.removeItem("auth-flow-active");
+    }
+
+    // Dispatch event to notify other components that auth flow was force-completed/abandoned
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("auth-flow-completed", {
+          detail: { reason: "abandoned" },
+        })
+      );
     }
   }, []);
 
@@ -149,6 +167,12 @@ export const LoadingProvider: React.FC<LoadingProviderProps> = ({
         if (!isAuthPage) {
           console.log(
             "LoadingContext: Detected abandoned auth flow on mount, clearing..."
+          );
+          // Dispatch abandoned event before completing auth flow
+          window.dispatchEvent(
+            new CustomEvent("auth-flow-completed", {
+              detail: { reason: "abandoned" },
+            })
           );
           completeAuthFlow();
         }
@@ -178,6 +202,12 @@ export const LoadingProvider: React.FC<LoadingProviderProps> = ({
           if (!isAuthPage) {
             console.log(
               "LoadingManager: Detected abandoned auth flow after 5 seconds, clearing..."
+            );
+            // Dispatch abandoned event before completing auth flow
+            window.dispatchEvent(
+              new CustomEvent("auth-flow-completed", {
+                detail: { reason: "abandoned" },
+              })
             );
             completeAuthFlow();
           }
@@ -222,6 +252,12 @@ export const LoadingProvider: React.FC<LoadingProviderProps> = ({
           console.log(
             "LoadingContext: User returned to non-auth page, clearing auth flow"
           );
+          // Dispatch abandoned event before completing auth flow
+          window.dispatchEvent(
+            new CustomEvent("auth-flow-completed", {
+              detail: { reason: "abandoned" },
+            })
+          );
           completeAuthFlow();
         }
       }
@@ -237,6 +273,12 @@ export const LoadingProvider: React.FC<LoadingProviderProps> = ({
         console.log(
           "LoadingContext: Navigation detected to non-auth page, clearing auth flow"
         );
+        // Dispatch abandoned event before completing auth flow
+        window.dispatchEvent(
+          new CustomEvent("auth-flow-completed", {
+            detail: { reason: "abandoned" },
+          })
+        );
         completeAuthFlow();
       }
     };
@@ -244,6 +286,12 @@ export const LoadingProvider: React.FC<LoadingProviderProps> = ({
     const handleBeforeUnload = () => {
       // Clear auth flow when user navigates away or closes tab
       console.log("LoadingContext: Page unload detected, clearing auth flow");
+      // Dispatch abandoned event before completing auth flow
+      window.dispatchEvent(
+        new CustomEvent("auth-flow-completed", {
+          detail: { reason: "abandoned" },
+        })
+      );
       completeAuthFlow();
     };
 
