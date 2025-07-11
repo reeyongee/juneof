@@ -41,6 +41,10 @@ interface CartContextType {
   checkoutLoginContext: CheckoutLoginContext;
   setCheckoutLoginContext: (context: CheckoutLoginContext) => void;
   clearCheckoutLoginContext: () => void;
+  // Cart overlay state management
+  isCartOverlayOpen: boolean;
+  openCartOverlay: () => void;
+  closeCartOverlay: () => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -67,10 +71,21 @@ export const CartProvider = ({ children }: CartProviderProps) => {
       lastAddedProductHandle: undefined,
       shouldOpenCartAfterLogin: false,
     });
+  const [isCartOverlayOpen, setIsCartOverlayOpen] = useState(false);
   const { isAuthenticated, customerData, tokens } = useAuth();
   const { selectedAddressId, addresses } = useAddress();
   const previousAuthState = useRef<boolean | null>(null);
   const hasInitialized = useRef(false);
+
+  // Cart overlay concurrency protection
+  const isOpeningRef = useRef(false);
+  const isClosingRef = useRef(false);
+  const openTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Auth change protection
+  const isProcessingAuthChange = useRef(false);
+  const authChangeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Initialize cart from localStorage on mount
   useEffect(() => {
@@ -91,7 +106,7 @@ export const CartProvider = ({ children }: CartProviderProps) => {
     }
   }, []);
 
-  // Handle authentication state changes
+  // Handle authentication state changes with race condition protection
   useEffect(() => {
     if (previousAuthState.current === null) {
       // First time setting auth state, just record it
@@ -99,46 +114,78 @@ export const CartProvider = ({ children }: CartProviderProps) => {
       return;
     }
 
+    // Prevent concurrent auth change processing
+    if (isProcessingAuthChange.current) {
+      console.log("CartContext: Auth change already in progress, skipping");
+      return;
+    }
+
     const wasAuthenticated = previousAuthState.current;
     const isNowAuthenticated = isAuthenticated;
 
-    if (!wasAuthenticated && isNowAuthenticated) {
-      // User just logged in - restore guest cart if it exists
-      if (typeof window !== "undefined") {
-        const savedGuestCart = localStorage.getItem(GUEST_CART_STORAGE_KEY);
-        if (savedGuestCart) {
-          try {
-            const parsedCart = JSON.parse(savedGuestCart);
-            if (Array.isArray(parsedCart) && parsedCart.length > 0) {
-              setCartItems(parsedCart);
-              // Clear the guest cart from localStorage since user is now authenticated
-              localStorage.removeItem(GUEST_CART_STORAGE_KEY);
-
-              // Show toast notification about cart restoration
-              toast.success("Welcome back!", {
-                description: `Your bag has been restored with ${
-                  parsedCart.length
-                } item${parsedCart.length === 1 ? "" : "s"}`,
-                duration: 3000,
-              });
-            }
-          } catch (error) {
-            console.error("Error restoring guest cart after login:", error);
-            localStorage.removeItem(GUEST_CART_STORAGE_KEY);
-          }
-        }
-      }
-    } else if (wasAuthenticated && !isNowAuthenticated) {
-      // User just logged out - clear cart completely
-      setCartItems([]);
-      // Also clear any guest cart data
-      if (typeof window !== "undefined") {
-        localStorage.removeItem(GUEST_CART_STORAGE_KEY);
-      }
+    // Only process actual state changes
+    if (wasAuthenticated === isNowAuthenticated) {
+      return;
     }
 
-    previousAuthState.current = isAuthenticated;
-  }, [isAuthenticated]);
+    isProcessingAuthChange.current = true;
+
+    // Clear any pending auth change timeout
+    if (authChangeTimeoutRef.current) {
+      clearTimeout(authChangeTimeoutRef.current);
+    }
+
+    // Debounce auth changes to prevent rapid state thrashing
+    authChangeTimeoutRef.current = setTimeout(() => {
+      console.log(
+        `CartContext: Processing auth change: ${wasAuthenticated} -> ${isNowAuthenticated}`
+      );
+
+      if (!wasAuthenticated && isNowAuthenticated) {
+        // User just logged in - restore guest cart if it exists
+        if (typeof window !== "undefined") {
+          const savedGuestCart = localStorage.getItem(GUEST_CART_STORAGE_KEY);
+          if (savedGuestCart) {
+            try {
+              const parsedCart = JSON.parse(savedGuestCart);
+              if (Array.isArray(parsedCart) && parsedCart.length > 0) {
+                setCartItems(parsedCart);
+                // Clear the guest cart from localStorage since user is now authenticated
+                localStorage.removeItem(GUEST_CART_STORAGE_KEY);
+
+                // Show toast notification about cart restoration
+                toast.success("Welcome back!", {
+                  description: `Your bag has been restored with ${
+                    parsedCart.length
+                  } item${parsedCart.length === 1 ? "" : "s"}`,
+                  duration: 3000,
+                });
+              }
+            } catch (error) {
+              console.error("Error restoring guest cart after login:", error);
+              localStorage.removeItem(GUEST_CART_STORAGE_KEY);
+            }
+          }
+        }
+      } else if (wasAuthenticated && !isNowAuthenticated) {
+        // User just logged out - clear cart completely
+        setCartItems([]);
+        // Also clear any guest cart data
+        if (typeof window !== "undefined") {
+          localStorage.removeItem(GUEST_CART_STORAGE_KEY);
+        }
+        // Close cart overlay if it's open during logout
+        if (isCartOverlayOpen) {
+          console.log("CartContext: Closing cart overlay due to logout");
+          setIsCartOverlayOpen(false);
+        }
+      }
+
+      previousAuthState.current = isAuthenticated;
+      isProcessingAuthChange.current = false;
+      authChangeTimeoutRef.current = null;
+    }, 100); // 100ms debounce for auth changes
+  }, [isAuthenticated, isCartOverlayOpen]);
 
   // Save cart to localStorage for guest users
   useEffect(() => {
@@ -154,6 +201,21 @@ export const CartProvider = ({ children }: CartProviderProps) => {
       }
     }
   }, [cartItems, isAuthenticated]);
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (openTimeoutRef.current) {
+        clearTimeout(openTimeoutRef.current);
+      }
+      if (closeTimeoutRef.current) {
+        clearTimeout(closeTimeoutRef.current);
+      }
+      if (authChangeTimeoutRef.current) {
+        clearTimeout(authChangeTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const addItemToCart = (newItemData: Omit<CartItem, "id" | "quantity">) => {
     // Track the last added product handle for checkout login context
@@ -306,6 +368,68 @@ export const CartProvider = ({ children }: CartProviderProps) => {
     });
   };
 
+  const openCartOverlay = () => {
+    // Prevent concurrent opens and debounce rapid calls
+    if (isOpeningRef.current || isCartOverlayOpen) {
+      console.log(
+        "CartContext: openCartOverlay blocked - already opening or open"
+      );
+      return;
+    }
+
+    // Clear any pending close operation
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+      isClosingRef.current = false;
+    }
+
+    isOpeningRef.current = true;
+
+    // Debounce rapid calls (50ms window)
+    if (openTimeoutRef.current) {
+      clearTimeout(openTimeoutRef.current);
+    }
+
+    openTimeoutRef.current = setTimeout(() => {
+      console.log("CartContext: Opening cart overlay");
+      setIsCartOverlayOpen(true);
+      isOpeningRef.current = false;
+      openTimeoutRef.current = null;
+    }, 50);
+  };
+
+  const closeCartOverlay = () => {
+    // Prevent concurrent closes and debounce rapid calls
+    if (isClosingRef.current || !isCartOverlayOpen) {
+      console.log(
+        "CartContext: closeCartOverlay blocked - already closing or closed"
+      );
+      return;
+    }
+
+    // Clear any pending open operation
+    if (openTimeoutRef.current) {
+      clearTimeout(openTimeoutRef.current);
+      openTimeoutRef.current = null;
+      isOpeningRef.current = false;
+    }
+
+    isClosingRef.current = true;
+
+    // Debounce rapid calls (50ms window)
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+    }
+
+    closeTimeoutRef.current = setTimeout(() => {
+      console.log("CartContext: Closing cart overlay");
+      setIsCartOverlayOpen(false);
+      isClosingRef.current = false;
+      closeTimeoutRef.current = null;
+    }, 50);
+  };
+
   const proceedToCheckout = async () => {
     try {
       // Use customer email if available
@@ -377,6 +501,9 @@ export const CartProvider = ({ children }: CartProviderProps) => {
         checkoutLoginContext,
         setCheckoutLoginContext,
         clearCheckoutLoginContext,
+        isCartOverlayOpen,
+        openCartOverlay,
+        closeCartOverlay,
       }}
     >
       {children}

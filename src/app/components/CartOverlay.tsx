@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { createPortal } from "react-dom";
 import Image from "next/image";
@@ -12,21 +12,6 @@ import { useRouter } from "next/navigation";
 import AddressSelectionOverlay from "./AddressSelectionOverlay";
 import { ShoppingBagIcon, XMarkIcon } from "@heroicons/react/24/outline";
 
-// Global guard to prevent multiple CartOverlay instances
-let globalCartOverlayOpen = false;
-const cartOverlayListeners: Set<() => void> = new Set();
-
-const setGlobalCartOverlayOpen = (isOpen: boolean) => {
-  globalCartOverlayOpen = isOpen;
-  cartOverlayListeners.forEach((listener) => listener());
-};
-
-// Define props interface
-interface CartOverlayProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
-
 // Simple price formatter for Rupees (consistent with ProductCard)
 const formatPrice = (price: number): string => {
   return `₹ ${price.toLocaleString("en-IN", {
@@ -35,39 +20,15 @@ const formatPrice = (price: number): string => {
   })}`;
 };
 
-export default function CartOverlay({ isOpen, onClose }: CartOverlayProps) {
+export default function CartOverlay() {
   const overlayRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const [isAnimatingOut, setIsAnimatingOut] = useState(false);
   const tl = useRef<gsap.core.Timeline | null>(null);
   const [isMounted, setIsMounted] = useState(false);
   const [isAddressSelectionOpen, setIsAddressSelectionOpen] = useState(false);
-  const [globalCartOpen, setGlobalCartOpen] = useState(globalCartOverlayOpen);
 
-  // Subscribe to global cart overlay state changes
-  useEffect(() => {
-    const updateGlobalState = () => setGlobalCartOpen(globalCartOverlayOpen);
-    cartOverlayListeners.add(updateGlobalState);
-    return () => {
-      cartOverlayListeners.delete(updateGlobalState);
-    };
-  }, []);
-
-  // Manage global cart overlay state
-  useEffect(() => {
-    if (isOpen && !globalCartOverlayOpen) {
-      // This instance is trying to open and no other is open
-      setGlobalCartOverlayOpen(true);
-    } else if (!isOpen && globalCartOverlayOpen) {
-      // This instance is closing, release the global lock
-      setGlobalCartOverlayOpen(false);
-    }
-  }, [isOpen]);
-
-  // Determine if this instance should actually render
-  const shouldRender = isOpen && globalCartOpen;
-
-  // Use cart from context
+  // Use cart from context (including overlay state)
   const {
     cartItems,
     updateItemQuantity,
@@ -75,6 +36,8 @@ export default function CartOverlay({ isOpen, onClose }: CartOverlayProps) {
     clearCart,
     proceedToCheckout,
     checkoutLoginContext,
+    isCartOverlayOpen,
+    closeCartOverlay,
   } = useCart();
 
   // Use address from context
@@ -91,6 +54,9 @@ export default function CartOverlay({ isOpen, onClose }: CartOverlayProps) {
 
   const [isCheckingOut, setIsCheckingOut] = useState(false);
 
+  // Auth state monitoring
+  const previousAuthState = useRef<boolean | null>(null);
+
   // Get selected address for display
   const selectedAddress = addresses.find(
     (addr) => addr.id === selectedAddressId
@@ -100,11 +66,31 @@ export default function CartOverlay({ isOpen, onClose }: CartOverlayProps) {
     setIsMounted(true);
   }, []);
 
-  const handleCloseStart = () => {
+  const handleCloseStart = useCallback(() => {
     if (!isAnimatingOut) {
       setIsAnimatingOut(true);
     }
-  };
+  }, [isAnimatingOut]);
+
+  // Monitor authentication state changes and close cart if user logs out
+  useEffect(() => {
+    if (previousAuthState.current === null) {
+      // First time setting auth state, just record it
+      previousAuthState.current = isAuthenticated;
+      return;
+    }
+
+    const wasAuthenticated = previousAuthState.current;
+    const isNowAuthenticated = isAuthenticated;
+
+    // If user logged out while cart overlay is open, close it
+    if (wasAuthenticated && !isNowAuthenticated && isCartOverlayOpen) {
+      console.log("CartOverlay: User logged out, closing cart overlay");
+      handleCloseStart();
+    }
+
+    previousAuthState.current = isAuthenticated;
+  }, [isAuthenticated, isCartOverlayOpen, handleCloseStart]);
 
   useEffect(() => {
     const overlayElement = overlayRef.current;
@@ -116,7 +102,7 @@ export default function CartOverlay({ isOpen, onClose }: CartOverlayProps) {
 
     tl.current?.kill();
 
-    if (shouldRender && !isAnimatingOut) {
+    if (isCartOverlayOpen && !isAnimatingOut) {
       gsap.set(overlayElement, { autoAlpha: 1 });
       gsap.set(contentElement, { x: "100%", opacity: 0 }); // Start off-screen right
       gsap.set(backdropElement, { opacity: 0 });
@@ -144,7 +130,7 @@ export default function CartOverlay({ isOpen, onClose }: CartOverlayProps) {
             if (overlayElement) {
               gsap.set(overlayElement, { autoAlpha: 0 });
             }
-            onClose();
+            closeCartOverlay();
             setIsAnimatingOut(false);
           },
         })
@@ -167,7 +153,7 @@ export default function CartOverlay({ isOpen, onClose }: CartOverlayProps) {
     return () => {
       tl.current?.kill();
     };
-  }, [shouldRender, isAnimatingOut, onClose]);
+  }, [isCartOverlayOpen, isAnimatingOut, closeCartOverlay]);
 
   const handleQuantityChange = (itemId: string, change: number) => {
     updateItemQuantity(itemId, change);
@@ -179,6 +165,14 @@ export default function CartOverlay({ isOpen, onClose }: CartOverlayProps) {
   );
 
   const handleCheckout = async () => {
+    // Prevent checkout if already processing or cart is empty
+    if (isCheckingOut || cartItems.length === 0) {
+      console.log(
+        "CartOverlay: Checkout blocked - already processing or empty cart"
+      );
+      return;
+    }
+
     // Check if user is authenticated
     if (!isAuthenticated) {
       // Set checkout login context before initiating login
@@ -201,6 +195,15 @@ export default function CartOverlay({ isOpen, onClose }: CartOverlayProps) {
 
     try {
       setIsCheckingOut(true);
+
+      // Double-check auth state hasn't changed during processing
+      if (!isAuthenticated) {
+        console.log(
+          "CartOverlay: User became unauthenticated during checkout, aborting"
+        );
+        return;
+      }
+
       await proceedToCheckout();
       // Cart will be cleared automatically in proceedToCheckout
       // Close the cart overlay after successful checkout initiation
@@ -214,7 +217,7 @@ export default function CartOverlay({ isOpen, onClose }: CartOverlayProps) {
     }
   };
 
-  if (!isMounted || !shouldRender) {
+  if (!isMounted || !isCartOverlayOpen) {
     return null;
   }
 

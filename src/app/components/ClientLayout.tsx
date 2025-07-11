@@ -1,22 +1,19 @@
 "use client";
 
-import { useEffect, Suspense } from "react";
-import { usePathname, useSearchParams } from "next/navigation"; // Import useSearchParams
-import SplashScreen from "./SplashScreen";
-import Navbar from "./Navbar";
-import Footer from "./Footer";
-import CustomCursor from "./CustomCursor";
+import { Suspense, useEffect } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useSplash } from "@/context/SplashContext";
 import { useLoading } from "@/context/LoadingContext";
 import { AddressProvider } from "@/context/AddressContext";
 import { CartProvider } from "@/context/CartContext";
-import { Toaster } from "@/components/ui/sonner";
+import Navbar from "@/app/components/Navbar";
+import Footer from "@/app/components/Footer";
+import CustomCursor from "@/app/components/CustomCursor";
+import SplashScreen from "@/app/components/SplashScreen";
 import PostLoginRedirect from "@/components/PostLoginRedirect";
-import * as pixel from "@/lib/meta-pixel"; // Import the pixel helper
-
-interface ClientLayoutProps {
-  children: React.ReactNode;
-}
+import CartOverlay from "@/app/components/CartOverlay";
+import { Toaster } from "@/components/ui/sonner";
+import * as pixel from "@/lib/meta-pixel";
 
 // Component that uses useSearchParams - needs to be wrapped in Suspense
 function PageViewTracker() {
@@ -32,6 +29,10 @@ function PageViewTracker() {
   }, [pathname, searchParams]); // Re-fire on path or query param change
 
   return null;
+}
+
+interface ClientLayoutProps {
+  children: React.ReactNode;
 }
 
 export default function ClientLayout({ children }: ClientLayoutProps) {
@@ -79,6 +80,7 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
           <main className="min-h-screen bg-white">{children}</main>
           {!isAdminRoute && <Footer />}
         </div>
+        <CartOverlay />
         <Toaster position="bottom-left" />
       </CartProvider>
     </AddressProvider>

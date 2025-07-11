@@ -5,7 +5,6 @@ import { useSearchParams } from "next/navigation";
 import SizeChart from "../../components/SizeChart";
 import WashCareOverlay from "../../components/WashCareOverlay";
 import ExpressInterestOverlay from "../../components/ExpressInterestOverlay";
-import CartOverlay from "../../components/CartOverlay";
 import { ProfileCompletionFlow } from "@/components/ProfileCompletionFlow";
 import Image from "next/image";
 import { useCart } from "@/context/CartContext";
@@ -86,7 +85,6 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
   const [isExpressInterestLoading, setIsExpressInterestLoading] =
     useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [isCartOpen, setIsCartOpen] = useState(false);
   const [isProfileCompletionOpen, setIsProfileCompletionOpen] = useState(false);
 
   // Add state for dynamic express interest checking
@@ -97,8 +95,9 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
   // Guards to prevent multiple cart overlay opens
   const hasOpenedCartFromUrl = useRef(false);
   const hasOpenedCartFromCompletion = useRef(false);
+  const isProcessingCompletion = useRef(false);
 
-  const { addItemToCart } = useCart();
+  const { addItemToCart, openCartOverlay, isCartOverlayOpen } = useCart();
   const { isAuthenticated, customerData } = useAuth();
   const { refreshProfileStatus } = useProfileCompletion();
   const isMobile = useIsMobile();
@@ -218,7 +217,7 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
         "ProductPageClient: Checkout login complete, opening cart overlay"
       );
       hasOpenedCartFromUrl.current = true;
-      setIsCartOpen(true);
+      openCartOverlay();
 
       // Clean up URL parameters
       const newUrl = new URL(window.location.href);
@@ -246,22 +245,24 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
         newUrl.pathname + newUrl.search
       );
     }
-  }, [searchParams]);
+  }, [searchParams, openCartOverlay]);
 
-  // Reset guards when component unmounts or when cart is manually closed
+  // Reset guards when component unmounts
   useEffect(() => {
     return () => {
       hasOpenedCartFromUrl.current = false;
       hasOpenedCartFromCompletion.current = false;
+      isProcessingCompletion.current = false;
     };
   }, []);
 
-  // Reset completion guard when cart is manually closed
+  // Reset completion guards when cart is manually closed
   useEffect(() => {
-    if (!isCartOpen) {
+    if (!isCartOverlayOpen) {
       hasOpenedCartFromCompletion.current = false;
+      isProcessingCompletion.current = false;
     }
-  }, [isCartOpen]);
+  }, [isCartOverlayOpen]);
 
   // Track scroll position for mobile image gallery with looping
   useEffect(() => {
@@ -674,16 +675,37 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
           productName={product.title}
           productId={product.id}
         />
-        <CartOverlay isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
+
         <ProfileCompletionFlow
           isOpen={isProfileCompletionOpen}
           onClose={() => setIsProfileCompletionOpen(false)}
           onComplete={() => {
+            // Prevent multiple completion callbacks
+            if (
+              isProcessingCompletion.current ||
+              hasOpenedCartFromCompletion.current
+            ) {
+              console.log(
+                "ProductPageClient: Profile completion already processed, skipping"
+              );
+              return;
+            }
+
+            isProcessingCompletion.current = true;
+            hasOpenedCartFromCompletion.current = true;
+
+            console.log(
+              "ProductPageClient: Processing profile completion (mobile)"
+            );
             refreshProfileStatus();
             setIsProfileCompletionOpen(false);
+
             // After profile completion, show cart overlay
-            setIsCartOpen(true);
-            toast.success("Profile updated successfully!");
+            setTimeout(() => {
+              openCartOverlay();
+              toast.success("Profile updated successfully!");
+              isProcessingCompletion.current = false;
+            }, 100);
           }}
         />
       </>
@@ -909,23 +931,41 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
         productName={product.title}
         productId={product.id}
       />
-      <CartOverlay isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
+
       <ProfileCompletionFlow
         isOpen={isProfileCompletionOpen}
         onClose={() => setIsProfileCompletionOpen(false)}
         onComplete={() => {
-          if (!hasOpenedCartFromCompletion.current) {
-            hasOpenedCartFromCompletion.current = true;
-            refreshProfileStatus();
-            setIsProfileCompletionOpen(false);
-            // After profile completion, show cart overlay
-            setIsCartOpen(true);
+          // Enhanced protection against multiple completion callbacks
+          if (
+            isProcessingCompletion.current ||
+            hasOpenedCartFromCompletion.current
+          ) {
+            console.log(
+              "ProductPageClient: Profile completion already processed, skipping"
+            );
+            return;
+          }
+
+          isProcessingCompletion.current = true;
+          hasOpenedCartFromCompletion.current = true;
+
+          console.log(
+            "ProductPageClient: Processing profile completion (desktop)"
+          );
+          refreshProfileStatus();
+          setIsProfileCompletionOpen(false);
+
+          // After profile completion, show cart overlay
+          setTimeout(() => {
+            openCartOverlay();
             toast.success("profile completed!", {
               description:
                 "your profile has been successfully updated. you'll now get personalized recommendations and faster checkout.",
               duration: 4000,
             });
-          }
+            isProcessingCompletion.current = false;
+          }, 100);
         }}
       />
     </>

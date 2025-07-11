@@ -2,9 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { usePathname } from "next/navigation";
-import CartOverlay from "./CartOverlay";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 
@@ -128,15 +127,14 @@ const AboutIcon = ({ className }: { className?: string }) => (
 
 const Navbar: React.FC = () => {
   const [visible, setVisible] = useState(true);
-  const [transparent, setTransparent] = useState(false);
+  const [transparent, setTransparent] = useState(true);
   const [isNavItemHovered, setIsNavItemHovered] = useState(false);
-  const [isCartOpen, setIsCartOpen] = useState(false);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const HOVER_DELAY_MS = 300;
 
   const isMobile = useIsMobile();
   const pathname = usePathname();
-  const { cartItems } = useCart();
+  const { cartItems, openCartOverlay } = useCart();
   const { isAuthenticated, customerData, login, isLoading } = useAuth();
 
   // Determine if transparency is allowed on current page
@@ -150,10 +148,6 @@ const Navbar: React.FC = () => {
     (sum, item) => sum + item.quantity,
     0
   );
-
-  const handleCloseCart = useCallback(() => {
-    setIsCartOpen(false);
-  }, []);
 
   // Reset transparency when navigating to pages where it's not allowed
   useEffect(() => {
@@ -445,7 +439,7 @@ const Navbar: React.FC = () => {
                 <button
                   onClick={(e) => {
                     e.preventDefault();
-                    setIsCartOpen(true);
+                    openCartOverlay();
                   }}
                   className={`${navLinkBaseClasses} ${getLinkItemClasses(
                     isEffectivelyTransparent
@@ -525,7 +519,6 @@ const Navbar: React.FC = () => {
           </nav>
         </div>
       </header>
-      <CartOverlay isOpen={isCartOpen} onClose={handleCloseCart} />
     </>
   );
 };
