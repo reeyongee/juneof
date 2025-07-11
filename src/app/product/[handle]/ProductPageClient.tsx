@@ -10,7 +10,7 @@ import Image from "next/image";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 import { useProfileCompletion } from "@/hooks/useProfileCompletion";
-import { ShopifyProductDetails } from "@/lib/shopify";
+import { ProductWithGuides } from "@/lib/sanity-queries";
 import { Badge } from "@/components/ui/badge";
 import { generateProductSchema } from "@/lib/seo";
 import * as pixel from "@/lib/meta-pixel"; // Import the pixel helper
@@ -47,7 +47,7 @@ const useIsMobile = () => {
 };
 
 interface ProductPageClientProps {
-  product: ShopifyProductDetails;
+  product: ProductWithGuides;
 }
 
 // Enhanced price formatter that handles different currencies
@@ -677,10 +677,12 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
         <SizeChart
           isOpen={isSizeChartOpen}
           onClose={() => setIsSizeChartOpen(false)}
+          content={product.sizeGuide?.content}
         />
         <WashCareOverlay
           isOpen={isWashCareOpen}
           onClose={() => setIsWashCareOpen(false)}
+          content={product.washCareGuide?.content}
         />
         <ExpressInterestOverlay
           isOpen={isExpressInterestOpen}
@@ -764,7 +766,7 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
             </div>
 
             {/* Wash Care Button - Positioned at the bottom */}
-            {!expressInterest && (
+            {!expressInterest && product.washCareGuide?.content && (
               <button
                 onClick={() => setIsWashCareOpen(true)}
                 className="text-sm tracking-widest lowercase hover:text-gray-600 transition-colors mt-auto pt-4 text-left"
@@ -856,12 +858,14 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
             {!expressInterest && (
               <>
                 {/* Size Chart Button */}
-                <button
-                  onClick={() => setIsSizeChartOpen(true)}
-                  className="text-sm tracking-widest lowercase hover:text-gray-600 transition-colors"
-                >
-                  size chart
-                </button>
+                {product.sizeGuide?.content && (
+                  <button
+                    onClick={() => setIsSizeChartOpen(true)}
+                    className="text-sm tracking-widest lowercase hover:text-gray-600 transition-colors"
+                  >
+                    size chart
+                  </button>
+                )}
 
                 {/* Divider */}
                 <div className="h-px bg-gray-300 w-full"></div>
@@ -937,10 +941,12 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
       <SizeChart
         isOpen={isSizeChartOpen}
         onClose={() => setIsSizeChartOpen(false)}
+        content={product.sizeGuide?.content}
       />
       <WashCareOverlay
         isOpen={isWashCareOpen}
         onClose={() => setIsWashCareOpen(false)}
+        content={product.washCareGuide?.content}
       />
       <ExpressInterestOverlay
         isOpen={isExpressInterestOpen}

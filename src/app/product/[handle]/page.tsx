@@ -6,9 +6,14 @@ import {
   GET_PRODUCT_BY_HANDLE_QUERY,
   GET_PRODUCTS_FOR_LISTING_QUERY,
   ShopifyProductByHandleData,
-  ShopifyProductDetails,
   ShopifyProductsData,
 } from "@/lib/shopify";
+import {
+  getWashCareByProductId,
+  getSizeGuideByProductId,
+  extractProductId,
+  ProductWithGuides,
+} from "@/lib/sanity-queries";
 import ProductPageClient from "./ProductPageClient";
 
 // Force dynamic rendering to ensure fresh data
@@ -116,7 +121,7 @@ export async function generateStaticParams() {
 // Server component to fetch product data
 export default async function ProductPage({ params }: ProductPageProps) {
   const { handle } = await params;
-  let product: ShopifyProductDetails | null = null;
+  let productWithGuides: ProductWithGuides | null = null;
 
   try {
     // Force fresh data fetch with cache bypass
@@ -130,22 +135,44 @@ export default async function ProductPage({ params }: ProductPageProps) {
       notFound();
     }
 
-    product = data.productByHandle;
+    const product = data.productByHandle;
 
     // Log the current metafield value for debugging
     console.log(
       `Product ${handle} express_interest metafield:`,
       product.metafield?.value
     );
+
+    // Extract numeric product ID from Shopify GID
+    const numericProductId = extractProductId(product.id);
+
+    // Fetch guide content from Sanity in parallel
+    const [washCareGuide, sizeGuide] = await Promise.all([
+      getWashCareByProductId(numericProductId),
+      getSizeGuideByProductId(numericProductId),
+    ]);
+
+    // Combine product data with guide content
+    productWithGuides = {
+      ...product,
+      washCareGuide,
+      sizeGuide,
+    };
+
+    console.log(
+      `Fetched guides for product ${handle}:`,
+      `Wash Care: ${washCareGuide ? "✓" : "✗"}`,
+      `Size Guide: ${sizeGuide ? "✓" : "✗"}`
+    );
   } catch (error) {
     console.error("Failed to fetch product:", error);
     notFound();
   }
 
-  // Pass the product data to the client component wrapped in Suspense
+  // Pass the product data with guides to the client component wrapped in Suspense
   return (
     <Suspense fallback={<div>Loading...</div>}>
-      <ProductPageClient product={product} />
+      <ProductPageClient product={productWithGuides} />
     </Suspense>
   );
 }
