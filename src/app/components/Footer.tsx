@@ -5,8 +5,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
 import { ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -94,68 +92,60 @@ const Footer = () => {
     </div>
   );
 
+  // Email section component for reuse
+  const EmailSection = ({ className }: { className?: string }) => (
+    <div className={className}>
+      <h3 className="text-base font-normal lowercase tracking-wider text-black mb-4">
+        want to reach out? drop an email
+      </h3>
+      <form onSubmit={handleEmailSubmit} className="space-y-4">
+        <div className="flex gap-2 items-center">
+          <div
+            className={cn(
+              "flex h-10 w-full bg-transparent px-3 py-2 text-sm",
+              "relative items-center flex-1 border border-gray-300"
+            )}
+          >
+            <Input
+              id="footer-email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="your email address"
+              className="flex-1 border-none bg-transparent p-0 focus-visible:ring-0 focus-visible:ring-offset-0 lowercase tracking-wider text-xs shadow-none"
+              required
+            />
+            <Button
+              type="submit"
+              variant="ghost"
+              size="icon"
+              className="absolute right-0 flex items-center justify-center h-full w-10 text-muted-foreground hover:bg-transparent hover:text-foreground"
+              aria-label="Send email"
+            >
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </form>
+    </div>
+  );
+
   return (
     <footer className="w-full" id="footer">
       <div
         className={`w-full ${backgroundColor} ${textColor} pt-8 pb-10 overflow-x-hidden`}
       >
         <div className="container mx-auto px-4 md:px-8 flex flex-col justify-between min-h-[400px]">
-          {/* Email Section */}
-          {SHOW_EMAIL_SECTION && (
-            <div className="mb-8">
-              <Card className="bg-white border-gray-300 max-w-md mx-auto">
-                <CardContent className="p-6">
-                  <h3 className="text-lg font-serif lowercase tracking-widest text-black mb-4 text-center">
-                    want to reach out? drop an email
-                  </h3>
-                  <form onSubmit={handleEmailSubmit} className="space-y-4">
-                    <div className="flex gap-2 items-center">
-                      <div
-                        className={cn(
-                          "flex h-10 w-full border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-                          "relative items-center flex-1"
-                        )}
-                      >
-                        <Label
-                          htmlFor="footer-email"
-                          className="text-muted-foreground mr-2 whitespace-nowrap cursor-default lowercase tracking-wider text-xs"
-                        >
-                          email :
-                        </Label>
-                        <Input
-                          id="footer-email"
-                          type="email"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          placeholder="your email address"
-                          className="flex-1 border-none bg-transparent p-0 focus-visible:ring-0 focus-visible:ring-offset-0 lowercase tracking-wider text-xs"
-                          required
-                        />
-                        <Button
-                          type="submit"
-                          variant="ghost"
-                          size="icon"
-                          className="absolute right-0 flex items-center justify-center h-full w-10 text-muted-foreground hover:bg-transparent hover:text-foreground"
-                          aria-label="Send email"
-                        >
-                          <ArrowRight className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </form>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
           {/* Links Section */}
           {!isMobile ? (
-            // Desktop Layout - Original
+            // Desktop Layout - Email section as first column
             <div className="flex flex-wrap justify-between items-start text-base tracking-wider mb-8">
-              {/* Column 1: Empty (was Newsletter) */}
-              <div className="w-full md:w-1/4 mb-6 md:mb-0">
-                {/* Intentionally empty */}
-              </div>
+              {/* Column 1: Email Section */}
+              {SHOW_EMAIL_SECTION && (
+                <div className="w-full md:w-1/4 mb-6 md:mb-0">
+                  <EmailSection />
+                </div>
+              )}
 
               {/* Column 2: Social/Shop */}
               <div className="w-full sm:w-auto md:w-1/4 mb-6 md:mb-0 flex flex-col items-start md:items-center">
@@ -246,13 +236,20 @@ const Footer = () => {
             </div>
           )}
 
-          {/* Logo Section - Smaller, left-aligned */}
+          {/* Mobile Email Section - Above Logo */}
+          {isMobile && SHOW_EMAIL_SECTION && (
+            <div className="mb-6">
+              <EmailSection />
+            </div>
+          )}
+
+          {/* Logo Section - Smaller on mobile, left-aligned */}
           <div className="w-full flex justify-start">
             <Image
               src="/juneof-logo.svg"
               alt="Juneof Logo"
-              width={640} // Reduced width by 20%
-              height={160} // Reduced height by 20%
+              width={isMobile ? 480 : 640} // Smaller on mobile
+              height={isMobile ? 120 : 160} // Smaller on mobile
               className="pointer-events-none"
               style={{ userSelect: "none" }}
               draggable="false"
