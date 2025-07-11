@@ -631,7 +631,7 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
                     onClick={() => setIsWashCareOpen(true)}
                     className="w-full border border-gray-300 py-3 text-center text-sm tracking-widest hover:bg-gray-50 transition-colors lowercase"
                   >
-                    view wash care guide
+                    fabrics & wash care
                   </button>
                 </div>
               </>
@@ -771,7 +771,7 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
                 onClick={() => setIsWashCareOpen(true)}
                 className="text-sm tracking-widest lowercase hover:text-gray-600 transition-colors mt-auto pt-4 text-left"
               >
-                wash care
+                fabrics & wash care
               </button>
             )}
           </div>

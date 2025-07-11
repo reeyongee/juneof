@@ -127,7 +127,7 @@ export default function WashCareOverlay({
       >
         <div className="flex justify-between items-center mb-6 sm:mb-8">
           <h2 className="text-xl sm:text-2xl tracking-widest lowercase font-serif">
-            wash instructions
+            fabrics & wash care
           </h2>
           <button
             onClick={handleCloseStart}
