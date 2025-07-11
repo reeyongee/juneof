@@ -771,12 +771,26 @@ export default function CustomerOrders({
                         <div className="pt-4 border-t border-gray-200">
                           {orderStatuses[order.id].trackingNumbers.map(
                             (trackingNumber, index) => (
-                              <p
+                              <div
                                 key={index}
-                                className="text-sm lowercase tracking-wider text-gray-600"
+                                className="flex justify-between items-center"
                               >
-                                tracking number : {trackingNumber}
-                              </p>
+                                <p className="text-sm lowercase tracking-wider text-gray-600">
+                                  tracking number : {trackingNumber}
+                                </p>
+                                <Button
+                                  onClick={() =>
+                                    window.open(
+                                      "http://juneof.shipway.com/track",
+                                      "_blank"
+                                    )
+                                  }
+                                  className="ml-4 bg-black text-white hover:bg-gray-800 lowercase tracking-wider text-xs px-3 py-1 h-auto"
+                                  size="sm"
+                                >
+                                  track order
+                                </Button>
+                              </div>
                             )
                           )}
                         </div>
@@ -1048,12 +1062,26 @@ export default function CustomerOrders({
                         <div className="pt-4 border-t border-gray-200">
                           {orderStatuses[order.id].trackingNumbers.map(
                             (trackingNumber, index) => (
-                              <p
+                              <div
                                 key={index}
-                                className="text-sm lowercase tracking-wider text-gray-600"
+                                className="flex justify-between items-center"
                               >
-                                tracking number : {trackingNumber}
-                              </p>
+                                <p className="text-sm lowercase tracking-wider text-gray-600">
+                                  tracking number : {trackingNumber}
+                                </p>
+                                <Button
+                                  onClick={() =>
+                                    window.open(
+                                      "http://juneof.shipway.com/track",
+                                      "_blank"
+                                    )
+                                  }
+                                  className="ml-4 bg-black text-white hover:bg-gray-800 lowercase tracking-wider text-xs px-3 py-1 h-auto"
+                                  size="sm"
+                                >
+                                  track order
+                                </Button>
+                              </div>
                             )
                           )}
                         </div>
@@ -1292,12 +1320,26 @@ export default function CustomerOrders({
                           <div className="pt-4 border-t border-gray-200">
                             {orderStatuses[order.id].trackingNumbers.map(
                               (trackingNumber, index) => (
-                                <p
+                                <div
                                   key={index}
-                                  className="text-sm lowercase tracking-wider text-gray-600"
+                                  className="flex justify-between items-center"
                                 >
-                                  tracking number : {trackingNumber}
-                                </p>
+                                  <p className="text-sm lowercase tracking-wider text-gray-600">
+                                    tracking number : {trackingNumber}
+                                  </p>
+                                  <Button
+                                    onClick={() =>
+                                      window.open(
+                                        "http://juneof.shipway.com/track",
+                                        "_blank"
+                                      )
+                                    }
+                                    className="ml-4 bg-black text-white hover:bg-gray-800 lowercase tracking-wider text-xs px-3 py-1 h-auto"
+                                    size="sm"
+                                  >
+                                    track order
+                                  </Button>
+                                </div>
                               )
                             )}
                           </div>
