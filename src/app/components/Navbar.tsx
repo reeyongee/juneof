@@ -482,7 +482,7 @@ const Navbar: React.FC = () => {
                     </Link>
                   ) : (
                     <button
-                      onClick={login}
+                      onClick={() => login()}
                       disabled={isLoading}
                       className={`${navLinkBaseClasses} ${getLinkItemClasses(
                         isEffectivelyTransparent
@@ -509,7 +509,7 @@ const Navbar: React.FC = () => {
                     </Link>
                   ) : (
                     <button
-                      onClick={login}
+                      onClick={() => login()}
                       disabled={isLoading}
                       className={`${navLinkBaseClasses} ${getLinkItemClasses(
                         isEffectivelyTransparent

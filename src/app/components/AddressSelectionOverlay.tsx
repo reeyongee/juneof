@@ -65,7 +65,7 @@ export default function AddressSelectionOverlay({
                 you need to sign in to view your addresses
               </p>
               <Button
-                onClick={login}
+                onClick={() => login()}
                 className="bg-black text-white hover:bg-gray-800 lowercase tracking-wider px-6 py-2"
               >
                 sign in with shopify

@@ -276,7 +276,7 @@ export default function DashboardPage() {
               refresh page
             </button>
             <button
-              onClick={login}
+              onClick={() => login()}
               className="block w-full bg-gray-600 text-white py-3 px-6 lowercase tracking-wider hover:opacity-75 transition-opacity"
             >
               try login again
@@ -302,7 +302,7 @@ export default function DashboardPage() {
             you need to be logged in to view your dashboard
           </p>
           <button
-            onClick={login}
+            onClick={() => login()}
             className="bg-black text-white px-6 py-3 lowercase tracking-wider hover:opacity-75 transition-opacity"
           >
             login with shopify
