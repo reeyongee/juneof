@@ -32,7 +32,7 @@ found_gift_card_with_recipient_email = true %} {% break %} {% endif %} {% endfor
 <p>you'll receive separate emails for any gift cards.</p>
 {% endif %} {% endcapture %}
 
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <title>{{ email_title }}</title>
@@ -499,24 +499,11 @@ found_gift_card_with_recipient_email = true %} {% break %} {% endif %} {% endfor
         {% endif %} {% endfor %} {% endif %}
 
         <!-- Action Buttons -->
-        {% if order_status_url %}
-        <div style="text-align: center; margin: 32px 0">
-          <a href="{{ order_status_url }}" class="button">view your order</a>
-          {% if shop.url %}
-          <br />
-          <a
-            href="{{ shop.url }}"
-            class="button-secondary"
-            style="margin-top: 16px; display: inline-block"
-            >visit our store</a
-          >
-          {% endif %}
-        </div>
-        {% else %} {% if shop.url %}
+        {% if shop.url %}
         <div style="text-align: center; margin: 32px 0">
           <a href="{{ shop.url }}" class="button">visit our store</a>
         </div>
-        {% endif %} {% endif %}
+        {% endif %}
       </div>
 
       <!-- Order Summary -->

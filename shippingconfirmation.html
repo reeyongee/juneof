@@ -18,7 +18,7 @@ way. track your shipment to see the delivery status.{% endcapture %} {% endif %}
 <strong>{{fulfillment.estimated_delivery_at | date: format: 'date'}}</strong>{%
 endcapture %}
 
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <title>{{ email_title }}</title>
@@ -374,22 +374,6 @@ endcapture %}
               <div class="emphasis">{{ email_emphasis }}</div>
               {% endif %}
 
-              <!-- Action Buttons -->
-              <div class="button-container">
-                {% if order_status_url %}
-                <a href="{{ order_status_url }}" class="button"
-                  >view your order</a
-                >
-                <br />
-                {% if shop.url %}
-                <a href="{{ shop.url }}" class="secondary-link"
-                  >or visit our store</a
-                >
-                {% endif %} {% else %} {% if shop.url %}
-                <a href="{{ shop.url }}" class="button">visit our store</a>
-                {% endif %} {% endif %}
-              </div>
-
               <!-- Tracking Information -->
               {% if fulfillment.tracking_numbers.size > 0 %}
               <div class="tracking-info">
@@ -418,6 +402,19 @@ endcapture %}
                 {% endfor %} {% endif %}
               </div>
               {% endif %}
+
+              <!-- Action Buttons -->
+              <div class="button-container">
+                <a href="https://juneof.shipway.com/track" class="button"
+                  >track your order</a
+                >
+                <br />
+                {% if shop.url %}
+                <a href="{{ shop.url }}" class="secondary-link"
+                  >or visit our store</a
+                >
+                {% endif %}
+              </div>
 
               <!-- Items Section -->
               <div class="items-section">

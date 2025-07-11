@@ -19,7 +19,7 @@ endif %} {% endif %} {% capture email_emphasis %}estimated delivery date:
 <strong>{{fulfillment.estimated_delivery_at | date: format: 'date'}}</strong>{%
 endcapture %}
 
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <title>{{ email_title }}</title>
@@ -377,18 +377,15 @@ endcapture %}
 
               <!-- Action Buttons -->
               <div class="button-container">
-                {% if order_status_url %}
-                <a href="{{ order_status_url }}" class="button"
-                  >track my shipment</a
+                <a href="https://juneof.shipway.com/track" class="button"
+                  >track your order</a
                 >
                 <br />
                 {% if shop.url %}
                 <a href="{{ shop.url }}" class="secondary-link"
                   >or visit our store</a
                 >
-                {% endif %} {% else %} {% if shop.url %}
-                <a href="{{ shop.url }}" class="button">visit our store</a>
-                {% endif %} {% endif %}
+                {% endif %}
               </div>
 
               <!-- Tracking Information -->
