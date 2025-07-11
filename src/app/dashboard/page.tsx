@@ -441,9 +441,18 @@ export default function DashboardPage() {
     showCompletionFlow,
   ]);
 
-  // Show loading state while checking authentication, dashboard flow running, redirecting, or if global loading is active
-  if (authIsLoading || isRedirecting || (isAuthenticated && !dashboardReady)) {
-    console.log("DashboardPage: Rendering local loading state");
+  // Show loading state only during initial authentication and dashboard bootstrap.
+  // After the dashboard is ready we keep the component mounted even when other
+  // data-fetching flows (like orders) trigger the global overlay.
+  if (
+    authIsLoading ||
+    isRedirecting ||
+    (isAuthenticated && !dashboardReady) ||
+    isFlowActive("dashboard-initialization")
+  ) {
+    console.log(
+      "DashboardPage: Rendering loading state during initial auth / dashboard setup"
+    );
     return (
       <div className="min-h-screen bg-[#F8F4EC] flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>

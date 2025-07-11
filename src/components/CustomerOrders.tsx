@@ -171,7 +171,7 @@ export default function CustomerOrders({
   const hasFetchedRef = useRef(false);
   const [ordersDataReady, setOrdersDataReady] = useState(false);
 
-  const { startFlow, completeFlowStep, forceCompleteFlow } = useLoading();
+  const { startFlow, completeFlowStep } = useLoading();
 
   // Memoize config to prevent unnecessary re-renders
   const memoizedConfig = useMemo(
@@ -255,16 +255,6 @@ export default function CustomerOrders({
         );
         return;
       }
-      // New: Check sessionStorage flag
-      if (
-        typeof window !== "undefined" &&
-        sessionStorage.getItem("ordersFetched") === "true"
-      ) {
-        console.log(
-          "CustomerOrders: Orders already fetched this session, skipping"
-        );
-        return;
-      }
 
       try {
         hasFetchedRef.current = true;
@@ -290,14 +280,6 @@ export default function CustomerOrders({
         ];
 
         startFlow("orders-data-loading", ordersFlowSteps, "loading orders...");
-
-        // New: Set timeout for entire fetch
-        const fetchTimeout = setTimeout(() => {
-          console.warn("CustomerOrders: Fetch timeout, force completing flow");
-          forceCompleteFlow("orders-data-loading");
-          setOrdersDataReady(true);
-          setError("Loading timed out");
-        }, 15000); // 15s timeout
 
         // First, ensure tokens are fresh
         const refreshedTokens = await autoRefreshTokens(memoizedConfig);
@@ -398,14 +380,6 @@ export default function CustomerOrders({
         console.log(
           "✅ CustomerOrders: All data loaded successfully, ordersDataReady = true"
         );
-
-        // New: Set sessionStorage flag
-        if (typeof window !== "undefined") {
-          sessionStorage.setItem("ordersFetched", "true");
-        }
-
-        // Clear timeout on success
-        clearTimeout(fetchTimeout);
       } catch (error) {
         console.error("❌ Error fetching customer orders:", error);
         setError(
@@ -416,8 +390,6 @@ export default function CustomerOrders({
         completeFlowStep("orders-data-loading", "fetch-statuses");
         completeFlowStep("orders-data-loading", "fetch-exchanges");
         completeFlowStep("orders-data-loading", "finalize");
-        // New: Force complete flow on error
-        forceCompleteFlow("orders-data-loading");
         setOrdersDataReady(true); // Set to true even on error to prevent infinite loading
       } finally {
         setLoading(false);
@@ -430,7 +402,6 @@ export default function CustomerOrders({
       fetchOrderExchanges,
       startFlow,
       completeFlowStep,
-      forceCompleteFlow, // Assuming forceCompleteFlow is from useLoading()
     ]
   );
 
