@@ -128,7 +128,7 @@ export const LoadingProvider: React.FC<LoadingProviderProps> = ({
   const forceCompleteAuthFlow = useCallback(() => {
     setIsAuthFlowActive(false);
     if (typeof window !== "undefined") {
-      sessionStorage.removeItem("juneof-auth-flow-active");
+      sessionStorage.removeItem("auth-flow-active");
     }
   }, []);
 
@@ -137,19 +137,52 @@ export const LoadingProvider: React.FC<LoadingProviderProps> = ({
     if (isAuthFlowActive) {
       setIsGlobalLoading(true);
       setLoadingMessage("");
+
+      // Check if we're in an abandoned auth flow state on mount
+      if (typeof window !== "undefined") {
+        const currentUrl = window.location.href;
+        const isAuthPage =
+          currentUrl.includes("/auth/") ||
+          currentUrl.includes("auth_completed=true");
+
+        // If we're not on an auth page but auth flow is active, it's likely abandoned
+        if (!isAuthPage) {
+          console.log(
+            "LoadingContext: Detected abandoned auth flow on mount, clearing..."
+          );
+          completeAuthFlow();
+        }
+      }
     }
-  }, [isAuthFlowActive]);
+  }, [isAuthFlowActive, completeAuthFlow]);
 
   // Enhanced timeout mechanism for auth flow
   useEffect(() => {
     if (isAuthFlowActive) {
-      // Set a 20-second global failsafe timeout
+      // Set a 15-second global failsafe timeout (reduced from 20s for better UX)
       const timeoutId = setTimeout(() => {
         console.warn(
-          "LoadingManager: Auth flow timeout after 20 seconds, force completing"
+          "LoadingManager: Auth flow timeout after 15 seconds, force completing"
         );
         forceCompleteAuthFlow();
-      }, 20000);
+      }, 15000);
+
+      // Add a shorter timeout to check for abandoned flows
+      const abandonedCheckId = setTimeout(() => {
+        if (typeof window !== "undefined") {
+          const currentUrl = window.location.href;
+          const isAuthPage =
+            currentUrl.includes("/auth/") ||
+            currentUrl.includes("auth_completed=true");
+
+          if (!isAuthPage) {
+            console.log(
+              "LoadingManager: Detected abandoned auth flow after 5 seconds, clearing..."
+            );
+            completeAuthFlow();
+          }
+        }
+      }, 5000);
 
       // Add a manual recovery function to window for debugging
       if (typeof window !== "undefined") {
@@ -157,19 +190,73 @@ export const LoadingProvider: React.FC<LoadingProviderProps> = ({
           window as typeof window & { clearAuthFlow?: () => void }
         ).clearAuthFlow = () => {
           clearTimeout(timeoutId);
+          clearTimeout(abandonedCheckId);
           forceCompleteAuthFlow();
         };
       }
 
       return () => {
         clearTimeout(timeoutId);
+        clearTimeout(abandonedCheckId);
         if (typeof window !== "undefined") {
           delete (window as typeof window & { clearAuthFlow?: () => void })
             .clearAuthFlow;
         }
       };
     }
-  }, [isAuthFlowActive, forceCompleteAuthFlow]);
+  }, [isAuthFlowActive, forceCompleteAuthFlow, completeAuthFlow]);
+
+  // Detect abandoned auth flows when users navigate back or return to the page
+  useEffect(() => {
+    if (!isAuthFlowActive || typeof window === "undefined") return;
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        const currentUrl = window.location.href;
+        const isAuthPage =
+          currentUrl.includes("/auth/") ||
+          currentUrl.includes("auth_completed=true");
+
+        // If user returned to a non-auth page, clear the auth flow
+        if (!isAuthPage) {
+          console.log(
+            "LoadingContext: User returned to non-auth page, clearing auth flow"
+          );
+          completeAuthFlow();
+        }
+      }
+    };
+
+    const handlePopState = () => {
+      const currentUrl = window.location.href;
+      const isAuthPage =
+        currentUrl.includes("/auth/") ||
+        currentUrl.includes("auth_completed=true");
+
+      if (!isAuthPage) {
+        console.log(
+          "LoadingContext: Navigation detected to non-auth page, clearing auth flow"
+        );
+        completeAuthFlow();
+      }
+    };
+
+    const handleBeforeUnload = () => {
+      // Clear auth flow when user navigates away or closes tab
+      console.log("LoadingContext: Page unload detected, clearing auth flow");
+      completeAuthFlow();
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("popstate", handlePopState);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("popstate", handlePopState);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [isAuthFlowActive, completeAuthFlow]);
 
   // Cleanup on unmount
   useEffect(() => {
