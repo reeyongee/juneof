@@ -1090,12 +1090,6 @@ export function convertCartItemsToCartLines(
     .map((item) => ({
       merchandiseId: item.variantId!,
       quantity: item.quantity,
-      attributes: [
-        {
-          key: "Size",
-          value: item.size,
-        },
-      ],
     }));
 }
 

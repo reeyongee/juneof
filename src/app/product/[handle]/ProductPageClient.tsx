@@ -524,10 +524,10 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
               <>
                 {/* Size Selection */}
                 <div>
-                  <h3 className="text-sm tracking-widest lowercase mb-3 text-gray-700">
+                  <h3 className="text-sm tracking-widest lowercase mb-3 text-gray-700 text-center">
                     select size
                   </h3>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2 justify-center">
                     {availableSizes.map((size) => {
                       const availabilityStatus = getSizeAvailabilityStatus(
                         product,
@@ -811,7 +811,7 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
                         key={size}
                         onClick={() => handleSizeSelect(size)}
                         disabled={!availabilityStatus.available}
-                        className={`hover:text-gray-600 transition-colors lowercase text-left ${
+                        className={`hover:text-gray-600 transition-colors lowercase text-center ${
                           selectedSize === size
                             ? "underline font-medium"
                             : availabilityStatus.available
