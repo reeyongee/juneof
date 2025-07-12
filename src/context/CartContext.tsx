@@ -45,6 +45,7 @@ interface CartContextType {
   isCartOverlayOpen: boolean;
   openCartOverlay: () => void;
   closeCartOverlay: () => void;
+  setCartItems: React.Dispatch<React.SetStateAction<CartItem[]>>;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -246,7 +247,7 @@ export const CartProvider = ({ children }: CartProviderProps) => {
       isProcessingAuthChange.current = false;
       authChangeTimeoutRef.current = null;
     }, 100); // 100ms debounce for auth changes
-  }, [isAuthenticated, isCartOverlayOpen, cartItems.length]);
+  }, [isAuthenticated, isCartOverlayOpen]);
 
   // Save cart to localStorage for guest users
   useEffect(() => {
@@ -430,49 +431,6 @@ export const CartProvider = ({ children }: CartProviderProps) => {
   };
 
   const openCartOverlay = () => {
-    // Check if cart is empty and try backup restoration first
-    const currentCartIsEmpty = cartItems.length === 0;
-    let restoredFromBackup = false;
-
-    if (currentCartIsEmpty && isAuthenticated) {
-      console.log(
-        "CartContext: Cart is empty, attempting backup restoration before opening."
-      );
-      const backupCartJSON = sessionStorage.getItem("backup-guest-cart");
-      if (backupCartJSON) {
-        try {
-          const backupCart = JSON.parse(backupCartJSON);
-          if (Array.isArray(backupCart) && backupCart.length > 0) {
-            console.log(
-              `CartContext: Restoring ${backupCart.length} items from backup.`
-            );
-            // Directly update the state and then proceed.
-            setCartItems(backupCart);
-            restoredFromBackup = true;
-            console.log(
-              "CartContext: Cart restored from backup, will open with restored items"
-            );
-          }
-        } catch (e) {
-          console.error("CartContext: Error parsing backup cart", e);
-        } finally {
-          // Clean up backup cart regardless of success
-          sessionStorage.removeItem("backup-guest-cart");
-        }
-      }
-    }
-
-    // Log current state (noting that cartItems.length may still be stale due to async state update)
-    console.log(
-      "CartContext: Proceeding to open overlay. Current cart state:",
-      {
-        currentCartItemsLength: cartItems.length,
-        restoredFromBackup,
-        currentCartIsEmpty,
-        isAuthenticated,
-      }
-    );
-
     // Prevent concurrent opens and debounce rapid calls
     if (isOpeningRef.current || isCartOverlayOpen) {
       console.log(
@@ -483,15 +441,12 @@ export const CartProvider = ({ children }: CartProviderProps) => {
 
     isOpeningRef.current = true;
 
-    // If we just restored from backup, give the state update a bit more time to settle
-    // before opening the overlay to ensure the cart items are properly rendered
-    const delayMs = restoredFromBackup ? 100 : 50;
-
+    // Debounce to allow state to settle and prevent rapid re-opens
     setTimeout(() => {
       console.log("CartContext: Opening cart overlay - executing now");
       setIsCartOverlayOpen(true);
       isOpeningRef.current = false;
-    }, delayMs);
+    }, 50);
   };
 
   const closeCartOverlay = () => {
@@ -599,6 +554,7 @@ export const CartProvider = ({ children }: CartProviderProps) => {
         isCartOverlayOpen,
         openCartOverlay,
         closeCartOverlay,
+        setCartItems,
       }}
     >
       {children}
