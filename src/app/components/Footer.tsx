@@ -9,7 +9,7 @@ import { ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // Toggle for email section visibility
-const SHOW_EMAIL_SECTION = true;
+const SHOW_EMAIL_SECTION = false;
 
 // Custom hook to detect mobile devices
 const useIsMobile = () => {

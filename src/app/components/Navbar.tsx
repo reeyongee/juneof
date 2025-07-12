@@ -7,6 +7,9 @@ import { usePathname } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 
+// Toggle for about us button visibility in mobile view only
+const SHOW_ABOUT_US_MOBILE = true;
+
 // Custom hook to detect mobile devices
 const useIsMobile = () => {
   const [isMobile, setIsMobile] = useState(false);
@@ -421,19 +424,22 @@ const Navbar: React.FC = () => {
               >
                 {isMobile ? <ShopIcon className="w-5 h-5" /> : "shop"}
               </Link>
-              <Link
-                href="/about-us"
-                className={`${navLinkBaseClasses} ${getLinkItemClasses(
-                  isEffectivelyTransparent
-                )} ${
-                  isMobile
-                    ? "text-base p-2 flex items-center justify-center"
-                    : ""
-                }`}
-                data-underline-button-effect
-              >
-                {isMobile ? <AboutIcon className="w-5 h-5" /> : "about us"}
-              </Link>
+              {/* About Us Button - Always visible on desktop, conditionally visible on mobile */}
+              {(!isMobile || SHOW_ABOUT_US_MOBILE) && (
+                <Link
+                  href="/about-us"
+                  className={`${navLinkBaseClasses} ${getLinkItemClasses(
+                    isEffectivelyTransparent
+                  )} ${
+                    isMobile
+                      ? "text-base p-2 flex items-center justify-center"
+                      : ""
+                  }`}
+                  data-underline-button-effect
+                >
+                  {isMobile ? <AboutIcon className="w-5 h-5" /> : "about us"}
+                </Link>
+              )}
               {/* Bag Button with Notification Bubble */}
               <div className="relative">
                 <button
