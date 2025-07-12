@@ -89,27 +89,57 @@ export const CartProvider = ({ children }: CartProviderProps) => {
 
   // Initialize cart from localStorage on mount
   useEffect(() => {
+    console.log("CartContext: Initialize effect triggered", {
+      hasInitialized: hasInitialized.current,
+      isAuthenticated,
+      windowAvailable: typeof window !== "undefined",
+    });
+
     if (typeof window !== "undefined" && !hasInitialized.current) {
       const savedGuestCart = localStorage.getItem(GUEST_CART_STORAGE_KEY);
+      console.log(
+        "CartContext: Initial cart load from localStorage:",
+        savedGuestCart
+      );
+
       if (savedGuestCart) {
         try {
           const parsedCart = JSON.parse(savedGuestCart);
+          console.log("CartContext: Initial parsed cart:", parsedCart);
+
           if (Array.isArray(parsedCart)) {
+            console.log(
+              `CartContext: Setting initial cart with ${parsedCart.length} items`
+            );
             setCartItems(parsedCart);
           }
         } catch (error) {
           console.error("Error parsing saved guest cart:", error);
           localStorage.removeItem(GUEST_CART_STORAGE_KEY);
         }
+      } else {
+        console.log("CartContext: No initial guest cart found");
       }
       hasInitialized.current = true;
+      console.log("CartContext: Cart initialization complete");
     }
-  }, []);
+  }, [isAuthenticated]);
 
   // Handle authentication state changes with race condition protection
   useEffect(() => {
+    console.log("CartContext: Auth state effect triggered", {
+      previousAuthState: previousAuthState.current,
+      currentAuthState: isAuthenticated,
+      isProcessingAuthChange: isProcessingAuthChange.current,
+      cartItemsCount: cartItems.length,
+    });
+
     if (previousAuthState.current === null) {
       // First time setting auth state, just record it
+      console.log(
+        "CartContext: First time setting auth state to:",
+        isAuthenticated
+      );
       previousAuthState.current = isAuthenticated;
       return;
     }
@@ -125,8 +155,13 @@ export const CartProvider = ({ children }: CartProviderProps) => {
 
     // Only process actual state changes
     if (wasAuthenticated === isNowAuthenticated) {
+      console.log("CartContext: No auth state change detected, skipping");
       return;
     }
+
+    console.log(
+      `CartContext: Auth state change detected: ${wasAuthenticated} -> ${isNowAuthenticated}`
+    );
 
     isProcessingAuthChange.current = true;
 
@@ -143,15 +178,36 @@ export const CartProvider = ({ children }: CartProviderProps) => {
 
       if (!wasAuthenticated && isNowAuthenticated) {
         // User just logged in - restore guest cart if it exists
+        console.log("CartContext: User logged in, checking for guest cart");
         if (typeof window !== "undefined") {
           const savedGuestCart = localStorage.getItem(GUEST_CART_STORAGE_KEY);
+          console.log(
+            "CartContext: Guest cart from localStorage:",
+            savedGuestCart
+          );
+
           if (savedGuestCart) {
             try {
               const parsedCart = JSON.parse(savedGuestCart);
+              console.log("CartContext: Parsed guest cart:", parsedCart);
+
               if (Array.isArray(parsedCart) && parsedCart.length > 0) {
+                console.log(
+                  `CartContext: Restoring ${parsedCart.length} items to cart`
+                );
                 setCartItems(parsedCart);
+
+                // Store a backup in sessionStorage for profile completion flow
+                sessionStorage.setItem("backup-guest-cart", savedGuestCart);
+                console.log(
+                  "CartContext: Stored backup cart in sessionStorage"
+                );
+
                 // Clear the guest cart from localStorage since user is now authenticated
                 localStorage.removeItem(GUEST_CART_STORAGE_KEY);
+                console.log(
+                  "CartContext: Cleared guest cart from localStorage"
+                );
 
                 // Show toast notification about cart restoration
                 toast.success("Welcome back!", {
@@ -160,15 +216,20 @@ export const CartProvider = ({ children }: CartProviderProps) => {
                   } item${parsedCart.length === 1 ? "" : "s"}`,
                   duration: 3000,
                 });
+              } else {
+                console.log("CartContext: Guest cart is empty or invalid");
               }
             } catch (error) {
               console.error("Error restoring guest cart after login:", error);
               localStorage.removeItem(GUEST_CART_STORAGE_KEY);
             }
+          } else {
+            console.log("CartContext: No guest cart found in localStorage");
           }
         }
       } else if (wasAuthenticated && !isNowAuthenticated) {
         // User just logged out - clear cart completely
+        console.log("CartContext: User logged out, clearing cart");
         setCartItems([]);
         // Also clear any guest cart data
         if (typeof window !== "undefined") {
@@ -185,7 +246,7 @@ export const CartProvider = ({ children }: CartProviderProps) => {
       isProcessingAuthChange.current = false;
       authChangeTimeoutRef.current = null;
     }, 100); // 100ms debounce for auth changes
-  }, [isAuthenticated, isCartOverlayOpen]);
+  }, [isAuthenticated, isCartOverlayOpen, cartItems.length]);
 
   // Save cart to localStorage for guest users
   useEffect(() => {
@@ -388,6 +449,31 @@ export const CartProvider = ({ children }: CartProviderProps) => {
       clearTimeout(closeTimeoutRef.current);
       closeTimeoutRef.current = null;
       isClosingRef.current = false;
+    }
+
+    // Check if cart is empty and try backup restoration BEFORE setting opening state
+    if (cartItems.length === 0 && isAuthenticated) {
+      console.log(
+        "CartContext: Cart is empty and user is authenticated, checking for backup"
+      );
+      const backupCart = sessionStorage.getItem("backup-guest-cart");
+      if (backupCart) {
+        try {
+          const parsedBackupCart = JSON.parse(backupCart);
+          if (Array.isArray(parsedBackupCart) && parsedBackupCart.length > 0) {
+            console.log(
+              `CartContext: Restoring ${parsedBackupCart.length} items from backup`
+            );
+            setCartItems(parsedBackupCart);
+            // Clear the backup since we've restored it
+            sessionStorage.removeItem("backup-guest-cart");
+            console.log("CartContext: Backup cart restored and cleared");
+          }
+        } catch (error) {
+          console.error("CartContext: Error restoring backup cart:", error);
+          sessionStorage.removeItem("backup-guest-cart");
+        }
+      }
     }
 
     isOpeningRef.current = true;

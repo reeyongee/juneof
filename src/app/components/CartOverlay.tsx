@@ -171,6 +171,12 @@ export default function CartOverlay() {
 
     // Check if user is authenticated
     if (!isAuthenticated) {
+      // Store current cart as backup before login (in case cart restoration fails)
+      if (cartItems.length > 0) {
+        console.log("CartOverlay: Storing cart backup before checkout login");
+        sessionStorage.setItem("backup-guest-cart", JSON.stringify(cartItems));
+      }
+
       // Set checkout login context before initiating login
       const checkoutContext = {
         isCheckoutLogin: true,

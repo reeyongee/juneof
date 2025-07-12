@@ -113,8 +113,10 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
               console.log(
                 "ClientLayout: Opening cart after profile completion"
               );
+              // Remove flag immediately to prevent duplicate calls
               sessionStorage.removeItem("open-cart-after-profile-completion");
 
+              // Use a longer delay to ensure profile completion flow is fully closed
               setTimeout(() => {
                 console.log("ClientLayout: Executing cart overlay open");
                 openCartOverlay();
@@ -123,7 +125,7 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
                     "your profile has been successfully updated. you'll now get personalized recommendations and faster checkout.",
                   duration: 4000,
                 });
-              }, 100);
+              }, 200); // Increased from 100ms to 200ms
             } else {
               console.log(
                 "ClientLayout: No cart opening needed, showing regular completion toast"
