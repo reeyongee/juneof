@@ -8,7 +8,6 @@ import { useCart } from "@/context/CartContext";
 import { useAddress } from "@/context/AddressContext";
 import { useAuth } from "@/context/AuthContext";
 import { useProfileCompletion } from "@/hooks/useProfileCompletion";
-import { useRouter } from "next/navigation";
 import AddressSelectionOverlay from "./AddressSelectionOverlay";
 import { ShoppingBagIcon, XMarkIcon } from "@heroicons/react/24/outline";
 
@@ -48,9 +47,6 @@ export default function CartOverlay() {
 
   // Use profile completion from hook
   const { isProfileComplete } = useProfileCompletion();
-
-  // Use router for navigation
-  const router = useRouter();
 
   const [isCheckingOut, setIsCheckingOut] = useState(false);
 
@@ -187,9 +183,10 @@ export default function CartOverlay() {
 
     // Check if profile is complete
     if (!isProfileComplete) {
-      // Redirect to dashboard with profile completion flow
-      router.push("/dashboard");
+      // Set flag to open cart after profile completion and trigger profile completion flow
+      sessionStorage.setItem("open-cart-after-profile-completion", "true");
       handleCloseStart(); // Close cart overlay
+      // Profile completion flow will be triggered globally via useProfileCompletion hook
       return;
     }
 

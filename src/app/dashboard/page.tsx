@@ -28,7 +28,6 @@ import { Label } from "@/components/ui/label";
 export default function DashboardPage() {
   const [activeSection, setActiveSection] = useState("orders");
   const [isAddAddressOpen, setIsAddAddressOpen] = useState(false);
-  const [isRedirecting, setIsRedirecting] = useState(false);
   const hasFetchedCustomerDataRef = useRef(false);
   const hasFetchedAddressesRef = useRef(false);
 
@@ -58,7 +57,7 @@ export default function DashboardPage() {
     error: authError,
     fetchCustomerData,
   } = useAuth();
-  const { startLoading, stopLoading, isGlobalLoading } = useLoading();
+  const { isGlobalLoading } = useLoading();
   const {
     hideCompletionFlow,
     isCompletionFlowOpen,
@@ -188,49 +187,9 @@ export default function DashboardPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, addresses.length, addressLoading]);
 
-  // Effect to handle post-login redirect check
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const isPostLoginRedirect = urlParams.get("auth_completed") === "true";
-
-    if (isPostLoginRedirect && isAuthenticated && !authIsLoading) {
-      // If this is a post-login redirect, always show loading to prevent content flash
-      console.log(
-        "Dashboard: Post-login redirect detected, starting loading state"
-      );
-      setIsRedirecting(true);
-
-      // Use fresh profile status to make the redirect decision
-      ensureFreshProfileStatus().then((freshStatus) => {
-        if (freshStatus?.isComplete) {
-          // Complete profile should not be here, redirect to homepage
-          console.log(
-            "Dashboard: Complete profile detected with auth_completed, redirecting to homepage"
-          );
-          startLoading("dashboard-redirect-complete", 500);
-          setTimeout(() => {
-            stopLoading("dashboard-redirect-complete");
-            window.location.href = "/";
-          }, 500);
-        } else {
-          // Incomplete profile - brief loading then show dashboard
-          startLoading("dashboard-redirect-incomplete", 300);
-          setTimeout(() => {
-            stopLoading("dashboard-redirect-incomplete");
-            setIsRedirecting(false);
-          }, 300);
-        }
-      });
-    }
-  }, [
-    isAuthenticated,
-    authIsLoading,
-    ensureFreshProfileStatus,
-    startLoading,
-    stopLoading,
-  ]);
-
   // Effect to show profile completion flow for incomplete profiles
+  // This guard ensures that if an incomplete profile user somehow gets access to the dashboard,
+  // the profile completion flow is triggered immediately before they can interact with anything
   useEffect(() => {
     const checkAndShowCompletionFlow = async () => {
       if (
@@ -248,8 +207,9 @@ export default function DashboardPage() {
 
         if (freshStatus && !freshStatus.isComplete) {
           console.log(
-            "Dashboard: Profile incomplete, showing completion flow..."
+            "Dashboard: Profile incomplete, showing completion flow immediately..."
           );
+          // Show completion flow immediately to prevent user from interacting with dashboard
           showCompletionFlow();
         } else if (freshStatus?.isComplete) {
           console.log(
@@ -259,23 +219,24 @@ export default function DashboardPage() {
       }
     };
 
-    // Only run this check once when the component first loads and user is authenticated
-    // Don't run it again unless the completion flow was closed and needs to be re-checked
+    // Run this check immediately when the component loads and user is authenticated
+    // This ensures profile completion happens quickly before user can fiddle with buttons
     if (
       isAuthenticated &&
       !authIsLoading &&
       !isCompletionFlowOpen &&
       !isProfileFetching
     ) {
+      // Run immediately without delay to catch incomplete profiles fast
       checkAndShowCompletionFlow();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, authIsLoading, isCompletionFlowOpen]);
+  }, [isAuthenticated, authIsLoading, isCompletionFlowOpen, isProfileFetching]);
 
-  // Show loading state while checking authentication or redirecting, or if global loading is active
-  if (authIsLoading || isRedirecting || isGlobalLoading || isProfileFetching) {
+  // Show loading state while checking authentication or if global loading is active
+  if (authIsLoading || isGlobalLoading || isProfileFetching) {
     console.log(
-      "DashboardPage: Rendering loading state (authIsLoading, redirecting, global loading, or profile fetching active)"
+      "DashboardPage: Rendering loading state (authIsLoading, global loading, or profile fetching active)"
     );
     // Don't render anything if global loading is active - let LoadingProvider handle it
     if (isGlobalLoading) {

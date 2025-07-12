@@ -12,8 +12,12 @@ import CustomCursor from "@/app/components/CustomCursor";
 import SplashScreen from "@/app/components/SplashScreen";
 import PostLoginRedirect from "@/components/PostLoginRedirect";
 import CartOverlay from "@/app/components/CartOverlay";
+import { ProfileCompletionFlow } from "@/components/ProfileCompletionFlow";
+import { useProfileCompletion } from "@/hooks/useProfileCompletion";
+import { useCart } from "@/context/CartContext";
 import { Toaster } from "@/components/ui/sonner";
 import * as pixel from "@/lib/meta-pixel";
+import { toast } from "sonner";
 
 // Component that uses useSearchParams - needs to be wrapped in Suspense
 function PageViewTracker() {
@@ -39,6 +43,9 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
   const { showSplash, setShowSplash } = useSplash();
   const { isGlobalLoading } = useLoading();
   const pathname = usePathname();
+  const { isCompletionFlowOpen, hideCompletionFlow, refreshProfileStatus } =
+    useProfileCompletion();
+  const { openCartOverlay } = useCart();
 
   // Check if current route is an admin route
   const isAdminRoute = pathname.startsWith("/admin");
@@ -81,6 +88,39 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
           {!isAdminRoute && <Footer />}
         </div>
         <CartOverlay />
+
+        {/* Global Profile Completion Flow */}
+        <ProfileCompletionFlow
+          isOpen={isCompletionFlowOpen}
+          onClose={hideCompletionFlow}
+          onComplete={() => {
+            refreshProfileStatus();
+            hideCompletionFlow();
+
+            // Check if we should open cart after profile completion (for checkout logins)
+            const shouldOpenCart = sessionStorage.getItem(
+              "open-cart-after-profile-completion"
+            );
+            if (shouldOpenCart === "true") {
+              sessionStorage.removeItem("open-cart-after-profile-completion");
+              setTimeout(() => {
+                openCartOverlay();
+                toast.success("profile completed!", {
+                  description:
+                    "your profile has been successfully updated. you'll now get personalized recommendations and faster checkout.",
+                  duration: 4000,
+                });
+              }, 100);
+            } else {
+              toast.success("profile completed!", {
+                description:
+                  "your profile has been successfully updated. you'll now get personalized recommendations and faster checkout.",
+                duration: 4000,
+              });
+            }
+          }}
+        />
+
         <Toaster position="bottom-left" />
       </CartProvider>
     </AddressProvider>

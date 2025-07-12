@@ -5,13 +5,16 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useProfileCompletion } from "@/hooks/useProfileCompletion";
 import { useLoading } from "@/context/LoadingContext";
+import { useCart } from "@/context/CartContext";
 
 function PostLoginRedirectContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isAuthenticated, isLoading: authLoading, customerData } = useAuth();
-  const { ensureFreshProfileStatus } = useProfileCompletion();
+  const { ensureFreshProfileStatus, showCompletionFlow } =
+    useProfileCompletion();
   const { completeAuthFlow } = useLoading();
+  const { openCartOverlay } = useCart();
   const hasRedirectedRef = useRef(false);
   const isRedirectingRef = useRef(false);
   const hasCalledEnsureFreshRef = useRef(false);
@@ -54,7 +57,7 @@ function PostLoginRedirectContent() {
         }
       );
 
-      // Early fallback - if nothing happens after 3 seconds, redirect to dashboard optimistically
+      // Early fallback - if nothing happens after 3 seconds, complete auth flow and stay on homepage
       if (
         waitTime > 3000 &&
         waitTime <= 3100 && // Only trigger once in this window
@@ -62,31 +65,29 @@ function PostLoginRedirectContent() {
         !isRedirectingRef.current
       ) {
         console.warn(
-          "PostLoginRedirect: 3-second fallback triggered - redirecting to dashboard optimistically"
+          "PostLoginRedirect: 3-second fallback triggered - completing auth flow and staying on homepage"
         );
         hasRedirectedRef.current = true;
         completeAuthFlow();
-        router.replace("/dashboard");
         return;
       }
 
-      // If we've been waiting too long (more than 12 seconds), force redirect to homepage
+      // If we've been waiting too long (more than 12 seconds), force complete auth flow
       if (
         waitTime > 12000 &&
         !hasRedirectedRef.current &&
         !isRedirectingRef.current
       ) {
         console.warn(
-          "PostLoginRedirect: Timeout waiting for authentication state after 12 seconds, redirecting to homepage"
+          "PostLoginRedirect: Timeout waiting for authentication state after 12 seconds, completing auth flow"
         );
         hasRedirectedRef.current = true;
         completeAuthFlow();
-        router.replace("/?auth_timeout=true");
         return;
       }
 
       // If user is authenticated but we're still waiting for customerData after 7 seconds,
-      // redirect anyway to prevent getting stuck
+      // complete auth flow anyway to prevent getting stuck
       if (
         waitTime > 7000 &&
         isAuthenticated &&
@@ -96,11 +97,10 @@ function PostLoginRedirectContent() {
         !isRedirectingRef.current
       ) {
         console.warn(
-          "PostLoginRedirect: Authenticated but no customer data after 7s, redirecting to dashboard anyway"
+          "PostLoginRedirect: Authenticated but no customer data after 7s, completing auth flow anyway"
         );
         hasRedirectedRef.current = true;
         completeAuthFlow();
-        router.replace("/dashboard");
         return;
       }
 
@@ -128,7 +128,9 @@ function PostLoginRedirectContent() {
       !isRedirectingRef.current &&
       !hasCalledEnsureFreshRef.current
     ) {
-      console.log("PostLoginRedirect: All conditions met, processing redirect");
+      console.log(
+        "PostLoginRedirect: All conditions met, processing auth completion"
+      );
       hasRedirectedRef.current = true;
       isRedirectingRef.current = true;
       hasCalledEnsureFreshRef.current = true; // Prevent multiple calls
@@ -140,52 +142,63 @@ function PostLoginRedirectContent() {
 
       if (checkoutLoginContext.isCheckoutLogin) {
         console.log(
-          "PostLoginRedirect: Checkout login detected, redirecting to product page"
+          "PostLoginRedirect: Checkout login detected, staying on homepage and opening cart"
         );
 
         // Clean up the checkout login context from sessionStorage since we're processing it
         sessionStorage.removeItem("checkout-login-context");
 
-        // Use fresh profile status for accurate redirect decision
+        // Use fresh profile status for accurate flow decision
         ensureFreshProfileStatus().then((freshStatus) => {
-          // Complete the auth flow and redirect to product page with appropriate context
+          // Complete the auth flow and handle checkout login on homepage
           setTimeout(() => {
             completeAuthFlow();
-            const productUrl = `/product/${checkoutLoginContext.lastAddedProductHandle}`;
-            const urlParams = new URLSearchParams();
 
             if (freshStatus?.isComplete) {
-              // Flow A: Profile complete - show cart overlay
-              urlParams.append("checkout_login_complete", "true");
-              urlParams.append("open_cart", "true");
+              // Flow A: Profile complete - show cart overlay on homepage
+              console.log(
+                "PostLoginRedirect: Profile complete, opening cart overlay on homepage"
+              );
+              openCartOverlay();
             } else {
-              // Flow B: Profile incomplete - show profile completion flow
-              urlParams.append("checkout_login_incomplete", "true");
-              urlParams.append("show_profile_completion", "true");
+              // Flow B: Profile incomplete - show profile completion flow first
+              console.log(
+                "PostLoginRedirect: Profile incomplete, showing profile completion on homepage"
+              );
+              // Set flag to open cart after profile completion
+              sessionStorage.setItem(
+                "open-cart-after-profile-completion",
+                "true"
+              );
+              showCompletionFlow();
+              // Cart will open after profile completion
             }
-
-            router.replace(`${productUrl}?${urlParams.toString()}`);
           }, 500);
         });
       } else {
-        // Regular login - redirect to dashboard
+        // Regular login (navbar, etc.) - stay on homepage
         console.log(
-          "PostLoginRedirect: Regular login, redirecting to dashboard",
-          {
-            isAuthenticated,
-            authLoading,
-            hasCustomerData: !!customerData,
-            customerName:
-              customerData.customer.displayName ||
-              customerData.customer.firstName,
-          }
+          "PostLoginRedirect: Regular login, staying on homepage and completing auth flow"
         );
 
-        // Complete the auth flow and redirect to dashboard
-        setTimeout(() => {
-          completeAuthFlow();
-          router.replace("/dashboard");
-        }, 500);
+        // Use fresh profile status to determine if we need profile completion
+        ensureFreshProfileStatus().then((freshStatus) => {
+          setTimeout(() => {
+            completeAuthFlow();
+
+            if (!freshStatus?.isComplete) {
+              // Show profile completion flow on homepage for incomplete profiles
+              console.log(
+                "PostLoginRedirect: Profile incomplete, showing profile completion on homepage"
+              );
+              showCompletionFlow();
+            } else {
+              console.log(
+                "PostLoginRedirect: Profile complete, staying on homepage"
+              );
+            }
+          }, 500);
+        });
       }
     }
   }, [
@@ -197,6 +210,8 @@ function PostLoginRedirectContent() {
     router,
     completeAuthFlow,
     ensureFreshProfileStatus,
+    showCompletionFlow,
+    openCartOverlay,
   ]);
 
   // This component doesn't render anything - loading is handled by LoadingProvider
