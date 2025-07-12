@@ -107,6 +107,7 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
             console.log("ClientLayout: Checking cart opening flag:", {
               shouldOpenCart,
               sessionStorageKeys: Object.keys(sessionStorage),
+              hasBackupCart: !!sessionStorage.getItem("backup-guest-cart"),
             });
 
             if (shouldOpenCart === "true") {
@@ -115,6 +116,16 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
               );
               // Remove flag immediately to prevent duplicate calls
               sessionStorage.removeItem("open-cart-after-profile-completion");
+
+              // Check if backup cart exists before opening
+              const backupCartExists =
+                !!sessionStorage.getItem("backup-guest-cart");
+              console.log("ClientLayout: Backup cart status before opening:", {
+                backupCartExists,
+                backupCartData: backupCartExists
+                  ? sessionStorage.getItem("backup-guest-cart")
+                  : null,
+              });
 
               // Use a longer delay to ensure profile completion flow is fully closed
               setTimeout(() => {

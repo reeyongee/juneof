@@ -432,6 +432,7 @@ export const CartProvider = ({ children }: CartProviderProps) => {
   const openCartOverlay = () => {
     // Check if cart is empty and try backup restoration first
     const currentCartIsEmpty = cartItems.length === 0;
+    let restoredFromBackup = false;
 
     if (currentCartIsEmpty && isAuthenticated) {
       console.log(
@@ -446,9 +447,11 @@ export const CartProvider = ({ children }: CartProviderProps) => {
               `CartContext: Restoring ${backupCart.length} items from backup.`
             );
             // Directly update the state and then proceed.
-            // This is the critical fix to win the race condition.
             setCartItems(backupCart);
-            // We can now proceed with opening the cart, which will have items.
+            restoredFromBackup = true;
+            console.log(
+              "CartContext: Cart restored from backup, will open with restored items"
+            );
           }
         } catch (e) {
           console.error("CartContext: Error parsing backup cart", e);
@@ -459,10 +462,15 @@ export const CartProvider = ({ children }: CartProviderProps) => {
       }
     }
 
-    // Now, with the cart state hopefully corrected, proceed with opening logic
+    // Log current state (noting that cartItems.length may still be stale due to async state update)
     console.log(
-      "CartContext: Proceeding to open overlay. Current item count:",
-      cartItems.length
+      "CartContext: Proceeding to open overlay. Current cart state:",
+      {
+        currentCartItemsLength: cartItems.length,
+        restoredFromBackup,
+        currentCartIsEmpty,
+        isAuthenticated,
+      }
     );
 
     // Prevent concurrent opens and debounce rapid calls
@@ -475,12 +483,15 @@ export const CartProvider = ({ children }: CartProviderProps) => {
 
     isOpeningRef.current = true;
 
-    // Debounce to allow state to settle and prevent rapid re-opens
+    // If we just restored from backup, give the state update a bit more time to settle
+    // before opening the overlay to ensure the cart items are properly rendered
+    const delayMs = restoredFromBackup ? 100 : 50;
+
     setTimeout(() => {
       console.log("CartContext: Opening cart overlay - executing now");
       setIsCartOverlayOpen(true);
       isOpeningRef.current = false;
-    }, 50);
+    }, delayMs);
   };
 
   const closeCartOverlay = () => {
