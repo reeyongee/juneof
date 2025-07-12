@@ -246,7 +246,7 @@ export const CartProvider = ({ children }: CartProviderProps) => {
       isProcessingAuthChange.current = false;
       authChangeTimeoutRef.current = null;
     }, 100); // 100ms debounce for auth changes
-  }, [isAuthenticated, isCartOverlayOpen]);
+  }, [isAuthenticated, isCartOverlayOpen, cartItems.length]);
 
   // Save cart to localStorage for guest users
   useEffect(() => {
@@ -430,6 +430,11 @@ export const CartProvider = ({ children }: CartProviderProps) => {
   };
 
   const openCartOverlay = () => {
+    console.log(
+      "CartContext: Opening cart overlay. Current item count:",
+      cartItems.length
+    );
+
     // Prevent concurrent opens and debounce rapid calls
     if (isOpeningRef.current || isCartOverlayOpen) {
       console.log(
@@ -439,52 +444,6 @@ export const CartProvider = ({ children }: CartProviderProps) => {
     }
 
     isOpeningRef.current = true;
-
-    // Check if cart is empty and try backup restoration first (only for authenticated users)
-    const currentCartIsEmpty = cartItems.length === 0;
-
-    if (currentCartIsEmpty && isAuthenticated) {
-      console.log(
-        "CartContext: Cart is empty, attempting backup restoration before opening."
-      );
-      const backupCartJSON = sessionStorage.getItem("backup-guest-cart");
-      if (backupCartJSON) {
-        try {
-          const backupCart = JSON.parse(backupCartJSON);
-          if (Array.isArray(backupCart) && backupCart.length > 0) {
-            console.log(
-              `CartContext: Restoring ${backupCart.length} items from backup.`
-            );
-
-            // Clean up backup cart first to prevent re-restoration
-            sessionStorage.removeItem("backup-guest-cart");
-
-            // Update the cart state and wait for it to take effect
-            setCartItems(backupCart);
-
-            // Use a longer delay to ensure state update completes before opening cart
-            setTimeout(() => {
-              console.log(
-                "CartContext: Opening cart overlay with restored items"
-              );
-              setIsCartOverlayOpen(true);
-              isOpeningRef.current = false;
-            }, 100);
-            return;
-          }
-        } catch (e) {
-          console.error("CartContext: Error parsing backup cart", e);
-        }
-        // Always clean up backup cart regardless of success/failure
-        sessionStorage.removeItem("backup-guest-cart");
-      }
-    }
-
-    // Standard cart opening (no backup restoration needed)
-    console.log(
-      "CartContext: Opening cart overlay. Current item count:",
-      cartItems.length
-    );
 
     // Debounce to allow state to settle and prevent rapid re-opens
     setTimeout(() => {

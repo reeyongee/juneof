@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useAddress } from "@/context/AddressContext";
+import { useCart } from "@/context/CartContext";
 import {
   analyzeProfileCompletion,
   getNextCompletionStep,
@@ -41,9 +42,42 @@ export function ProfileCompletionFlow({
   // Simplified state management - track if this session actually completed the profile
   const [hasCompletedInThisSession, setHasCompletedInThisSession] =
     useState(false);
+  const [shouldOpenCartOnComplete, setShouldOpenCartOnComplete] =
+    useState(false);
   const isLoadingRef = useRef(false);
   const { apiClient, fetchCustomerData } = useAuth();
   const { fetchAddresses } = useAddress();
+  const { openCartOverlay } = useCart();
+
+  // Check for checkout login context when dialog opens
+  useEffect(() => {
+    if (isOpen && typeof window !== "undefined") {
+      console.log("ProfileCompletionFlow: Checking for checkout login context");
+
+      const checkoutLoginContext = sessionStorage.getItem(
+        "checkout-login-context"
+      );
+      if (checkoutLoginContext) {
+        try {
+          const context = JSON.parse(checkoutLoginContext);
+          if (context.isCheckoutLogin) {
+            console.log(
+              "ProfileCompletionFlow: Checkout login detected - will open cart after completion"
+            );
+            setShouldOpenCartOnComplete(true);
+
+            // Clean up checkout context immediately since we're handling it
+            sessionStorage.removeItem("checkout-login-context");
+          }
+        } catch (error) {
+          console.error(
+            "ProfileCompletionFlow: Error parsing checkout login context:",
+            error
+          );
+        }
+      }
+    }
+  }, [isOpen]);
 
   const loadCustomerProfile = useCallback(async () => {
     if (!apiClient || isLoadingRef.current) return;
@@ -213,6 +247,18 @@ export function ProfileCompletionFlow({
           );
           setHasCompletedInThisSession(true);
 
+          // Handle cart opening for checkout login flows
+          if (shouldOpenCartOnComplete) {
+            console.log(
+              "ProfileCompletionFlow: Opening cart after profile completion for checkout login"
+            );
+
+            // Use a timeout to ensure profile completion flow closes first
+            setTimeout(() => {
+              openCartOverlay();
+            }, 100);
+          }
+
           // Always trigger completion callback when user completes profile
           onComplete?.();
           onClose();
@@ -224,6 +270,19 @@ export function ProfileCompletionFlow({
               "ProfileCompletionFlow: Next step is complete but status incomplete - triggering completion anyway"
             );
             setHasCompletedInThisSession(true);
+
+            // Handle cart opening for checkout login flows
+            if (shouldOpenCartOnComplete) {
+              console.log(
+                "ProfileCompletionFlow: Opening cart after profile completion for checkout login (fallback)"
+              );
+
+              // Use a timeout to ensure profile completion flow closes first
+              setTimeout(() => {
+                openCartOverlay();
+              }, 100);
+            }
+
             onComplete?.();
             onClose();
           } else {

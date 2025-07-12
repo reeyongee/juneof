@@ -189,8 +189,7 @@ export default function CartOverlay() {
 
     // Check if profile is complete
     if (!isProfileComplete) {
-      // Set flag to open cart after profile completion and trigger profile completion flow
-      sessionStorage.setItem("open-cart-after-profile-completion", "true");
+      // Close cart overlay and let profile completion flow handle cart reopening
       handleCloseStart(); // Close cart overlay
       // Profile completion flow will be triggered globally via useProfileCompletion hook
       return;

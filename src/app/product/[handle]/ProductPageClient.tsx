@@ -715,12 +715,9 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
             refreshProfileStatus();
             setIsProfileCompletionOpen(false);
 
-            // After profile completion, show cart overlay
-            setTimeout(() => {
-              openCartOverlay();
-              toast.success("Profile updated successfully!");
-              isProcessingCompletion.current = false;
-            }, 100);
+            // ProfileCompletionFlow now handles cart opening for checkout logins automatically
+            toast.success("Profile updated successfully!");
+            isProcessingCompletion.current = false;
           }}
         />
       </>
@@ -979,16 +976,13 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
           refreshProfileStatus();
           setIsProfileCompletionOpen(false);
 
-          // After profile completion, show cart overlay
-          setTimeout(() => {
-            openCartOverlay();
-            toast.success("profile completed!", {
-              description:
-                "your profile has been successfully updated. you'll now get personalized recommendations and faster checkout.",
-              duration: 4000,
-            });
-            isProcessingCompletion.current = false;
-          }, 100);
+          // ProfileCompletionFlow now handles cart opening for checkout logins automatically
+          toast.success("profile completed!", {
+            description:
+              "your profile has been successfully updated. you'll now get personalized recommendations and faster checkout.",
+            duration: 4000,
+          });
+          isProcessingCompletion.current = false;
         }}
       />
     </>
