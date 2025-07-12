@@ -152,14 +152,13 @@ function PostLoginRedirectContent() {
             completeAuthFlow();
 
             if (freshStatus?.isComplete) {
-              // Flow A: Profile complete - show cart overlay on homepage
+              // Flow A: Profile complete - briefly show ProfileCompletionFlow to detect checkout context
               console.log(
-                "PostLoginRedirect: Profile complete, opening cart overlay on homepage"
+                "PostLoginRedirect: Profile complete for checkout login - showing ProfileCompletionFlow briefly to handle cart opening"
               );
 
-              // Clean up checkout context since we're handling it completely
-              sessionStorage.removeItem("checkout-login-context");
-              openCartOverlay();
+              // ProfileCompletionFlow will detect it's complete, detect checkout context, open cart, and close immediately
+              showCompletionFlow();
             } else {
               // Flow B: Profile incomplete - show profile completion flow first
               console.log(

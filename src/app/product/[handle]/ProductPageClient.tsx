@@ -256,11 +256,19 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
     };
   }, []);
 
-  // Reset completion guards when cart is manually closed
+  // Reset completion guards when cart is manually closed (with debounce to prevent excessive runs)
   useEffect(() => {
     if (!isCartOverlayOpen) {
-      hasOpenedCartFromCompletion.current = false;
-      isProcessingCompletion.current = false;
+      // Use a timeout to prevent rapid resetting during cart operations
+      const resetTimeout = setTimeout(() => {
+        hasOpenedCartFromCompletion.current = false;
+        isProcessingCompletion.current = false;
+        console.log(
+          "ProductPageClient: Reset completion guards after cart close"
+        );
+      }, 200); // 200ms delay to allow cart operations to settle
+
+      return () => clearTimeout(resetTimeout);
     }
   }, [isCartOverlayOpen]);
 
