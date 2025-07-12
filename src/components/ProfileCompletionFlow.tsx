@@ -68,6 +68,9 @@ export function ProfileCompletionFlow({
 
             // Clean up checkout context immediately since we're handling it
             sessionStorage.removeItem("checkout-login-context");
+            console.log(
+              "ProfileCompletionFlow: Cleaned up checkout login context"
+            );
           }
         } catch (error) {
           console.error(
@@ -75,6 +78,8 @@ export function ProfileCompletionFlow({
             error
           );
         }
+      } else {
+        console.log("ProfileCompletionFlow: No checkout login context found");
       }
     }
   }, [isOpen]);
@@ -173,13 +178,19 @@ export function ProfileCompletionFlow({
     }
   }, [isOpen]);
 
-  // Reset session completion state when dialog opens
+  // Reset session completion state when dialog opens/closes
   useEffect(() => {
     if (isOpen) {
       console.log(
         "ProfileCompletionFlow: Dialog opened, resetting session state"
       );
       setHasCompletedInThisSession(false);
+    } else {
+      // Reset checkout cart opening flag when dialog closes to prevent stale state
+      console.log(
+        "ProfileCompletionFlow: Dialog closed, resetting cart opening flag"
+      );
+      setShouldOpenCartOnComplete(false);
     }
   }, [isOpen]);
 
@@ -255,7 +266,11 @@ export function ProfileCompletionFlow({
 
             // Use a timeout to ensure profile completion flow closes first
             setTimeout(() => {
+              console.log("ProfileCompletionFlow: Executing cart overlay open");
               openCartOverlay();
+
+              // Reset the flag after opening to prevent any future accidental opens
+              setShouldOpenCartOnComplete(false);
             }, 100);
           }
 
@@ -279,7 +294,13 @@ export function ProfileCompletionFlow({
 
               // Use a timeout to ensure profile completion flow closes first
               setTimeout(() => {
+                console.log(
+                  "ProfileCompletionFlow: Executing cart overlay open (fallback)"
+                );
                 openCartOverlay();
+
+                // Reset the flag after opening to prevent any future accidental opens
+                setShouldOpenCartOnComplete(false);
               }, 100);
             }
 

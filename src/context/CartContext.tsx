@@ -246,7 +246,7 @@ export const CartProvider = ({ children }: CartProviderProps) => {
       isProcessingAuthChange.current = false;
       authChangeTimeoutRef.current = null;
     }, 100); // 100ms debounce for auth changes
-  }, [isAuthenticated, isCartOverlayOpen, cartItems.length]);
+  }, [isAuthenticated, isCartOverlayOpen]);
 
   // Save cart to localStorage for guest users
   useEffect(() => {

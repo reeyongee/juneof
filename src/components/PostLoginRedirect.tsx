@@ -145,9 +145,6 @@ function PostLoginRedirectContent() {
           "PostLoginRedirect: Checkout login detected, staying on homepage and opening cart"
         );
 
-        // Clean up the checkout login context from sessionStorage since we're processing it
-        sessionStorage.removeItem("checkout-login-context");
-
         // Use fresh profile status for accurate flow decision
         ensureFreshProfileStatus().then((freshStatus) => {
           // Complete the auth flow and handle checkout login on homepage
@@ -159,6 +156,9 @@ function PostLoginRedirectContent() {
               console.log(
                 "PostLoginRedirect: Profile complete, opening cart overlay on homepage"
               );
+
+              // Clean up checkout context since we're handling it completely
+              sessionStorage.removeItem("checkout-login-context");
               openCartOverlay();
             } else {
               // Flow B: Profile incomplete - show profile completion flow first
@@ -166,6 +166,7 @@ function PostLoginRedirectContent() {
                 "PostLoginRedirect: Profile incomplete, showing profile completion on homepage"
               );
 
+              // DON'T clean up checkout context - let ProfileCompletionFlow handle it
               showCompletionFlow();
               // Cart will open after profile completion (handled by ProfileCompletionFlow itself)
             }
