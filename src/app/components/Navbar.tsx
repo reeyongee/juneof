@@ -8,7 +8,7 @@ import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 
 // Toggle for about us button visibility in mobile view only
-const SHOW_ABOUT_US_MOBILE = true;
+const SHOW_ABOUT_US_MOBILE = false;
 
 // Custom hook to detect mobile devices
 const useIsMobile = () => {
