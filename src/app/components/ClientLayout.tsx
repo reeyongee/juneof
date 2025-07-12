@@ -94,6 +94,8 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
           isOpen={isCompletionFlowOpen}
           onClose={hideCompletionFlow}
           onComplete={() => {
+            console.log("ClientLayout: Profile completion callback triggered");
+
             refreshProfileStatus();
             hideCompletionFlow();
 
@@ -101,9 +103,20 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
             const shouldOpenCart = sessionStorage.getItem(
               "open-cart-after-profile-completion"
             );
+
+            console.log("ClientLayout: Checking cart opening flag:", {
+              shouldOpenCart,
+              sessionStorageKeys: Object.keys(sessionStorage),
+            });
+
             if (shouldOpenCart === "true") {
+              console.log(
+                "ClientLayout: Opening cart after profile completion"
+              );
               sessionStorage.removeItem("open-cart-after-profile-completion");
+
               setTimeout(() => {
+                console.log("ClientLayout: Executing cart overlay open");
                 openCartOverlay();
                 toast.success("profile completed!", {
                   description:
@@ -112,6 +125,9 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
                 });
               }, 100);
             } else {
+              console.log(
+                "ClientLayout: No cart opening needed, showing regular completion toast"
+              );
               toast.success("profile completed!", {
                 description:
                   "your profile has been successfully updated. you'll now get personalized recommendations and faster checkout.",

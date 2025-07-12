@@ -166,10 +166,23 @@ function PostLoginRedirectContent() {
                 "PostLoginRedirect: Profile incomplete, showing profile completion on homepage"
               );
               // Set flag to open cart after profile completion
+              console.log(
+                "PostLoginRedirect: Setting cart opening flag for checkout login"
+              );
               sessionStorage.setItem(
                 "open-cart-after-profile-completion",
                 "true"
               );
+
+              // Verify flag was set
+              const verifyFlag = sessionStorage.getItem(
+                "open-cart-after-profile-completion"
+              );
+              console.log(
+                "PostLoginRedirect: Cart opening flag verified:",
+                verifyFlag
+              );
+
               showCompletionFlow();
               // Cart will open after profile completion
             }

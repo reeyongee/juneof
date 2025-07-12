@@ -369,6 +369,12 @@ export const CartProvider = ({ children }: CartProviderProps) => {
   };
 
   const openCartOverlay = () => {
+    console.log("CartContext: openCartOverlay called", {
+      isOpening: isOpeningRef.current,
+      isOpen: isCartOverlayOpen,
+      cartItemsCount: cartItems.length,
+    });
+
     // Prevent concurrent opens and debounce rapid calls
     if (isOpeningRef.current || isCartOverlayOpen) {
       console.log(
@@ -392,7 +398,7 @@ export const CartProvider = ({ children }: CartProviderProps) => {
     }
 
     openTimeoutRef.current = setTimeout(() => {
-      console.log("CartContext: Opening cart overlay");
+      console.log("CartContext: Opening cart overlay - executing now");
       setIsCartOverlayOpen(true);
       isOpeningRef.current = false;
       openTimeoutRef.current = null;

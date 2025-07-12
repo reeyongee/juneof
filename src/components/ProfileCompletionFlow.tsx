@@ -37,7 +37,10 @@ export function ProfileCompletionFlow({
   const [profileStatus, setProfileStatus] =
     useState<ProfileCompletionStatus | null>(null);
   const [currentStep, setCurrentStep] = useState<"name" | "address">("name");
-  const [userHasInteracted, setUserHasInteracted] = useState(false);
+
+  // Simplified state management - track if this session actually completed the profile
+  const [hasCompletedInThisSession, setHasCompletedInThisSession] =
+    useState(false);
   const isLoadingRef = useRef(false);
   const { apiClient, fetchCustomerData } = useAuth();
   const { fetchAddresses } = useAddress();
@@ -50,6 +53,7 @@ export function ProfileCompletionFlow({
     setError(null);
 
     try {
+      console.log("ProfileCompletionFlow: Loading customer profile...");
       const response = await fetchCustomerProfileForCompletion(apiClient);
       const errors = handleGraphQLErrors(response);
 
@@ -77,29 +81,33 @@ export function ProfileCompletionFlow({
         const status = analyzeProfileCompletion(profile);
         setProfileStatus(status);
 
+        console.log("ProfileCompletionFlow: Profile analysis:", {
+          isComplete: status.isComplete,
+          completionPercentage: status.completionPercentage,
+          missingFields: status.missingFields,
+          hasCompletedInThisSession,
+        });
+
         if (status.isComplete) {
-          // Only trigger completion if user has interacted with the form
-          // This prevents the completion callback from being called on system checks
-          if (userHasInteracted) {
-            console.log(
-              "ProfileCompletionFlow: Profile completed by user interaction"
-            );
-            onComplete?.();
-          } else {
-            console.log(
-              "ProfileCompletionFlow: Profile already complete, closing without completion callback"
-            );
-          }
+          console.log(
+            "ProfileCompletionFlow: Profile is already complete, closing flow"
+          );
+          // Profile is already complete - close without triggering completion callback
+          // since this wasn't completed in this session
           onClose();
         } else {
           const nextStep = getNextCompletionStep(status);
           if (nextStep === "complete") {
             // This shouldn't happen if status.isComplete is false, but handle it
-            if (userHasInteracted) {
-              onComplete?.();
-            }
+            console.log(
+              "ProfileCompletionFlow: Next step is complete but status says incomplete - closing"
+            );
             onClose();
           } else {
+            console.log(
+              "ProfileCompletionFlow: Setting current step to:",
+              nextStep
+            );
             setCurrentStep(nextStep);
           }
         }
@@ -112,7 +120,7 @@ export function ProfileCompletionFlow({
       isLoadingRef.current = false;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [apiClient, userHasInteracted, onComplete, onClose]);
+  }, [apiClient, onClose, hasCompletedInThisSession]);
 
   // Prevent ESC key from closing the dialog
   useEffect(() => {
@@ -131,10 +139,13 @@ export function ProfileCompletionFlow({
     }
   }, [isOpen]);
 
-  // Reset user interaction state when dialog opens
+  // Reset session completion state when dialog opens
   useEffect(() => {
     if (isOpen) {
-      setUserHasInteracted(false);
+      console.log(
+        "ProfileCompletionFlow: Dialog opened, resetting session state"
+      );
+      setHasCompletedInThisSession(false);
     }
   }, [isOpen]);
 
@@ -146,8 +157,7 @@ export function ProfileCompletionFlow({
   }, [isOpen, apiClient, loadCustomerProfile]);
 
   const handleStepCompleteWithDirectCheck = async () => {
-    // Mark that user has interacted with the form
-    setUserHasInteracted(true);
+    console.log("ProfileCompletionFlow: Step completion triggered");
 
     if (!apiClient) {
       console.error("No apiClient available for step completion");
@@ -184,6 +194,12 @@ export function ProfileCompletionFlow({
         const status = analyzeProfileCompletion(profile);
         setProfileStatus(status);
 
+        console.log("ProfileCompletionFlow: After step completion analysis:", {
+          isComplete: status.isComplete,
+          completionPercentage: status.completionPercentage,
+          missingFields: status.missingFields,
+        });
+
         // Refresh the auth context customer data as well
         await fetchCustomerData();
 
@@ -191,19 +207,30 @@ export function ProfileCompletionFlow({
         await fetchAddresses();
 
         if (status.isComplete) {
-          // Profile is now complete, trigger completion callback and close
+          // Profile is now complete due to user action in this session
           console.log(
-            "ProfileCompletionFlow: Profile completed by user step completion"
+            "ProfileCompletionFlow: Profile completed by user action - triggering completion callback"
           );
+          setHasCompletedInThisSession(true);
+
+          // Always trigger completion callback when user completes profile
           onComplete?.();
           onClose();
         } else {
           const nextStep = getNextCompletionStep(status);
           if (nextStep === "complete") {
             // This shouldn't happen if status.isComplete is false, but handle it
+            console.log(
+              "ProfileCompletionFlow: Next step is complete but status incomplete - triggering completion anyway"
+            );
+            setHasCompletedInThisSession(true);
             onComplete?.();
             onClose();
           } else {
+            console.log(
+              "ProfileCompletionFlow: Moving to next step:",
+              nextStep
+            );
             setCurrentStep(nextStep);
           }
         }
@@ -280,62 +307,58 @@ export function ProfileCompletionFlow({
       <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" />
 
       {/* Overlay Content */}
-      <div className="relative bg-[#F8F4EC] w-full max-w-lg mx-4 max-h-[calc(100vh-6rem)] border border-gray-300 mt-12 flex flex-col">
-        {/* Header */}
-        <div className="p-6 border-b border-gray-300">
-          <div className="flex items-center gap-3 mb-3">
-            {getStepIcon(currentStep)}
-            <h2 className="text-xl font-serif lowercase tracking-widest text-black">
-              {getStepTitle()}
-            </h2>
-          </div>
-
-          <p className="text-sm lowercase tracking-wider text-gray-600 mb-4">
-            {getStepDescription()}
-          </p>
-
-          {profileStatus && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="lowercase tracking-wider text-gray-600">
-                  profile completion
-                </span>
-                <Badge
-                  variant="secondary"
-                  className="bg-black text-white text-xs lowercase tracking-widest"
-                >
-                  {profileStatus.completionPercentage}%
+      <div className="relative z-10 w-full max-w-md mx-4">
+        <div className="bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden">
+          {/* Header */}
+          <div className="px-6 py-4 border-b border-gray-100">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-lg font-medium text-gray-900 lowercase">
+                {getStepTitle()}
+              </h2>
+              <div className="flex items-center space-x-2">
+                <Badge variant="outline" className="text-xs">
+                  {getStepIcon(currentStep)}
+                  <span className="ml-1 capitalize">{currentStep}</span>
                 </Badge>
               </div>
-              <Progress
-                value={profileStatus.completionPercentage}
-                className="h-2 bg-gray-200"
-              />
             </div>
-          )}
-        </div>
+            <p className="text-sm text-gray-600 lowercase">
+              {getStepDescription()}
+            </p>
+            {profileStatus && (
+              <div className="mt-3">
+                <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
+                  <span>Profile completion</span>
+                  <span>{profileStatus.completionPercentage}%</span>
+                </div>
+                <Progress
+                  value={profileStatus.completionPercentage}
+                  className="h-2"
+                />
+              </div>
+            )}
+          </div>
 
-        {/* Content */}
-        <div className="p-6 overflow-y-auto flex-1">
-          {isLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
-            </div>
-          ) : error ? (
-            <div className="text-center py-8">
-              <p className="text-red-600 mb-4 text-sm lowercase tracking-wider">
-                {error}
-              </p>
-              <button
-                onClick={loadCustomerProfile}
-                className="bg-black text-white px-4 py-2 text-sm lowercase tracking-widest hover:opacity-75 transition-opacity"
-              >
-                try again
-              </button>
-            </div>
-          ) : (
-            renderCurrentStep()
-          )}
+          {/* Content */}
+          <div className="px-6 py-4">
+            {isLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+              </div>
+            ) : error ? (
+              <div className="text-center py-8">
+                <p className="text-red-600 text-sm mb-4">{error}</p>
+                <button
+                  onClick={loadCustomerProfile}
+                  className="text-sm text-blue-600 hover:text-blue-700 underline"
+                >
+                  Try again
+                </button>
+              </div>
+            ) : (
+              renderCurrentStep()
+            )}
+          </div>
         </div>
       </div>
     </div>
