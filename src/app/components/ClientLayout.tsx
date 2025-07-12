@@ -5,7 +5,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { useSplash } from "@/context/SplashContext";
 import { useLoading } from "@/context/LoadingContext";
 import { AddressProvider } from "@/context/AddressContext";
-import { CartProvider, useCart } from "@/context/CartContext";
+import { CartProvider } from "@/context/CartContext";
 import Navbar from "@/app/components/Navbar";
 import Footer from "@/app/components/Footer";
 import CustomCursor from "@/app/components/CustomCursor";
@@ -14,6 +14,7 @@ import PostLoginRedirect from "@/components/PostLoginRedirect";
 import CartOverlay from "@/app/components/CartOverlay";
 import { ProfileCompletionFlow } from "@/components/ProfileCompletionFlow";
 import { useProfileCompletion } from "@/hooks/useProfileCompletion";
+import { useCart } from "@/context/CartContext";
 import { Toaster } from "@/components/ui/sonner";
 import * as pixel from "@/lib/meta-pixel";
 import { toast } from "sonner";
@@ -44,7 +45,7 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
   const pathname = usePathname();
   const { isCompletionFlowOpen, hideCompletionFlow, refreshProfileStatus } =
     useProfileCompletion();
-  const { openCartOverlay, setCartItems } = useCart();
+  const { openCartOverlay } = useCart();
 
   // Check if current route is an admin route
   const isAdminRoute = pathname.startsWith("/admin");
@@ -102,10 +103,10 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
             const shouldOpenCart = sessionStorage.getItem(
               "open-cart-after-profile-completion"
             );
+
             console.log("ClientLayout: Checking cart opening flag:", {
               shouldOpenCart,
               sessionStorageKeys: Object.keys(sessionStorage),
-              hasBackupCart: !!sessionStorage.getItem("backup-guest-cart"),
             });
 
             if (shouldOpenCart === "true") {
@@ -115,28 +116,7 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
               // Remove flag immediately to prevent duplicate calls
               sessionStorage.removeItem("open-cart-after-profile-completion");
 
-              // MANUALLY RESTORE CART HERE, BEFORE OPENING
-              // This is the key fix to prevent the race condition
-              const backupCartJSON =
-                sessionStorage.getItem("backup-guest-cart");
-              if (backupCartJSON) {
-                try {
-                  const backupCart = JSON.parse(backupCartJSON);
-                  if (Array.isArray(backupCart) && backupCart.length > 0) {
-                    console.log(
-                      `ClientLayout: Restoring ${backupCart.length} items from backup before opening cart.`
-                    );
-                    setCartItems(backupCart);
-                  }
-                } catch (e) {
-                  console.error("ClientLayout: Error parsing backup cart", e);
-                } finally {
-                  sessionStorage.removeItem("backup-guest-cart");
-                }
-              }
-
               // Use a longer delay to ensure profile completion flow is fully closed
-              // and to allow the cart state to propagate before opening the overlay.
               setTimeout(() => {
                 console.log("ClientLayout: Executing cart overlay open");
                 openCartOverlay();
@@ -145,7 +125,7 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
                     "your profile has been successfully updated. you'll now get personalized recommendations and faster checkout.",
                   duration: 4000,
                 });
-              }, 250); // Increased delay slightly
+              }, 200); // Increased from 100ms to 200ms
             } else {
               console.log(
                 "ClientLayout: No cart opening needed, showing regular completion toast"
