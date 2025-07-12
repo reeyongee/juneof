@@ -11,75 +11,82 @@ function PostLoginRedirectContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isAuthenticated, isLoading: authIsLoading, customerData } = useAuth();
-  const { ensureFreshProfileStatus, showCompletionFlow, isCompletionFlowOpen } =
+  const { ensureFreshProfileStatus, showCompletionFlow } =
     useProfileCompletion();
   const { completeAuthFlow } = useLoading();
-  const { openCartOverlay, isCartOverlayOpen } = useCart();
+  const { openCartOverlay } = useCart();
   const processingRef = useRef(false);
 
+  // This is the core logic that orchestrates the entire post-login sequence
   const processPostLogin = useCallback(async () => {
+    // 1. Gatekeeper: Ensure this complex logic runs only once per login.
     if (processingRef.current) return;
     processingRef.current = true;
 
     console.log("PostLoginRedirect: Starting post-login processing...");
 
-    // 1. Get fresh profile status
-    const freshStatus = await ensureFreshProfileStatus();
-
-    // 2. Check for checkout login context
-    const checkoutLoginContext = JSON.parse(
-      sessionStorage.getItem("checkout-login-context") || "{}"
+    // 2. Consume the Trigger: Immediately read and clear the checkout context.
+    // This is the most critical step to prevent re-triggering.
+    const checkoutContextString = sessionStorage.getItem(
+      "checkout-login-context"
+    );
+    const checkoutContext = checkoutContextString
+      ? JSON.parse(checkoutContextString)
+      : {};
+    sessionStorage.removeItem("checkout-login-context");
+    console.log(
+      "PostLoginRedirect: Consumed and cleared checkout context:",
+      checkoutContext
     );
 
-    // 3. Decide the next step
+    // 3. Get Fresh Data: Ensure we have the latest profile status.
+    const freshStatus = await ensureFreshProfileStatus();
+
+    // 4. Decision Point
     if (freshStatus && !freshStatus.isComplete) {
+      // Flow A: Profile is incomplete.
       console.log(
-        "PostLoginRedirect: Profile is incomplete. Showing completion flow."
+        "PostLoginRedirect: Profile incomplete. Showing completion flow."
+      );
+      // Pass the consumed context to the flow via a new session storage item
+      // that the completion flow itself will manage and clean up.
+      sessionStorage.setItem(
+        "post-login-context",
+        JSON.stringify(checkoutContext)
       );
       showCompletionFlow();
-      // The useEffect below will handle what happens after the flow closes.
+      // This component's job is done for now. The ProfileCompletionFlow will take over.
     } else {
+      // Flow B: Profile is complete.
       console.log(
         "PostLoginRedirect: Profile is complete. Checking for checkout context."
       );
-      if (checkoutLoginContext.isCheckoutLogin) {
-        if (!isCartOverlayOpen) {
-          console.log(
-            "PostLoginRedirect: Checkout login detected, opening cart overlay."
-          );
-          openCartOverlay();
-        }
+      if (checkoutContext.isCheckoutLogin) {
+        console.log(
+          "PostLoginRedirect: Checkout login detected, opening cart overlay."
+        );
+        openCartOverlay();
       }
-
-      // Cleanup and finish
+      // Finalize the process.
       completeAuthFlow();
-      sessionStorage.removeItem("checkout-login-context");
       const url = new URL(window.location.href);
       url.searchParams.delete("auth_completed");
       url.searchParams.delete("t");
       router.replace(url.toString());
-      processingRef.current = false;
+      processingRef.current = false; // Reset for any future logins.
     }
   }, [
     ensureFreshProfileStatus,
     showCompletionFlow,
-    isCartOverlayOpen,
     openCartOverlay,
     completeAuthFlow,
     router,
   ]);
 
-  // Main effect to trigger the post-login sequence
+  // Main effect to trigger the sequence
   useEffect(() => {
     const authCompleted = searchParams.get("auth_completed") === "true";
-
-    if (
-      authCompleted &&
-      isAuthenticated &&
-      !authIsLoading &&
-      customerData &&
-      !processingRef.current
-    ) {
+    if (authCompleted && isAuthenticated && !authIsLoading && customerData) {
       processPostLogin();
     }
   }, [
@@ -90,44 +97,7 @@ function PostLoginRedirectContent() {
     processPostLogin,
   ]);
 
-  // Effect to handle the completion of the profile flow
-  useEffect(() => {
-    // This effect triggers when the completion flow is closed.
-    if (processingRef.current && !isCompletionFlowOpen) {
-      console.log(
-        "PostLoginRedirect: Profile completion flow closed. Resuming post-login sequence."
-      );
-
-      const checkoutLoginContext = JSON.parse(
-        sessionStorage.getItem("checkout-login-context") || "{}"
-      );
-
-      if (checkoutLoginContext.isCheckoutLogin) {
-        if (!isCartOverlayOpen) {
-          console.log(
-            "PostLoginRedirect: Checkout login detected after completion, opening cart overlay."
-          );
-          openCartOverlay();
-        }
-      }
-
-      // Final cleanup
-      completeAuthFlow();
-      sessionStorage.removeItem("checkout-login-context");
-      const url = new URL(window.location.href);
-      url.searchParams.delete("auth_completed");
-      url.searchParams.delete("t");
-      router.replace(url.toString());
-      processingRef.current = false;
-    }
-  }, [
-    isCompletionFlowOpen,
-    openCartOverlay,
-    isCartOverlayOpen,
-    completeAuthFlow,
-    router,
-  ]);
-
+  // This component renders nothing itself.
   return null;
 }
 

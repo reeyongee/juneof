@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useAddress } from "@/context/AddressContext";
+import { useCart } from "@/context/CartContext";
+import { useLoading } from "@/context/LoadingContext";
 import {
   analyzeProfileCompletion,
   getNextCompletionStep,
@@ -40,41 +42,31 @@ export function ProfileCompletionFlow({
   const isLoadingRef = useRef(false);
   const { apiClient, fetchCustomerData } = useAuth();
   const { fetchAddresses } = useAddress();
+  const { openCartOverlay } = useCart();
+  const { completeAuthFlow } = useLoading();
 
   const loadCustomerProfile = useCallback(async () => {
     if (!apiClient || isLoadingRef.current) return;
-
     isLoadingRef.current = true;
     setIsLoading(true);
     setError(null);
-
     try {
       const response = await fetchCustomerProfileForCompletion(apiClient);
       const errors = handleGraphQLErrors(response);
-
-      if (errors.length > 0) {
-        throw new Error(errors.join(", "));
-      }
+      if (errors.length > 0) throw new Error(errors.join(", "));
 
       if (response.data?.customer) {
         const customer = response.data.customer;
         const profile: CustomerProfile = {
-          id: customer.id,
-          displayName: customer.displayName,
-          firstName: customer.firstName,
-          lastName: customer.lastName,
-          emailAddress: customer.emailAddress,
-          phoneNumber: customer.phoneNumber,
-          defaultAddress: customer.defaultAddress,
+          ...customer,
           addresses: customer.addresses.nodes,
         };
-
         setCustomerProfile(profile);
         const status = analyzeProfileCompletion(profile);
         setProfileStatus(status);
 
         if (status.isComplete) {
-          onClose(); // Already complete, just close.
+          onClose();
         } else {
           const nextStep = getNextCompletionStep(status);
           if (nextStep === "name" || nextStep === "address") {
@@ -90,29 +82,15 @@ export function ProfileCompletionFlow({
     }
   }, [apiClient, onClose]);
 
-  // Prevent ESC key from closing the dialog
   useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (isOpen && event.key === "Escape") {
-        event.preventDefault();
-        event.stopPropagation();
-      }
-    };
-    document.addEventListener("keydown", handleKeyDown, true);
-    return () => document.removeEventListener("keydown", handleKeyDown, true);
-  }, [isOpen]);
-
-  // Fetch profile when the dialog opens
-  useEffect(() => {
-    if (isOpen && apiClient) {
+    if (isOpen) {
       loadCustomerProfile();
     }
-  }, [isOpen, apiClient, loadCustomerProfile]);
+  }, [isOpen, loadCustomerProfile]);
 
   const handleStepComplete = async () => {
     if (!apiClient) return;
-
-    // Refresh data to see if we're done
+    // Refetch data to confirm completion
     const response = await fetchCustomerProfileForCompletion(apiClient);
     if (response.data?.customer) {
       const profile: CustomerProfile = {
@@ -125,8 +103,25 @@ export function ProfileCompletionFlow({
       await fetchAddresses();
 
       if (newStatus.isComplete) {
-        onComplete?.(); // Signal completion to the parent
-        onClose();
+        console.log("ProfileCompletionFlow: Profile is now complete.");
+        // Check for the post-login context
+        const postLoginContextString =
+          sessionStorage.getItem("post-login-context");
+        if (postLoginContextString) {
+          const context = JSON.parse(postLoginContextString);
+          if (context.isCheckoutLogin) {
+            console.log(
+              "ProfileCompletionFlow: Checkout context found. Opening cart."
+            );
+            openCartOverlay();
+          }
+          // Clean up the context now that it's been handled.
+          sessionStorage.removeItem("post-login-context");
+        }
+
+        onComplete?.();
+        onClose(); // Close the modal
+        completeAuthFlow(); // Signal that the entire loading/auth flow is done
       } else {
         const nextStep = getNextCompletionStep(newStatus);
         if (nextStep === "name" || nextStep === "address") {
@@ -142,14 +137,6 @@ export function ProfileCompletionFlow({
     return "complete your profile";
   };
 
-  const getStepDescription = () => {
-    if (currentStep === "name")
-      return "help us personalize your experience by completing your name.";
-    if (currentStep === "address")
-      return "add your complete address and phone number for delivery and order updates.";
-    return "complete your profile to get the best experience.";
-  };
-
   if (!isOpen) return null;
 
   return (
@@ -161,9 +148,6 @@ export function ProfileCompletionFlow({
             <h2 className="text-lg font-medium text-gray-900 lowercase">
               {getStepTitle()}
             </h2>
-            <p className="text-sm text-gray-600 lowercase mt-1">
-              {getStepDescription()}
-            </p>
             {profileStatus && (
               <div className="mt-3">
                 <Progress
@@ -174,18 +158,15 @@ export function ProfileCompletionFlow({
             )}
           </div>
           <div className="px-6 py-4">
-            {isLoading && (
+            {isLoading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-8 w-8 animate-spin text-gray-900" />
               </div>
-            )}
-            {error && (
+            ) : error ? (
               <div className="text-center py-8">
                 <p className="text-red-600 text-sm mb-4">{error}</p>
               </div>
-            )}
-            {!isLoading &&
-              !error &&
+            ) : (
               apiClient &&
               customerProfile &&
               (currentStep === "name" ? (
@@ -201,7 +182,8 @@ export function ProfileCompletionFlow({
                   customerProfile={customerProfile}
                   onComplete={handleStepComplete}
                 />
-              ))}
+              ))
+            )}
           </div>
         </div>
       </div>
