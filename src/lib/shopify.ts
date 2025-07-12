@@ -171,6 +171,7 @@ export const GET_PRODUCT_BY_HANDLE_QUERY = gql`
       handle
       description
       descriptionHtml
+      availableForSale
       priceRange {
         minVariantPrice {
           amount
@@ -191,7 +192,7 @@ export const GET_PRODUCT_BY_HANDLE_QUERY = gql`
           }
         }
       }
-      variants(first: 10) {
+      variants(first: 100) {
         edges {
           node {
             id
@@ -201,6 +202,8 @@ export const GET_PRODUCT_BY_HANDLE_QUERY = gql`
               currencyCode
             }
             availableForSale
+            currentlyNotInStock
+            quantityAvailable
             selectedOptions {
               name
               value
@@ -219,6 +222,25 @@ export const GET_PRODUCT_BY_HANDLE_QUERY = gql`
       metafield(namespace: "custom", key: "express_interest") {
         value
         type
+      }
+      # NEW 2025-07 API Features
+      selectedOrFirstAvailableVariant {
+        id
+        title
+        availableForSale
+        selectedOptions {
+          name
+          value
+        }
+      }
+      variantBySelectedOptions(selectedOptions: []) {
+        id
+        title
+        availableForSale
+        selectedOptions {
+          name
+          value
+        }
       }
     }
   }
@@ -664,6 +686,8 @@ export interface ShopifyProductVariant {
   title: string;
   price: ShopifyMoney;
   availableForSale: boolean;
+  currentlyNotInStock?: boolean; // NEW 2025-07 API field
+  quantityAvailable?: number; // NEW 2025-07 API field
   selectedOptions: {
     name: string;
     value: string;
@@ -1166,5 +1190,130 @@ export async function preloadShopifyProducts(): Promise<{
   } catch (error) {
     console.error("Failed to preload Shopify products:", error);
     return { products: [], imageUrls: [] };
+  }
+}
+
+/**
+ * NEW 2025-07 API: Variant Mapping and Availability Utilities
+ */
+
+// Get available size options from product variants
+export function getAvailableSizeOptions(
+  product: ShopifyProductDetails
+): string[] {
+  const sizeOption = product.options.find(
+    (option) => option.name.toLowerCase() === "size"
+  );
+
+  if (!sizeOption) {
+    console.warn("No size option found for product:", product.title);
+    return [];
+  }
+
+  // Get only sizes that have available variants
+  const availableSizes = product.variants.edges
+    .filter((edge) => edge.node.availableForSale)
+    .map((edge) => {
+      const sizeOption = edge.node.selectedOptions.find(
+        (opt) => opt.name.toLowerCase() === "size"
+      );
+      return sizeOption?.value;
+    })
+    .filter((size): size is string => Boolean(size))
+    .filter((size, index, array) => array.indexOf(size) === index); // Remove duplicates
+
+  return availableSizes;
+}
+
+// Find variant by selected size using 2025-07 API method
+export function findVariantBySize(
+  product: ShopifyProductDetails,
+  selectedSize: string
+): ShopifyProductVariant | null {
+  const variant = product.variants.edges.find((edge) =>
+    edge.node.selectedOptions.some(
+      (option) =>
+        option.name.toLowerCase() === "size" &&
+        option.value.toLowerCase() === selectedSize.toLowerCase()
+    )
+  );
+
+  return variant?.node || null;
+}
+
+// Check if a specific size is available
+export function isSizeAvailable(
+  product: ShopifyProductDetails,
+  size: string
+): boolean {
+  const variant = findVariantBySize(product, size);
+  return variant ? variant.availableForSale : false;
+}
+
+// Get size availability status with stock info
+export function getSizeAvailabilityStatus(
+  product: ShopifyProductDetails,
+  size: string
+): {
+  available: boolean;
+  inStock: boolean;
+  quantityAvailable?: number;
+  variant?: ShopifyProductVariant;
+} {
+  const variant = findVariantBySize(product, size);
+
+  if (!variant) {
+    return { available: false, inStock: false };
+  }
+
+  return {
+    available: variant.availableForSale,
+    inStock: !variant.currentlyNotInStock,
+    quantityAvailable: variant.quantityAvailable || undefined,
+    variant,
+  };
+}
+
+// NEW: Use Shopify's variantBySelectedOptions API (2025-07 feature)
+export async function getVariantBySelectedOptions(
+  handle: string,
+  selectedOptions: Array<{ name: string; value: string }>
+): Promise<ShopifyProductVariant | null> {
+  try {
+    const query = gql`
+      query GetVariantBySelectedOptions(
+        $handle: String!
+        $selectedOptions: [SelectedOptionInput!]!
+      ) {
+        productByHandle(handle: $handle) {
+          variantBySelectedOptions(selectedOptions: $selectedOptions) {
+            id
+            title
+            price {
+              amount
+              currencyCode
+            }
+            availableForSale
+            currentlyNotInStock
+            quantityAvailable
+            selectedOptions {
+              name
+              value
+            }
+          }
+        }
+      }
+    `;
+
+    const data = await storefrontApiRequest<{
+      productByHandle: {
+        variantBySelectedOptions: ShopifyProductVariant | null;
+      };
+    }>(query, { handle, selectedOptions });
+
+    return data.productByHandle?.variantBySelectedOptions || null;
+  } catch (error) {
+    console.error("Error fetching variant by selected options:", error);
+    return null;
   }
 }

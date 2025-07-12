@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import SizeChart from "../../components/SizeChart";
 import WashCareOverlay from "../../components/WashCareOverlay";
@@ -11,10 +11,16 @@ import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 import { useProfileCompletion } from "@/hooks/useProfileCompletion";
 import { ProductWithGuides } from "@/lib/sanity-queries";
-import { Badge } from "@/components/ui/badge";
 import { generateProductSchema } from "@/lib/seo";
 import * as pixel from "@/lib/meta-pixel"; // Import the pixel helper
 import { toast } from "sonner";
+// NEW 2025-07 API imports
+import {
+  getAvailableSizeOptions,
+  findVariantBySize,
+  getSizeAvailabilityStatus,
+  type ShopifyProductVariant,
+} from "@/lib/shopify";
 
 // Mobile detection hook
 const useIsMobile = () => {
@@ -50,34 +56,21 @@ interface ProductPageClientProps {
   product: ProductWithGuides;
 }
 
-// Enhanced price formatter that handles different currencies
-const formatPrice = (price: number, currencyCode?: string): string => {
-  if (!currencyCode || currencyCode === "INR") {
-    return `₹ ${price.toLocaleString("en-IN", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })}`;
-  }
-
-  const currencySymbols: { [key: string]: string } = {
-    USD: "$",
-    EUR: "€",
-    GBP: "£",
-    CAD: "C$",
-    AUD: "A$",
-    JPY: "¥",
-  };
-
-  const symbol = currencySymbols[currencyCode] || currencyCode;
-
-  return `${symbol} ${price.toLocaleString("en-US", {
-    minimumFractionDigits: currencyCode === "JPY" ? 0 : 2,
-    maximumFractionDigits: currencyCode === "JPY" ? 0 : 2,
-  })}`;
-};
+// Format price helper
+function formatPrice(amount: number, currencyCode: string = "INR"): string {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: currencyCode,
+  }).format(amount);
+}
 
 export default function ProductPageClient({ product }: ProductPageClientProps) {
-  const [selectedSize, setSelectedSize] = useState<string>("in between");
+  // NEW: Dynamic size options from Shopify variants
+  const [availableSizes, setAvailableSizes] = useState<string[]>([]);
+  const [selectedSize, setSelectedSize] = useState<string>("");
+  const [selectedVariant, setSelectedVariant] =
+    useState<ShopifyProductVariant | null>(null);
+
   const [isSizeChartOpen, setIsSizeChartOpen] = useState(false);
   const [isWashCareOpen, setIsWashCareOpen] = useState(false);
   const [isExpressInterestOpen, setIsExpressInterestOpen] = useState(false);
@@ -97,13 +90,39 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
   const hasOpenedCartFromCompletion = useRef(false);
   const isProcessingCompletion = useRef(false);
 
-  const { addItemToCart, openCartOverlay, isCartOverlayOpen } = useCart();
+  const { addItemToCart, openCartOverlay } = useCart();
   const { isAuthenticated, customerData } = useAuth();
   const { refreshProfileStatus } = useProfileCompletion();
   const isMobile = useIsMobile();
   const imageGalleryRef = useRef<HTMLDivElement>(null);
 
   const searchParams = useSearchParams();
+
+  // NEW: Initialize available sizes from Shopify variants
+  useEffect(() => {
+    if (product) {
+      const sizes = getAvailableSizeOptions(product);
+      setAvailableSizes(sizes);
+
+      // Set default size to first available or from URL
+      const sizeFromUrl = searchParams.get("size");
+      if (sizeFromUrl && sizes.includes(sizeFromUrl)) {
+        setSelectedSize(sizeFromUrl);
+      } else if (sizes.length > 0) {
+        // Default to first available size
+        setSelectedSize(sizes[0]);
+      }
+    }
+  }, [product, searchParams]);
+
+  // NEW: Update selected variant when size changes
+  useEffect(() => {
+    if (product && selectedSize) {
+      const variant = findVariantBySize(product, selectedSize);
+      setSelectedVariant(variant);
+      console.log("Selected variant:", variant);
+    }
+  }, [product, selectedSize]);
 
   // Track ViewContent event when the product data is available
   useEffect(() => {
@@ -162,14 +181,6 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
     }
   }, [product]);
 
-  const sizes = [
-    "extra petite",
-    "petite",
-    "in between",
-    "curvy",
-    "extra curvy",
-  ];
-
   // Get images for rendering
   const images =
     product.images.edges.length > 0
@@ -192,14 +203,6 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
             altText: "Product image 4",
           },
         ];
-
-  // Initialize size from URL parameter on mount only
-  useEffect(() => {
-    const sizeFromUrl = searchParams.get("size");
-    if (sizeFromUrl) {
-      setSelectedSize(sizeFromUrl);
-    }
-  }, [searchParams]); // Include searchParams in dependency array
 
   // Handle checkout login flows
   useEffect(() => {
@@ -256,91 +259,38 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
     };
   }, []);
 
-  // Reset completion guards when cart is manually closed (with debounce to prevent excessive runs)
-  useEffect(() => {
-    if (!isCartOverlayOpen) {
-      // Use a timeout to prevent rapid resetting during cart operations
-      const resetTimeout = setTimeout(() => {
-        hasOpenedCartFromCompletion.current = false;
-        isProcessingCompletion.current = false;
-        console.log(
-          "ProductPageClient: Reset completion guards after cart close"
-        );
-      }, 200); // 200ms delay to allow cart operations to settle
+  // NEW: Handle size selection with availability checking
+  const handleSizeSelect = (size: string) => {
+    const availabilityStatus = getSizeAvailabilityStatus(product, size);
 
-      return () => clearTimeout(resetTimeout);
+    if (!availabilityStatus.available) {
+      toast.error("Size not available", {
+        description: `${size} is currently out of stock`,
+        duration: 3000,
+      });
+      return;
     }
-  }, [isCartOverlayOpen]);
 
-  // Track scroll position for mobile image gallery with looping
-  useEffect(() => {
-    if (!isMobile || !imageGalleryRef.current) return;
+    setSelectedSize(size);
 
-    const gallery = imageGalleryRef.current;
-    const imageCount = images.length;
-    let touchStartX = 0;
-    let touchEndX = 0;
+    // Update URL without page reload
+    const newUrl = new URL(window.location.href);
+    newUrl.searchParams.set("size", size);
+    window.history.replaceState({}, document.title, newUrl.toString());
+  };
 
-    const handleScroll = () => {
-      const scrollLeft = gallery.scrollLeft;
-      const itemWidth = gallery.offsetWidth;
-      const currentIndex = Math.round(scrollLeft / itemWidth);
-      setCurrentImageIndex(Math.max(0, Math.min(currentIndex, imageCount - 1)));
-    };
+  // Get pricing info - use selected variant price if available
+  const price = selectedVariant
+    ? parseFloat(selectedVariant.price.amount)
+    : parseFloat(product.priceRange.minVariantPrice.amount);
+  const currencyCode = selectedVariant
+    ? selectedVariant.price.currencyCode
+    : product.priceRange.minVariantPrice.currencyCode;
 
-    const handleTouchStart = (e: TouchEvent) => {
-      touchStartX = e.changedTouches[0].screenX;
-    };
+  // Check if express interest mode
+  const expressInterest = currentExpressInterest;
 
-    const handleTouchEnd = (e: TouchEvent) => {
-      touchEndX = e.changedTouches[0].screenX;
-      handleSwipeGesture();
-    };
-
-    const handleSwipeGesture = () => {
-      const swipeThreshold = 50; // Minimum distance for a swipe
-      const swipeDistance = touchStartX - touchEndX;
-
-      if (Math.abs(swipeDistance) > swipeThreshold) {
-        if (swipeDistance > 0) {
-          // Swiped left, go to next image
-          const newIndex =
-            currentImageIndex === imageCount - 1 ? 0 : currentImageIndex + 1;
-          setCurrentImageIndex(newIndex);
-          gallery.scrollTo({
-            left: newIndex * gallery.offsetWidth,
-            behavior: "smooth",
-          });
-        } else {
-          // Swiped right, go to previous image
-          const newIndex =
-            currentImageIndex === 0 ? imageCount - 1 : currentImageIndex - 1;
-          setCurrentImageIndex(newIndex);
-          gallery.scrollTo({
-            left: newIndex * gallery.offsetWidth,
-            behavior: "smooth",
-          });
-        }
-      }
-    };
-
-    gallery.addEventListener("scroll", handleScroll);
-    gallery.addEventListener("touchstart", handleTouchStart);
-    gallery.addEventListener("touchend", handleTouchEnd);
-
-    return () => {
-      gallery.removeEventListener("scroll", handleScroll);
-      gallery.removeEventListener("touchstart", handleTouchStart);
-      gallery.removeEventListener("touchend", handleTouchEnd);
-    };
-  }, [isMobile, images.length, currentImageIndex]);
-
-  // Handler to update size selection without URL changes
-  const handleSizeSelect = useCallback((newSize: string) => {
-    setSelectedSize(newSize);
-  }, []);
-
-  // Handle add to cart
+  // NEW: Proper add to cart with correct variant
   const handleAddToCart = () => {
     // Validate that a size is selected
     if (!selectedSize || selectedSize.trim() === "") {
@@ -351,21 +301,37 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
       return;
     }
 
-    // Get the first available variant ID (you might want to make this more sophisticated)
-    const variantId = product.variants.edges[0]?.node?.id;
+    // Validate that we have a valid variant
+    if (!selectedVariant) {
+      toast.error("Invalid size selection", {
+        description: "Please select a valid size",
+        duration: 3000,
+      });
+      return;
+    }
+
+    // Check availability one more time
+    if (!selectedVariant.availableForSale) {
+      toast.error("Size not available", {
+        description: `${selectedSize} is currently out of stock`,
+        duration: 3000,
+      });
+      return;
+    }
 
     const productToAdd = {
       name: product.title.toLowerCase(),
-      price: parseFloat(product.priceRange.minVariantPrice.amount),
+      price: parseFloat(selectedVariant.price.amount),
       size: selectedSize,
       imageUrl:
         product.images.edges[0]?.node?.url ||
         "https://picsum.photos/id/11/100/150",
-      variantId: variantId,
+      variantId: selectedVariant.id, // NOW USING CORRECT VARIANT ID!
       productHandle: product.handle,
     };
+
     addItemToCart(productToAdd);
-    console.log("Added to cart:", productToAdd);
+    console.log("Added to cart with correct variant:", productToAdd);
 
     // Track AddToCart event
     if (pixel.PIXEL_ID) {
@@ -373,10 +339,15 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
         content_name: product.title,
         content_ids: [product.id],
         content_type: "product",
-        currency: product.priceRange.minVariantPrice.currencyCode,
-        value: parseFloat(product.priceRange.minVariantPrice.amount),
+        currency: selectedVariant.price.currencyCode,
+        value: parseFloat(selectedVariant.price.amount),
       });
     }
+
+    toast.success("Added to cart!", {
+      description: `${product.title} (${selectedSize}) added to your cart`,
+      duration: 3000,
+    });
   };
 
   // Handle express interest
@@ -436,58 +407,42 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
           );
         }
       } catch (error) {
-        console.error(
-          "Express Interest: Network error for authenticated user",
-          error
-        );
+        console.error("Express Interest: Network error", error);
         setExpressInterestMessage(
           "Network error. Please check your connection and try again."
         );
       } finally {
         setIsExpressInterestLoading(false);
-        // Clear message after 5 seconds
-        setTimeout(() => setExpressInterestMessage(""), 5000);
       }
     } else {
-      // Show overlay for non-authenticated users
+      // Handle unauthenticated users - show overlay for data collection
+      console.log("Express interest for unauthenticated user:", product.title);
       setIsExpressInterestOpen(true);
     }
   };
 
-  const price = parseFloat(product.priceRange.minVariantPrice.amount);
-  const currencyCode = product.priceRange.minVariantPrice.currencyCode;
-
-  // Use the dynamic express interest value instead of the static one
-  const expressInterest = currentExpressInterest;
-
   // Periodically check for metafield updates (every 30 seconds)
   useEffect(() => {
+    if (!product?.handle) return;
+
     const checkMetafieldUpdates = async () => {
       try {
-        // Only check if we're currently in express interest mode
-        if (currentExpressInterest) {
-          const response = await fetch(
-            `/api/product/${product.handle}/metafield`
-          );
-          if (response.ok) {
-            const data = await response.json();
-            const newExpressInterest = data.expressInterest === "true";
-
-            if (newExpressInterest !== currentExpressInterest) {
-              console.log(
-                `Express interest status changed for ${product.title}: ${currentExpressInterest} -> ${newExpressInterest}`
-              );
-              setCurrentExpressInterest(newExpressInterest);
-
-              // Optionally refresh the page to get full updated data
-              if (!newExpressInterest) {
-                window.location.reload();
-              }
-            }
+        const response = await fetch(
+          `/api/product/${product.handle}/metafield`
+        );
+        if (response.ok) {
+          const data = await response.json();
+          const newExpressInterest = data.expressInterest === "true";
+          if (newExpressInterest !== currentExpressInterest) {
+            console.log(
+              `Express interest updated for ${product.handle}:`,
+              newExpressInterest
+            );
+            setCurrentExpressInterest(newExpressInterest);
           }
         }
       } catch (error) {
-        console.warn("Failed to check metafield updates:", error);
+        console.error("Failed to check metafield updates:", error);
       }
     };
 
@@ -496,7 +451,7 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
     const interval = setInterval(checkMetafieldUpdates, 30000);
 
     return () => clearInterval(interval);
-  }, [currentExpressInterest, product.handle, product.title]);
+  }, [product?.handle, currentExpressInterest]);
 
   if (isMobile) {
     // Mobile Layout
@@ -573,77 +528,91 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
                     select size
                   </h3>
                   <div className="flex flex-wrap gap-2">
-                    {sizes.map((size) => (
-                      <button
-                        key={size}
-                        onClick={() => handleSizeSelect(size)}
-                        className={`px-4 py-2 border rounded-full text-sm tracking-wide lowercase transition-colors ${
-                          selectedSize === size
-                            ? "bg-gray-900 text-white border-gray-900"
-                            : "bg-white text-gray-700 border-gray-300 hover:border-gray-500"
-                        }`}
-                      >
-                        {size}
-                      </button>
-                    ))}
+                    {availableSizes.map((size) => {
+                      const availabilityStatus = getSizeAvailabilityStatus(
+                        product,
+                        size
+                      );
+                      return (
+                        <button
+                          key={size}
+                          onClick={() => handleSizeSelect(size)}
+                          disabled={!availabilityStatus.available}
+                          className={`px-4 py-2 border rounded-full text-sm tracking-wide lowercase transition-colors ${
+                            selectedSize === size
+                              ? "bg-gray-900 text-white border-gray-900"
+                              : availabilityStatus.available
+                                ? "bg-white text-gray-700 border-gray-300 hover:border-gray-500"
+                                : "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+                          }`}
+                        >
+                          {size}
+                          {!availabilityStatus.available && (
+                            <span className="ml-1 text-xs">(out of stock)</span>
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
+                  {availableSizes.length === 0 && (
+                    <p className="text-sm text-gray-500 italic">
+                      No sizes available for this product
+                    </p>
+                  )}
                 </div>
               </>
             )}
 
             {/* Product Details - Always Visible */}
             <div className="space-y-4">
-              <div className="space-y-2 text-sm tracking-wider text-gray-700">
-                {product.descriptionHtml && (
-                  <div
-                    className="prose prose-sm lowercase"
-                    dangerouslySetInnerHTML={{
-                      __html: product.descriptionHtml,
-                    }}
-                  />
-                )}
-                {product.tags.length > 0 && (
-                  <p className="lowercase">{product.tags.join(" • ")}</p>
-                )}
+              <div>
+                <h3 className="text-sm tracking-widest lowercase mb-2 text-gray-700">
+                  description
+                </h3>
+                <div
+                  className="text-sm text-gray-600 leading-relaxed"
+                  dangerouslySetInnerHTML={{
+                    __html: product.descriptionHtml || product.description,
+                  }}
+                />
               </div>
+
+              {/* Express Interest Banner - Mobile */}
+              {expressInterest && (
+                <div className="bg-gray-50 border border-gray-200 p-4 rounded-lg">
+                  <p className="text-sm text-gray-700 tracking-wide lowercase leading-relaxed text-justify">
+                    we&apos;re working on bringing you this product as soon as
+                    possible. sign up to be the first to know when it&apos;s
+                    available by clicking on the express interest button!
+                  </p>
+                </div>
+              )}
+
+              {!expressInterest && (
+                <>
+                  {/* Direct Action Buttons */}
+                  <div className="space-y-3">
+                    {product.sizeGuide?.content && (
+                      <button
+                        onClick={() => setIsSizeChartOpen(true)}
+                        className="w-full border border-gray-300 py-3 text-center text-sm tracking-widest hover:bg-gray-50 transition-colors lowercase"
+                      >
+                        view size chart
+                      </button>
+                    )}
+
+                    {product.washCareGuide?.content && (
+                      <button
+                        onClick={() => setIsWashCareOpen(true)}
+                        className="w-full border border-gray-300 py-3 text-center text-sm tracking-widest hover:bg-gray-50 transition-colors lowercase"
+                      >
+                        fabrics & wash care
+                      </button>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
-
-            {/* Express Interest Banner */}
-            {expressInterest && (
-              <div className="bg-gray-50 border border-gray-200 p-4 rounded-lg">
-                <div className="mb-3">
-                  <Badge className="bg-black text-white hover:bg-black/90 px-3 py-1 text-xs font-semibold tracking-widest lowercase border-0">
-                    coming soon!
-                  </Badge>
-                </div>
-                <p className="text-sm text-gray-700 tracking-wide lowercase leading-relaxed text-justify">
-                  we&apos;re working on bringing you this product as soon as
-                  possible. sign up to be the first to know when it&apos;s
-                  available by clicking on the express interest button!
-                </p>
-              </div>
-            )}
-
-            {!expressInterest && (
-              <>
-                {/* Direct Action Buttons */}
-                <div className="space-y-3">
-                  <button
-                    onClick={() => setIsSizeChartOpen(true)}
-                    className="w-full border border-gray-300 py-3 text-center text-sm tracking-widest hover:bg-gray-50 transition-colors lowercase"
-                  >
-                    view size chart
-                  </button>
-
-                  <button
-                    onClick={() => setIsWashCareOpen(true)}
-                    className="w-full border border-gray-300 py-3 text-center text-sm tracking-widest hover:bg-gray-50 transition-colors lowercase"
-                  >
-                    fabrics & wash care
-                  </button>
-                </div>
-              </>
-            )}
           </div>
 
           {/* Sticky Add to Cart - Mobile */}
@@ -656,14 +625,18 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
               disabled={
                 isExpressInterestLoading ||
                 (!expressInterest &&
-                  (!selectedSize || selectedSize.trim() === ""))
+                  (!selectedSize ||
+                    selectedSize.trim() === "" ||
+                    !selectedVariant?.availableForSale))
               }
             >
               {expressInterest
                 ? isExpressInterestLoading
                   ? "submitting..."
                   : "express interest!"
-                : "add to cart"}
+                : selectedVariant?.availableForSale === false
+                  ? "out of stock"
+                  : "add to cart"}
             </button>
 
             {expressInterestMessage && (
@@ -703,7 +676,7 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
           isOpen={isProfileCompletionOpen}
           onClose={() => setIsProfileCompletionOpen(false)}
           onComplete={() => {
-            // Prevent multiple completion callbacks
+            // Enhanced protection against multiple completion callbacks
             if (
               isProcessingCompletion.current ||
               hasOpenedCartFromCompletion.current
@@ -723,8 +696,11 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
             refreshProfileStatus();
             setIsProfileCompletionOpen(false);
 
-            // ProfileCompletionFlow now handles cart opening for checkout logins automatically
-            toast.success("Profile updated successfully!");
+            toast.success("profile completed!", {
+              description:
+                "your profile has been successfully updated. you'll now get personalized recommendations and faster checkout.",
+              duration: 4000,
+            });
             isProcessingCompletion.current = false;
           }}
         />
@@ -732,52 +708,20 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
     );
   }
 
-  // Desktop Layout (Original)
+  // Desktop Layout
   return (
     <>
       <main className="flex min-h-screen bg-[#F8F4EC] text-gray-900">
-        {/* Left Column (Sticky) */}
-        <div className="sticky top-0 flex h-screen w-1/4 flex-col justify-center p-8 border-r border-gray-300">
-          <div className="flex flex-col h-full">
-            <div className="flex-grow flex flex-col justify-center">
-              <div className="space-y-6">
-                {/* Product Title */}
-                <h1 className="text-xl font-medium tracking-widest lowercase mb-2">
-                  {product.title.toLowerCase()}
-                </h1>
-
-                {/* Price - Always show for non-express interest products */}
-                {!expressInterest && (
-                  <span className="text-lg font-medium mb-6 block">
-                    {formatPrice(price, currencyCode)}
-                  </span>
-                )}
-
-                {/* Product Information */}
-                <div className="space-y-2 text-sm tracking-wider text-gray-700">
-                  {product.descriptionHtml && (
-                    <div
-                      className="prose prose-sm lowercase"
-                      dangerouslySetInnerHTML={{
-                        __html: product.descriptionHtml,
-                      }}
-                    />
-                  )}
-                  {product.tags.length > 0 && (
-                    <p className="lowercase">{product.tags.join(" • ")}</p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Wash Care Button - Positioned at the bottom */}
-            {!expressInterest && product.washCareGuide?.content && (
-              <button
-                onClick={() => setIsWashCareOpen(true)}
-                className="text-sm tracking-widest lowercase hover:text-gray-600 transition-colors mt-auto pt-4 text-left"
-              >
-                fabrics & wash care
-              </button>
+        {/* Left Column - Product Title and Price */}
+        <div className="sticky top-0 flex h-screen w-1/4 flex-col justify-center p-8">
+          <div className="space-y-4">
+            <h1 className="text-2xl font-medium tracking-widest lowercase">
+              {product.title.toLowerCase()}
+            </h1>
+            {!expressInterest && (
+              <span className="text-xl font-medium">
+                {formatPrice(price, currencyCode)}
+              </span>
             )}
           </div>
         </div>
@@ -787,77 +731,57 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
           {/* Add spacing equivalent to navbar height */}
           <div className="h-16"></div>
           <div className="space-y-8">
-            {product.images.edges.length > 0 ? (
-              product.images.edges.map((imageEdge, index) => {
-                // Define specific sizes for each image position to match original design
-                const imageSizes = [
-                  { width: 600, height: 1000 }, // First image: portrait
-                  { width: 900, height: 600 }, // Second image: landscape
-                  { width: 700, height: 800 }, // Third image: slightly wider portrait
-                  { width: 850, height: 1200 }, // Fourth image: tall portrait
-                ];
+            {product.images.edges.length > 0
+              ? product.images.edges.map((imageEdge, index) => {
+                  // Define specific sizes for each image position to match original design
+                  const imageSizes = [
+                    { width: 600, height: 1000 }, // First image: portrait
+                    { width: 900, height: 600 }, // Second image: landscape
+                    { width: 700, height: 800 }, // Third image: slightly wider portrait
+                    { width: 850, height: 1200 }, // Fourth image: tall portrait
+                  ];
 
-                // Use predefined size or default for additional images
-                const size = imageSizes[index] || { width: 600, height: 800 };
+                  // Use predefined size or default for additional images
+                  const size = imageSizes[index] || { width: 600, height: 800 };
 
-                return (
+                  return (
+                    <Image
+                      key={`product-image-${index}`}
+                      src={imageEdge.node.url}
+                      alt={
+                        imageEdge.node.altText ||
+                        `${product.title} - Image ${index + 1}`
+                      }
+                      width={size.width}
+                      height={size.height}
+                      className="w-full h-auto select-none pointer-events-none"
+                      priority={index === 0}
+                      draggable={false}
+                    />
+                  );
+                })
+              : // Fallback placeholder images with different sizes
+                [
+                  { width: 600, height: 1000 },
+                  { width: 900, height: 600 },
+                  { width: 700, height: 800 },
+                  { width: 850, height: 1200 },
+                ].map((size, index) => (
                   <Image
-                    key={`product-image-${index}`}
-                    src={imageEdge.node.url}
-                    alt={
-                      imageEdge.node.altText ||
-                      `${product.title} - Image ${index + 1}`
-                    }
+                    key={`placeholder-image-${index}`}
+                    src={`https://picsum.photos/id/${11 + index * 11}/${size.width}/${size.height}`}
+                    alt={`${product.title} - Placeholder ${index + 1}`}
                     width={size.width}
                     height={size.height}
                     className="w-full h-auto select-none pointer-events-none"
                     priority={index === 0}
                     draggable={false}
                   />
-                );
-              })
-            ) : (
-              // Fallback images with original specific sizes
-              <>
-                <Image
-                  src="https://picsum.photos/id/11/600/1000"
-                  alt="Product image 1 (W:600)"
-                  width={600}
-                  height={1000}
-                  className="w-full h-auto select-none pointer-events-none"
-                  priority
-                  draggable={false}
-                />
-                <Image
-                  src="https://picsum.photos/id/22/900/600"
-                  alt="Product image 2 (W:900)"
-                  width={900}
-                  height={600}
-                  className="w-full h-auto select-none pointer-events-none"
-                  draggable={false}
-                />
-                <Image
-                  src="https://picsum.photos/id/33/700/800"
-                  alt="Product image 3 (W:700)"
-                  width={700}
-                  height={800}
-                  className="w-full h-auto select-none pointer-events-none"
-                  draggable={false}
-                />
-                <Image
-                  src="https://picsum.photos/id/44/850/1200"
-                  alt="Product image 4 (W:850)"
-                  width={850}
-                  height={1200}
-                  className="w-full h-auto select-none pointer-events-none"
-                  draggable={false}
-                />
-              </>
-            )}
+                ))}
           </div>
         </div>
 
-        {/* Right Column (Sticky) */}
+        {/* Right Column - Size Selection and Actions */}
         <div className="sticky top-0 flex h-screen w-1/4 flex-col p-8 border-l border-gray-300">
           <div className="flex-1 flex flex-col justify-center space-y-6">
             {!expressInterest && (
@@ -877,19 +801,36 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
 
                 {/* Sizes */}
                 <div className="flex flex-col space-y-3 text-base tracking-widest">
-                  {sizes.map((size) => (
-                    <button
-                      key={size}
-                      onClick={() => handleSizeSelect(size)}
-                      className={`hover:text-gray-600 transition-colors lowercase ${
-                        selectedSize === size
-                          ? "underline font-medium"
-                          : "text-gray-700"
-                      }`}
-                    >
-                      {size}
-                    </button>
-                  ))}
+                  {availableSizes.map((size) => {
+                    const availabilityStatus = getSizeAvailabilityStatus(
+                      product,
+                      size
+                    );
+                    return (
+                      <button
+                        key={size}
+                        onClick={() => handleSizeSelect(size)}
+                        disabled={!availabilityStatus.available}
+                        className={`hover:text-gray-600 transition-colors lowercase text-left ${
+                          selectedSize === size
+                            ? "underline font-medium"
+                            : availabilityStatus.available
+                              ? "text-gray-700"
+                              : "text-gray-400 cursor-not-allowed line-through"
+                        }`}
+                      >
+                        {size}
+                        {!availabilityStatus.available && (
+                          <span className="ml-2 text-xs">(out of stock)</span>
+                        )}
+                      </button>
+                    );
+                  })}
+                  {availableSizes.length === 0 && (
+                    <p className="text-sm text-gray-500 italic">
+                      No sizes available for this product
+                    </p>
+                  )}
                 </div>
               </>
             )}
@@ -916,14 +857,18 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
               disabled={
                 isExpressInterestLoading ||
                 (!expressInterest &&
-                  (!selectedSize || selectedSize.trim() === ""))
+                  (!selectedSize ||
+                    selectedSize.trim() === "" ||
+                    !selectedVariant?.availableForSale))
               }
             >
               {expressInterest
                 ? isExpressInterestLoading
                   ? "submitting..."
                   : "express interest!"
-                : "add to cart"}
+                : selectedVariant?.availableForSale === false
+                  ? "out of stock"
+                  : "add to cart"}
             </button>
 
             {expressInterestMessage && (
