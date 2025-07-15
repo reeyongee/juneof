@@ -709,8 +709,9 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
     <>
       <main className="flex min-h-screen bg-[#F8F4EC] text-gray-900">
         {/* Left Column - Product Title, Description and Price */}
-        <div className="sticky top-0 flex h-screen w-1/4 flex-col justify-center p-8">
-          <div className="space-y-4">
+        <div className="sticky top-0 flex h-screen w-1/4 flex-col p-8">
+          {/* Main content centered */}
+          <div className="flex-1 flex flex-col justify-center space-y-4">
             <h1 className="text-2xl font-medium tracking-widest lowercase">
               {product.title.toLowerCase()}
             </h1>
@@ -728,17 +729,19 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
                 {formatPrice(price, currencyCode)}
               </span>
             )}
+          </div>
 
-            {/* Fabric & Wash Care Button - Only show if not express interest and content exists */}
-            {product.washCareGuide?.content && !expressInterest && (
+          {/* Fabric & Wash Care Button - At the bottom */}
+          {product.washCareGuide?.content && !expressInterest && (
+            <div className="mt-auto">
               <button
                 onClick={() => setIsWashCareOpen(true)}
                 className="text-sm tracking-widest lowercase hover:text-gray-600 transition-colors text-left"
               >
                 fabrics & wash care
               </button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Middle Column (Now Scrolls with Page) */}
