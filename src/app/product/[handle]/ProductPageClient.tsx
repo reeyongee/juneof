@@ -708,16 +708,35 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
   return (
     <>
       <main className="flex min-h-screen bg-[#F8F4EC] text-gray-900">
-        {/* Left Column - Product Title and Price */}
+        {/* Left Column - Product Title, Description and Price */}
         <div className="sticky top-0 flex h-screen w-1/4 flex-col justify-center p-8">
           <div className="space-y-4">
             <h1 className="text-2xl font-medium tracking-widest lowercase">
               {product.title.toLowerCase()}
             </h1>
+
+            {/* Product Description - Always Visible */}
+            <div
+              className="text-sm text-gray-600 leading-relaxed"
+              dangerouslySetInnerHTML={{
+                __html: product.descriptionHtml || product.description,
+              }}
+            />
+
             {!expressInterest && (
               <span className="text-xl font-medium">
                 {formatPrice(price, currencyCode)}
               </span>
+            )}
+
+            {/* Fabric & Wash Care Button - Only show if not express interest and content exists */}
+            {product.washCareGuide?.content && !expressInterest && (
+              <button
+                onClick={() => setIsWashCareOpen(true)}
+                className="text-sm tracking-widest lowercase hover:text-gray-600 transition-colors text-left"
+              >
+                fabrics & wash care
+              </button>
             )}
           </div>
         </div>
@@ -780,22 +799,6 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
         {/* Right Column - Size Selection and Actions */}
         <div className="sticky top-0 flex h-screen w-1/4 flex-col p-8 border-l border-gray-300">
           <div className="flex-1 flex flex-col justify-center space-y-6">
-            {/* Product Description - Always Visible */}
-            <div>
-              <h3 className="text-sm tracking-widest lowercase mb-2 text-gray-700">
-                description
-              </h3>
-              <div
-                className="text-sm text-gray-600 leading-relaxed"
-                dangerouslySetInnerHTML={{
-                  __html: product.descriptionHtml || product.description,
-                }}
-              />
-            </div>
-
-            {/* Divider */}
-            <div className="h-px bg-gray-300 w-full"></div>
-
             {/* Size Chart Button - Always show if content exists */}
             {product.sizeGuide?.content && (
               <button
@@ -803,16 +806,6 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
                 className="text-sm tracking-widest lowercase hover:text-gray-600 transition-colors"
               >
                 size chart
-              </button>
-            )}
-
-            {/* Wash Care Button - Only show if not express interest and content exists */}
-            {product.washCareGuide?.content && !expressInterest && (
-              <button
-                onClick={() => setIsWashCareOpen(true)}
-                className="text-sm tracking-widest lowercase hover:text-gray-600 transition-colors"
-              >
-                fabrics & wash care
               </button>
             )}
 
