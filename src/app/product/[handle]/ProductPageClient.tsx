@@ -588,30 +588,26 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
                 </div>
               )}
 
-              {!expressInterest && (
-                <>
-                  {/* Direct Action Buttons */}
-                  <div className="space-y-3">
-                    {product.sizeGuide?.content && (
-                      <button
-                        onClick={() => setIsSizeChartOpen(true)}
-                        className="w-full border border-gray-300 py-3 text-center text-sm tracking-widest hover:bg-gray-50 transition-colors lowercase"
-                      >
-                        view size chart
-                      </button>
-                    )}
+              {/* Direct Action Buttons - Always show if content exists */}
+              <div className="space-y-3">
+                {product.sizeGuide?.content && (
+                  <button
+                    onClick={() => setIsSizeChartOpen(true)}
+                    className="w-full border border-gray-300 py-3 text-center text-sm tracking-widest hover:bg-gray-50 transition-colors lowercase"
+                  >
+                    view size chart
+                  </button>
+                )}
 
-                    {product.washCareGuide?.content && (
-                      <button
-                        onClick={() => setIsWashCareOpen(true)}
-                        className="w-full border border-gray-300 py-3 text-center text-sm tracking-widest hover:bg-gray-50 transition-colors lowercase"
-                      >
-                        fabrics & wash care
-                      </button>
-                    )}
-                  </div>
-                </>
-              )}
+                {product.washCareGuide?.content && !expressInterest && (
+                  <button
+                    onClick={() => setIsWashCareOpen(true)}
+                    className="w-full border border-gray-300 py-3 text-center text-sm tracking-widest hover:bg-gray-50 transition-colors lowercase"
+                  >
+                    fabrics & wash care
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 
@@ -784,18 +780,44 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
         {/* Right Column - Size Selection and Actions */}
         <div className="sticky top-0 flex h-screen w-1/4 flex-col p-8 border-l border-gray-300">
           <div className="flex-1 flex flex-col justify-center space-y-6">
+            {/* Product Description - Always Visible */}
+            <div>
+              <h3 className="text-sm tracking-widest lowercase mb-2 text-gray-700">
+                description
+              </h3>
+              <div
+                className="text-sm text-gray-600 leading-relaxed"
+                dangerouslySetInnerHTML={{
+                  __html: product.descriptionHtml || product.description,
+                }}
+              />
+            </div>
+
+            {/* Divider */}
+            <div className="h-px bg-gray-300 w-full"></div>
+
+            {/* Size Chart Button - Always show if content exists */}
+            {product.sizeGuide?.content && (
+              <button
+                onClick={() => setIsSizeChartOpen(true)}
+                className="text-sm tracking-widest lowercase hover:text-gray-600 transition-colors"
+              >
+                size chart
+              </button>
+            )}
+
+            {/* Wash Care Button - Only show if not express interest and content exists */}
+            {product.washCareGuide?.content && !expressInterest && (
+              <button
+                onClick={() => setIsWashCareOpen(true)}
+                className="text-sm tracking-widest lowercase hover:text-gray-600 transition-colors"
+              >
+                fabrics & wash care
+              </button>
+            )}
+
             {!expressInterest && (
               <>
-                {/* Size Chart Button */}
-                {product.sizeGuide?.content && (
-                  <button
-                    onClick={() => setIsSizeChartOpen(true)}
-                    className="text-sm tracking-widest lowercase hover:text-gray-600 transition-colors"
-                  >
-                    size chart
-                  </button>
-                )}
-
                 {/* Divider */}
                 <div className="h-px bg-gray-300 w-full"></div>
 
